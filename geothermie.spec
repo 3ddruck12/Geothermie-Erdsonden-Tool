@@ -11,8 +11,9 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('pipe.txt', '.'),
+        ('Material/pipe.txt', 'Material'),
         ('EED_4_example_files', 'EED_4_example_files'),
+        ('Icons', 'Icons'),
         ('data', 'data'),
         ('gui', 'gui'),
         ('parsers', 'parsers'),
@@ -61,6 +62,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='icon.ico' if os.path.exists('icon.ico') else None,
+    icon='Icons/icon.ico' if os.path.exists('Icons/icon.ico') else None,
 )
 

@@ -35,7 +35,7 @@ jobs:
     
     - name: Build Windows executable
       run: |
-        pyinstaller --onefile --windowed --name GeothermieErdsondentool --icon=icon.ico main.py
+        pyinstaller --onefile --windowed --name GeothermieErdsondentool --icon=Icons/icon.ico main.py
     
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
@@ -83,7 +83,7 @@ jobs:
         chmod +x package/usr/local/bin/geothermie-erdsondentool
         
         # Icon konvertieren und kopieren
-        convert icon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
+        convert Icons/icon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
         
         # Desktop Entry
         cat > package/usr/share/applications/geothermie-erdsondentool.desktop << EOF

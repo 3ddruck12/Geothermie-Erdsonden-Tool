@@ -26,6 +26,7 @@ from calculations.hydraulics import HydraulicsCalculator
 from utils import PDFReportGenerator
 from utils.pvgis_api import PVGISClient, FALLBACK_CLIMATE_DATA
 from data import GroutMaterialDB, SoilTypeDB
+from gui.tooltips import InfoButton
 
 
 class GeothermieGUIProfessional:
@@ -293,9 +294,9 @@ class GeothermieGUIProfessional:
         self.pipe_type_combo.bind("<<ComboboxSelected>>", self._on_pipe_selected)
         row += 1
         
-        self._add_entry(parent, row, "Rohr Außendurchmesser [m]:", "pipe_outer_diameter", "0.032", self.entries)
+        self._add_entry(parent, row, "Rohr Außendurchmesser [mm]:", "pipe_outer_diameter", "32", self.entries, "pipe_outer_diameter")
         row += 1
-        self._add_entry(parent, row, "Rohr Wandstärke [m]:", "pipe_thickness", "0.003", self.entries)
+        self._add_entry(parent, row, "Rohr Wandstärke [mm]:", "pipe_thickness", "3", self.entries, "pipe_wall_thickness")
         row += 1
         self._add_entry(parent, row, "Rohr Wärmeleitfähigkeit [W/m·K]:", "pipe_thermal_cond", "0.42", self.entries)
         row += 1
@@ -340,9 +341,9 @@ class GeothermieGUIProfessional:
         self._add_entry(parent, row, "Frostschutzkonzentration [Vol%]:", "antifreeze_concentration", "25", self.hydraulics_entries)
         row += 1
         
-        self._add_entry(parent, row, "Volumenstrom [m³/s]:", "fluid_flow_rate", "0.0005", self.entries)
+        self._add_entry(parent, row, "Volumenstrom [m³/s]:", "fluid_flow_rate", "0.0005", self.entries, "fluid_flow_rate")
         row += 1
-        self._add_entry(parent, row, "Wärmeleitfähigkeit [W/m·K]:", "fluid_thermal_cond", "0.48", self.entries)
+        self._add_entry(parent, row, "Wärmeleitfähigkeit [W/m·K]:", "fluid_thermal_cond", "0.48", self.entries, "fluid_thermal_cond")
         row += 1
         self._add_entry(parent, row, "Wärmekapazität [J/kg·K]:", "fluid_heat_cap", "3800", self.entries)
         row += 1
@@ -408,13 +409,17 @@ class GeothermieGUIProfessional:
         ttk.Button(button_frame, text="📄 PDF-Bericht erstellen", 
                   command=self._export_pdf, width=25).pack(side=tk.LEFT, padx=5)
     
-    def _add_entry(self, parent, row, label, key, default, dict_target):
-        """Fügt ein Eingabefeld hinzu."""
+    def _add_entry(self, parent, row, label, key, default, dict_target, info_key=None):
+        """Fügt ein Eingabefeld hinzu, optional mit Info-Button."""
         ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w", padx=10, pady=5)
         entry = ttk.Entry(parent, width=32)
         entry.insert(0, default)
         entry.grid(row=row, column=1, sticky="w", padx=10, pady=5)
         dict_target[key] = entry
+        
+        # Optional: Info-Button
+        if info_key:
+            InfoButton.create_info_button(parent, row, 2, info_key)
     
     def _create_results_tab(self):
         """Erstellt den Ergebnisse-Tab."""
@@ -516,11 +521,12 @@ class GeothermieGUIProfessional:
         selected_name = self.pipe_type_var.get()
         for pipe in self.pipes:
             if pipe.name == selected_name:
+                # Konvertiere m → mm für Anzeige
                 self.entries["pipe_outer_diameter"].delete(0, tk.END)
-                self.entries["pipe_outer_diameter"].insert(0, f"{pipe.diameter_m:.4f}")
+                self.entries["pipe_outer_diameter"].insert(0, f"{pipe.diameter_m * 1000:.1f}")
                 
                 self.entries["pipe_thickness"].delete(0, tk.END)
-                self.entries["pipe_thickness"].insert(0, f"{pipe.thickness_m:.4f}")
+                self.entries["pipe_thickness"].insert(0, f"{pipe.thickness_m * 1000:.1f}")
                 
                 self.entries["pipe_thermal_cond"].delete(0, tk.END)
                 self.entries["pipe_thermal_cond"].insert(0, str(pipe.thermal_conductivity))
@@ -548,7 +554,7 @@ class GeothermieGUIProfessional:
             # Hole Parameter
             depth = float(self.entries["initial_depth"].get())
             bh_diameter = float(self.entries["borehole_diameter"].get())
-            pipe_diameter = float(self.entries["pipe_outer_diameter"].get())
+            pipe_diameter = float(self.entries["pipe_outer_diameter"].get()) / 1000.0  # mm → m
             num_boreholes = int(self.borehole_entries["num_boreholes"].get())
             
             # Anzahl Rohre basierend auf Konfiguration
@@ -617,7 +623,10 @@ class GeothermieGUIProfessional:
             num_circuits = int(self.hydraulics_entries["num_circuits"].get())
             depth = float(self.entries["initial_depth"].get())
             num_boreholes = int(self.borehole_entries["num_boreholes"].get())
-            pipe_inner_d = float(self.entries["pipe_outer_diameter"].get()) - 2 * float(self.entries["pipe_thickness"].get())
+            # Konvertiere mm → m für Innendurchmesser-Berechnung
+            pipe_outer_d_m = float(self.entries["pipe_outer_diameter"].get()) / 1000.0
+            pipe_thickness_m = float(self.entries["pipe_thickness"].get()) / 1000.0
+            pipe_inner_d = pipe_outer_d_m - 2 * pipe_thickness_m
             
             # Volumenstrom berechnen
             flow = self.hydraulics_calc.calculate_required_flow_rate(
@@ -681,28 +690,96 @@ class GeothermieGUIProfessional:
     
     def _load_pvgis_data(self):
         """Lädt Klimadaten von PVGIS."""
-        # Dialog für Koordinaten oder Adresse
-        choice = messagebox.askquestion("PVGIS Klimadaten", 
-                                       "Möchten Sie eine Adresse eingeben?\n\n" +
-                                       "JA = Adresse\nNEIN = Koordinaten (Lat/Lon)")
+        # Benutzerdefinierten Dialog für bessere Sichtbarkeit
+        dialog = tk.Toplevel(self.root)
+        dialog.title("🌍 PVGIS Klimadaten laden")
+        dialog.geometry("500x350")
+        dialog.transient(self.root)
+        dialog.grab_set()
         
+        # Zentrierung
+        dialog.update_idletasks()
+        x = (dialog.winfo_screenwidth() // 2) - (500 // 2)
+        y = (dialog.winfo_screenheight() // 2) - (350 // 2)
+        dialog.geometry(f"500x350+{x}+{y}")
+        
+        result = {'choice': None, 'address': None, 'lat': None, 'lon': None}
+        
+        # Frame für Inhalte
+        content_frame = ttk.Frame(dialog, padding=20)
+        content_frame.pack(fill=tk.BOTH, expand=True)
+        
+        ttk.Label(content_frame, text="Wählen Sie die Eingabemethode:", 
+                 font=("Arial", 11, "bold")).pack(pady=10)
+        
+        # Radio-Buttons für Auswahl
+        choice_var = tk.StringVar(value="address")
+        ttk.Radiobutton(content_frame, text="📍 Adresse eingeben", 
+                       variable=choice_var, value="address").pack(anchor=tk.W, pady=5)
+        ttk.Radiobutton(content_frame, text="🌐 Koordinaten eingeben (Lat/Lon)", 
+                       variable=choice_var, value="coords").pack(anchor=tk.W, pady=5)
+        
+        # Eingabefelder
+        input_frame = ttk.LabelFrame(content_frame, text="Eingabe", padding=10)
+        input_frame.pack(fill=tk.BOTH, expand=True, pady=15)
+        
+        ttk.Label(input_frame, text="Adresse:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        address_entry = ttk.Entry(input_frame, width=40)
+        address_entry.grid(row=0, column=1, pady=5, padx=5)
+        address_entry.insert(0, "z.B. Musterstraße 1, 80331 München")
+        
+        ttk.Label(input_frame, text="Breitengrad:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        lat_entry = ttk.Entry(input_frame, width=20)
+        lat_entry.grid(row=1, column=1, pady=5, padx=5, sticky=tk.W)
+        lat_entry.insert(0, "z.B. 48.14")
+        
+        ttk.Label(input_frame, text="Längengrad:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        lon_entry = ttk.Entry(input_frame, width=20)
+        lon_entry.grid(row=2, column=1, pady=5, padx=5, sticky=tk.W)
+        lon_entry.insert(0, "z.B. 11.58")
+        
+        # Buttons
+        btn_frame = ttk.Frame(content_frame)
+        btn_frame.pack(pady=10)
+        
+        def on_load():
+            result['choice'] = choice_var.get()
+            result['address'] = address_entry.get()
+            try:
+                result['lat'] = float(lat_entry.get())
+                result['lon'] = float(lon_entry.get())
+            except:
+                pass
+            dialog.destroy()
+        
+        def on_cancel():
+            dialog.destroy()
+        
+        ttk.Button(btn_frame, text="🌍 Klimadaten laden", 
+                  command=on_load).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Abbrechen", 
+                  command=on_cancel).pack(side=tk.LEFT, padx=5)
+        
+        # Warte auf Dialog
+        self.root.wait_window(dialog)
+        
+        # Verarbeite Ergebnis
         try:
-            if choice == 'yes':
-                # Adresse
-                address = simpledialog.askstring("Adresse", 
-                                                "Vollständige Adresse eingeben:\n(z.B. Musterstraße 1, 80331 München)")
-                if address:
+            if result['choice'] == 'address' and result['address']:
+                address = result['address']
+                if "z.B." not in address:
                     self.status_var.set("⏳ Lade Klimadaten von PVGIS...")
                     self.root.update()
                     data = self.pvgis_client.get_climate_data_for_address(address)
+                else:
+                    return
+            elif result['choice'] == 'coords' and result['lat'] and result['lon']:
+                lat, lon = result['lat'], result['lon']
+                self.status_var.set("⏳ Lade Klimadaten von PVGIS...")
+                self.root.update()
+                data = self.pvgis_client.get_monthly_temperature_data(lat, lon)
             else:
-                # Koordinaten
-                lat = simpledialog.askfloat("Breitengrad", "Breitengrad eingeben (z.B. 48.14):")
-                lon = simpledialog.askfloat("Längengrad", "Längengrad eingeben (z.B. 11.58):")
-                if lat and lon:
-                    self.status_var.set("⏳ Lade Klimadaten von PVGIS...")
-                    self.root.update()
-                    data = self.pvgis_client.get_monthly_temperature_data(lat, lon)
+                return
             
             if data:
                 # Übernehme Daten
@@ -740,6 +817,10 @@ class GeothermieGUIProfessional:
             params = {}
             for key, entry in self.entries.items():
                 params[key] = float(entry.get())
+            
+            # Konvertiere mm → m für Rohr-Parameter
+            params["pipe_outer_diameter"] = params["pipe_outer_diameter"] / 1000.0
+            params["pipe_thickness"] = params["pipe_thickness"] / 1000.0
             
             self.status_var.set("⏳ Berechnung läuft...")
             self.root.update()
@@ -853,7 +934,7 @@ class GeothermieGUIProfessional:
         
         # Bohrloch
         bh_d = float(self.entries["borehole_diameter"].get())
-        pipe_d = float(self.entries["pipe_outer_diameter"].get())
+        pipe_d = float(self.entries["pipe_outer_diameter"].get()) / 1000.0  # mm → m
         
         scale = 100
         bh_r = (bh_d / 2) * scale
@@ -967,7 +1048,7 @@ In diesem Tool verfügbar über:
     
     def _load_default_pipes(self):
         """Lädt Standard-Rohre."""
-        pipe_file = os.path.join(os.path.dirname(__file__), "..", "pipe.txt")
+        pipe_file = os.path.join(os.path.dirname(__file__), "..", "Material", "pipe.txt")
         if os.path.exists(pipe_file):
             try:
                 self.pipes = self.pipe_parser.parse_file(pipe_file)

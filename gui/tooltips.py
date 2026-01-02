@@ -213,6 +213,82 @@ Nachteile höherer Konzentration:
 
 Wählen Sie die Konzentration basierend auf
 der minimalen Soletemperatur + Sicherheit!'''
+        },
+        'fluid_thermal_cond': {
+            'title': 'Wärmeleitfähigkeit Wärmeträgerflüssigkeit',
+            'text': '''Wärmeleitfähigkeit der Sole (Wärmeträgerflüssigkeit).
+
+Typische Werte:
+• Reines Wasser: 0.60 W/m·K
+• 25% Ethylenglykol: 0.48 W/m·K ⭐
+• 30% Ethylenglykol: 0.46 W/m·K
+• 40% Ethylenglykol: 0.43 W/m·K
+
+Wichtig:
+- Höherer Frostschutz = niedrigere Wärmeleitfähigkeit
+- Beeinflusst den Wärmeübergang im Rohr
+- Temperaturabhängig (Werte für ~0°C)
+
+Die Wärmeleitfähigkeit sinkt mit steigender
+Frostschutzkonzentration!'''
+        },
+        'fluid_flow_rate': {
+            'title': 'Volumenstrom Wärmeträgerflüssigkeit',
+            'text': '''Durchflussrate der Sole durch die Erdwärmesonde.
+
+Typische Werte:
+• Einfamilienhaus: 0.0003-0.0006 m³/s (1.1-2.2 m³/h)
+• Pro kW Heizleistung: ~0.15 L/min
+• 6 kW WP: ~0.9 L/min = 0.00015 m³/s
+
+Wichtig:
+- Höherer Durchfluss = besserer Wärmeübergang
+- Aber auch höherer Druckverlust
+- Optimum: Re ≈ 3000-5000 (turbulent)
+
+Zu niedrig: Schlechter Wärmeübergang
+Zu hoch: Hohe Pumpenleistung, Lärm
+
+Faustformel: 3 L/min pro kW Entzugsleistung'''
+        },
+        'pipe_wall_thickness': {
+            'title': 'Rohr-Wandstärke',
+            'text': '''Wandstärke der PE-Rohre.
+
+Typische Werte:
+• DN25 (32mm): 2.4-3.0 mm
+• DN32 (40mm): 3.0-3.7 mm ⭐
+• DN40 (50mm): 3.7-4.6 mm
+
+SDR-Reihen (Standard Dimension Ratio):
+• SDR 11: Dickere Wand, höherer Druck
+• SDR 17: Standard
+• SDR 21: Dünnere Wand
+
+Wichtig:
+- Dickere Wand = höherer thermischer Widerstand
+- Aber bessere Druckfestigkeit
+- Muss zu Betriebsdruck passen (meist 6-10 bar)'''
+        },
+        'pipe_outer_diameter': {
+            'title': 'Rohr-Außendurchmesser',
+            'text': '''Außendurchmesser der PE-Erdwärmesonden-Rohre.
+
+Standard PE-100 Rohre:
+• DN20 (25 mm) - Kleine Anlagen
+• DN25 (32 mm) - Sehr häufig ⭐
+• DN32 (40 mm) - Standard
+• DN40 (50 mm) - Hohe Leistung
+
+Wichtig:
+- Größerer Durchmesser = mehr Wärmeübertragungsfläche
+- Aber auch höherer Druckverlust
+- Muss ins Bohrloch passen!
+
+Faustformel:
+4 × Rohrdurchmesser < Bohrlochdurchmesser
+
+Beispiel: 4 × 32mm = 128mm < 152mm Bohrloch ✓'''
         }
     }
     
