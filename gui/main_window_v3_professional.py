@@ -519,9 +519,9 @@ class GeothermieGUIProfessional:
         
         # Rohr 1 & 2 (links im Bohrloch)
         ax.plot([borehole_center - center_offset, borehole_center - center_offset], [0, 15], 
-               color='#ff6b6b', linewidth=5, label='Vorlauf (warm)', solid_capstyle='round')
+               color='#ff6b6b', linewidth=5, solid_capstyle='round')
         ax.plot([borehole_center - center_offset + spacing, borehole_center - center_offset + spacing], [0, 15], 
-               color='#4ecdc4', linewidth=5, label='Rücklauf (kalt)', solid_capstyle='round')
+               color='#4ecdc4', linewidth=5, solid_capstyle='round')
         
         # Rohr 3 & 4 (rechts im Bohrloch)
         ax.plot([borehole_center + center_offset - spacing, borehole_center + center_offset - spacing], [0, 15], 
@@ -555,24 +555,7 @@ class GeothermieGUIProfessional:
                fontweight='bold', color='#1976d2', rotation=90,
                bbox=dict(boxstyle='round,pad=0.4', facecolor='white', edgecolor='#2196f3'))
         
-        # Rohre nummerieren (neue Positionen, enger)
-        rohr1_x = borehole_center - center_offset
-        rohr2_x = borehole_center - center_offset + spacing
-        rohr3_x = borehole_center + center_offset - spacing
-        rohr4_x = borehole_center + center_offset
-        
-        ax.text(rohr1_x, 14, '1', ha='center', va='center', fontsize=9, 
-               fontweight='bold', color='white',
-               bbox=dict(boxstyle='circle,pad=0.3', facecolor='#ff6b6b', edgecolor='black'))
-        ax.text(rohr2_x, 14, '2', ha='center', va='center', fontsize=9, 
-               fontweight='bold', color='white',
-               bbox=dict(boxstyle='circle,pad=0.3', facecolor='#4ecdc4', edgecolor='black'))
-        ax.text(rohr3_x, 14, '3', ha='center', va='center', fontsize=9, 
-               fontweight='bold', color='white',
-               bbox=dict(boxstyle='circle,pad=0.3', facecolor='#ff6b6b', edgecolor='black'))
-        ax.text(rohr4_x, 14, '4', ha='center', va='center', fontsize=9, 
-               fontweight='bold', color='white',
-               bbox=dict(boxstyle='circle,pad=0.3', facecolor='#4ecdc4', edgecolor='black'))
+        # Nummern entfernt - sind nur im Querschnitt sichtbar
         
         # Verfüllung
         ax.text(borehole_center, 10, 'Verfüllung\n(Zement-Bentonit)', ha='center', fontsize=9,
@@ -592,24 +575,23 @@ class GeothermieGUIProfessional:
         bh_circle = Circle((0, 0), 1, facecolor='#d9d9d9', edgecolor='black', linewidth=2.5, label='Bohrloch')
         ax_inset.add_patch(bh_circle)
         
-        # 4 Rohre ENGER zusammen (wie in der Seitenansicht)
-        # Gleiche enge Anordnung
-        positions = [(-0.3, 0.3), (-0.1, 0.3), (0.1, -0.3), (0.3, -0.3)]
+        # 4 Rohre in QUADRAT-Anordnung
+        # Links-oben, Rechts-oben, Links-unten, Rechts-unten
+        positions = [(-0.35, 0.35), (0.35, 0.35), (-0.35, -0.35), (0.35, -0.35)]
         colors = ['#ff6b6b', '#4ecdc4', '#ff6b6b', '#4ecdc4']
-        labels = ['1 (V)', '2 (R)', '3 (V)', '4 (R)']
         
-        for i, ((x, y), color, label) in enumerate(zip(positions, colors, labels)):
-            pipe_circle = Circle((x, y), 0.18, facecolor=color, edgecolor='black', linewidth=1.5)
+        for i, ((x, y), color) in enumerate(zip(positions, colors)):
+            pipe_circle = Circle((x, y), 0.2, facecolor=color, edgecolor='black', linewidth=1.5)
             ax_inset.add_patch(pipe_circle)
             ax_inset.text(x, y, str(i+1), ha='center', va='center', 
-                         fontsize=9, fontweight='bold', color='white')
+                         fontsize=10, fontweight='bold', color='white')
         
-        # Legende
-        ax_inset.text(0, -1.6, 'V = Vorlauf (rot) | R = Rücklauf (blau)', 
-                     ha='center', fontsize=8, style='italic')
+        # Legende UNTEN
+        ax_inset.text(0, -1.25, 'Vorlauf (rot)  |  Rücklauf (blau)', 
+                     ha='center', fontsize=9, style='italic', fontweight='bold')
         
-        ax_inset.set_xlim(-1.4, 1.4)
-        ax_inset.set_ylim(-1.8, 1.4)
+        ax_inset.set_xlim(-1.1, 1.1)
+        ax_inset.set_ylim(-1.5, 1.1)
         ax_inset.set_aspect('equal')
         ax_inset.axis('off')
         
@@ -618,7 +600,6 @@ class GeothermieGUIProfessional:
         ax.set_ylim(-1, 18)
         ax.set_aspect('equal')
         ax.axis('off')
-        ax.legend(loc='upper left', fontsize=9, framealpha=0.9)
         
         fig.tight_layout()
         
