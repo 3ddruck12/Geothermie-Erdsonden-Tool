@@ -3,6 +3,7 @@
 PyInstaller Spec File für Geothermie Erdsondentool
 Erzeugt eine Standalone-Anwendung mit allen Abhängigkeiten
 """
+import os
 
 block_cipher = None
 
@@ -11,7 +12,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('Material/pipe.txt', 'Material'),
+        ('Material', 'Material'),
         ('EED_4_example_files', 'EED_4_example_files'),
         ('Icons', 'Icons'),
         ('data', 'data'),

@@ -37,7 +37,7 @@ jobs:
     
     - name: Build Windows executable
       run: |
-        pyinstaller --onefile --windowed --name GeothermieErdsondentool --icon=Icons/icon.ico main.py
+        pyinstaller geothermie.spec
     
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
@@ -66,7 +66,10 @@ jobs:
     
     - name: Build Linux executable
       run: |
-        pyinstaller --onefile --name geothermie-erdsondentool main.py
+        # Linux spec erstellen (ohne .ico Icon und mit korrektem Namen)
+        sed "s/icon=.*$/icon=None,/" geothermie.spec | \
+        sed "s/name='GeothermieErdsondentool'/name='geothermie-erdsondentool'/" > geothermie-linux.spec
+        pyinstaller geothermie-linux.spec
     
     - name: Install fpm for DEB creation
       run: |
