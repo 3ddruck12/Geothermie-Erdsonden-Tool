@@ -178,6 +178,7 @@ Vollständige Dokumentation im [`docs/`](docs/) Ordner:
 - [📘 Installationsanleitung](docs/INSTALL.md)
 - [📗 Benutzerhandbuch](docs/ANLEITUNG.md)
 - [📙 Schnellstart](docs/SCHNELLSTART.md)
+- [📈 Roadmap](docs/ROADMAP.md) - Geplante Features
 - [📕 Changelog](docs/CHANGELOG.md)
 - [📓 Version 2 Features](docs/NEUE_FEATURES_V2.md)
 - [📔 Version 3 Features](docs/PROFESSIONAL_FEATURES_V3.md)
@@ -291,17 +292,13 @@ pyinstaller geothermie.spec
 
 ## 📈 Roadmap
 
-### Version 3.1 (Q2 2025)
-- [ ] Mehrsprachigkeit (EN, FR)
-- [ ] Zusätzliche Rohrtypen
-- [ ] Erweiterte Hydraulik
-- [ ] Cloud-Speicherung
+Die detaillierte Roadmap mit allen geplanten Features findest du in [docs/ROADMAP.md](docs/ROADMAP.md).
 
-### Version 4.0 (Q3 2025)
-- [ ] 3D-Visualisierung
-- [ ] Kostenberechnung
-- [ ] Optimierungsalgorithmus
-- [ ] REST API
+**Highlights:**
+- 🌍 Mehrsprachigkeit (V3.1)
+- 🎮 3D-Visualisierung (V4.0)
+- 💰 Kostenberechnung (V4.0)
+- 🤖 Optimierungsalgorithmus (V4.0)
 
 ---
 
