@@ -1,4 +1,6 @@
-# 🌡️ Geothermie Erdsondentool (GET)
+# 🌡️ GET - Geothermie Erdsondentool
+
+**GET** steht für **G**eothermie **E**rdsonden**t**ool
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
@@ -7,7 +9,7 @@
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
-Eine moderne, benutzerfreundliche Alternative zu Earth Energy Designer (EED) für Linux und Windows.
+**GET** ist eine moderne, benutzerfreundliche Alternative zu Earth Energy Designer (EED) für Linux und Windows.
 
 ---
 
