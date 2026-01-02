@@ -232,22 +232,27 @@ Vollständige Dokumentation im [`docs/`](docs/) Ordner:
 
 ## 🖼️ Screenshots
 
-### Hauptfenster
-*(Screenshot hier einfügen)*
+### Hauptfenster - Eingabe & Visualisierung
 
-### Dropdown-Auswahl
-- Bodentyp-Auswahl mit Auto-Vervollständigung
-- Verfüllmaterial mit Beschreibung
+<div align="center">
+  <img src="docs/images/screenshot-main.png" alt="GET Hauptfenster" width="100%">
+  
+  *Moderne Benutzeroberfläche mit 2-Spalten-Layout: Eingaben links, Live-Visualisierung rechts*
+</div>
 
-### Ergebnisse
-- Detaillierte Berechnung
-- Grafische Darstellung
-- PDF-Export
+### Features im Screenshot
+- ✅ **Links**: Eingabeformular mit Dropdown-Auswahl (Boden, Verfüllmaterial)
+- ✅ **Rechts**: Statische Erdsonden-Grafik mit 4 Leitungen & Querschnitt
+- ✅ **Info-Buttons**: Hilfe zu jedem Parameter mit Fragezeichen-Symbol
+- ✅ **Tabs**: Übersichtliche Organisation (Eingabe, Berechnung, Visualisierung)
+- ✅ **Einheiten**: Alle Werte in praxisgerechten Einheiten (mm, kWh)
 
 ### PDF-Bericht
-- Projektdaten
-- Berechnungsergebnisse
-- Grafiken und Diagramme
+- 📄 Professionelle Berichte mit Projektdaten
+- 📊 Detaillierte Berechnungsergebnisse
+- 📈 Grafiken und Temperaturverläufe
+- 🏗️ Verfüllmaterial-Berechnung (m³, Liter, Kosten)
+- 💧 Hydraulik-Analyse (Druckverlust, Pumpenleistung)
 
 ---
 
