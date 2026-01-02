@@ -66,27 +66,33 @@ jobs:
     - name: Install fpm for DEB creation
       run: |
         sudo apt-get update
-        sudo apt-get install -y ruby ruby-dev build-essential
+        sudo apt-get install -y ruby ruby-dev build-essential imagemagick
         sudo gem install fpm
     
     - name: Create DEB package
       run: |
         mkdir -p package/usr/local/bin
         mkdir -p package/usr/share/applications
+        mkdir -p package/usr/share/pixmaps
         mkdir -p package/usr/share/doc/geothermie-erdsondentool
         
         cp dist/geothermie-erdsondentool package/usr/local/bin/
         chmod +x package/usr/local/bin/geothermie-erdsondentool
         
+        # Icon konvertieren und kopieren
+        convert icon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
+        
         # Desktop Entry
         cat > package/usr/share/applications/geothermie-erdsondentool.desktop << EOF
         [Desktop Entry]
-        Name=Geothermie Erdsondentool
+        Name=GET - Geothermie Erdsondentool
         Comment=Berechnung von Erdwärmesonden bis 100m
         Exec=/usr/local/bin/geothermie-erdsondentool
+        Icon=geothermie-erdsondentool
         Terminal=false
         Type=Application
-        Categories=Science;Engineering;
+        Categories=Science;Engineering;Education;
+        Keywords=geothermal;erdwaerme;geothermie;borehole;
         EOF
         
         # Documentation
@@ -104,7 +110,7 @@ jobs:
           --maintainer "3ddruck12" \
           --license "MIT" \
           -C package \
-          usr/local/bin usr/share/applications usr/share/doc
+          usr/local/bin usr/share/applications usr/share/pixmaps usr/share/doc
     
     - name: Upload DEB artifact
       uses: actions/upload-artifact@v4
