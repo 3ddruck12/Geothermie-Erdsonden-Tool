@@ -497,7 +497,7 @@ class GeothermieGUIProfessional:
         from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
         from matplotlib.patches import Circle, Rectangle, FancyArrow
         
-        fig = Figure(figsize=(5, 7), facecolor='white')
+        fig = Figure(figsize=(5.5, 8), facecolor='white')
         ax = fig.add_subplot(111)
         
         # === SEITLICHE ANSICHT (Schnitt durch Sonde) ===
@@ -505,97 +505,120 @@ class GeothermieGUIProfessional:
         ground = Rectangle((0, 0), 10, 15, facecolor='#8B4513', alpha=0.3, label='Boden')
         ax.add_patch(ground)
         
-        # Bohrloch (hellgrau)
-        borehole_left = Rectangle((3.5, 0), 0.3, 15, facecolor='#d9d9d9', edgecolor='black', linewidth=2)
-        borehole_right = Rectangle((6.2, 0), 0.3, 15, facecolor='#d9d9d9', edgecolor='black', linewidth=2)
-        ax.add_patch(borehole_left)
-        ax.add_patch(borehole_right)
+        # Bohrloch (hellgrau) - EIN Bohrloch mit 4 Leitungen ENGER zusammen
+        borehole_width = 1.0
+        borehole_center = 5.0
+        borehole = Rectangle((borehole_center - borehole_width/2, 0), borehole_width, 15, 
+                            facecolor='#d9d9d9', edgecolor='black', linewidth=2)
+        ax.add_patch(borehole)
         
-        # 4 Leitungen (Vorlauf rot, Rücklauf blau)
-        # Links: Vorlauf 1 + Rücklauf 2
-        ax.plot([3.65, 3.65], [0, 15], color='#ff6b6b', linewidth=4, label='Vorlauf (warm)', solid_capstyle='round')
-        ax.plot([3.95, 3.95], [0, 15], color='#4ecdc4', linewidth=4, label='Rücklauf (kalt)', solid_capstyle='round')
+        # 4 Leitungen ENGER zusammen (alle im gleichen Bohrloch)
+        # Abstand zwischen Rohren: nur 0.2 Einheiten
+        spacing = 0.2
+        center_offset = spacing * 1.5  # Gesamtbreite der 4 Rohre
         
-        # Rechts: Vorlauf 3 + Rücklauf 4
-        ax.plot([6.35, 6.35], [0, 15], color='#ff6b6b', linewidth=4, solid_capstyle='round')
-        ax.plot([6.65, 6.65], [0, 15], color='#4ecdc4', linewidth=4, solid_capstyle='round')
+        # Rohr 1 & 2 (links im Bohrloch)
+        ax.plot([borehole_center - center_offset, borehole_center - center_offset], [0, 15], 
+               color='#ff6b6b', linewidth=5, label='Vorlauf (warm)', solid_capstyle='round')
+        ax.plot([borehole_center - center_offset + spacing, borehole_center - center_offset + spacing], [0, 15], 
+               color='#4ecdc4', linewidth=5, label='Rücklauf (kalt)', solid_capstyle='round')
         
-        # U-Bogen unten
+        # Rohr 3 & 4 (rechts im Bohrloch)
+        ax.plot([borehole_center + center_offset - spacing, borehole_center + center_offset - spacing], [0, 15], 
+               color='#ff6b6b', linewidth=5, solid_capstyle='round')
+        ax.plot([borehole_center + center_offset, borehole_center + center_offset], [0, 15], 
+               color='#4ecdc4', linewidth=5, solid_capstyle='round')
+        
+        # U-Bogen unten (verbindet Rohr 1-2 und 3-4)
         from matplotlib.patches import Arc
-        arc1 = Arc((3.8, 0.3), 0.6, 0.6, angle=0, theta1=180, theta2=360, 
-                  color='black', linewidth=2)
-        arc2 = Arc((6.5, 0.3), 0.6, 0.6, angle=0, theta1=180, theta2=360, 
-                  color='black', linewidth=2)
+        arc1 = Arc((borehole_center - center_offset + spacing/2, 0.3), spacing*1.5, 0.4, 
+                  angle=0, theta1=180, theta2=360, color='black', linewidth=2)
+        arc2 = Arc((borehole_center + center_offset - spacing/2, 0.3), spacing*1.5, 0.4, 
+                  angle=0, theta1=180, theta2=360, color='black', linewidth=2)
         ax.add_patch(arc1)
         ax.add_patch(arc2)
         
         # === BESCHRIFTUNGEN ===
         # Durchmesser
-        ax.annotate('', xy=(3.5, 16), xytext=(6.5, 16),
+        bh_left = borehole_center - borehole_width/2
+        bh_right = borehole_center + borehole_width/2
+        ax.annotate('', xy=(bh_left, 16), xytext=(bh_right, 16),
                    arrowprops=dict(arrowstyle='<->', color='black', lw=2))
-        ax.text(5, 16.5, 'Bohrloch Ø 152mm', ha='center', fontsize=10, 
+        ax.text(borehole_center, 16.6, 'Bohrloch Ø 152mm', ha='center', fontsize=11, 
                fontweight='bold', bbox=dict(boxstyle='round,pad=0.5', 
                facecolor='yellow', edgecolor='black'))
         
         # Tiefe
-        ax.annotate('', xy=(-0.5, 0), xytext=(-0.5, 15),
+        ax.annotate('', xy=(0.5, 0), xytext=(0.5, 15),
                    arrowprops=dict(arrowstyle='<->', color='#2196f3', lw=2))
-        ax.text(-1.5, 7.5, 'Tiefe\nbis 100m', ha='center', fontsize=9, 
+        ax.text(-0.3, 7.5, 'Tiefe\nbis 100m', ha='center', fontsize=10, 
                fontweight='bold', color='#1976d2', rotation=90,
                bbox=dict(boxstyle='round,pad=0.4', facecolor='white', edgecolor='#2196f3'))
         
-        # Rohre nummerieren
-        ax.text(3.65, 14, '1', ha='center', va='center', fontsize=8, 
+        # Rohre nummerieren (neue Positionen, enger)
+        rohr1_x = borehole_center - center_offset
+        rohr2_x = borehole_center - center_offset + spacing
+        rohr3_x = borehole_center + center_offset - spacing
+        rohr4_x = borehole_center + center_offset
+        
+        ax.text(rohr1_x, 14, '1', ha='center', va='center', fontsize=9, 
                fontweight='bold', color='white',
                bbox=dict(boxstyle='circle,pad=0.3', facecolor='#ff6b6b', edgecolor='black'))
-        ax.text(3.95, 14, '2', ha='center', va='center', fontsize=8, 
+        ax.text(rohr2_x, 14, '2', ha='center', va='center', fontsize=9, 
                fontweight='bold', color='white',
                bbox=dict(boxstyle='circle,pad=0.3', facecolor='#4ecdc4', edgecolor='black'))
-        ax.text(6.35, 14, '3', ha='center', va='center', fontsize=8, 
+        ax.text(rohr3_x, 14, '3', ha='center', va='center', fontsize=9, 
                fontweight='bold', color='white',
                bbox=dict(boxstyle='circle,pad=0.3', facecolor='#ff6b6b', edgecolor='black'))
-        ax.text(6.65, 14, '4', ha='center', va='center', fontsize=8, 
+        ax.text(rohr4_x, 14, '4', ha='center', va='center', fontsize=9, 
                fontweight='bold', color='white',
                bbox=dict(boxstyle='circle,pad=0.3', facecolor='#4ecdc4', edgecolor='black'))
         
         # Verfüllung
-        ax.text(5, 10, 'Verfüllung\n(Zement-Bentonit)', ha='center', fontsize=8,
+        ax.text(borehole_center, 10, 'Verfüllung\n(Zement-Bentonit)', ha='center', fontsize=9,
                bbox=dict(boxstyle='round,pad=0.4', facecolor='#e0e0e0', edgecolor='black'))
         
         # Rohrmaterial
-        ax.text(8.5, 13, 'PE 100 RC\nØ 32mm', ha='left', fontsize=8,
+        ax.text(7.5, 12, 'PE 100 RC\nØ 32mm', ha='left', fontsize=9,
                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='black'))
-        ax.annotate('', xy=(6.7, 13), xytext=(8.3, 13),
-                   arrowprops=dict(arrowstyle='->', color='black', lw=1))
+        ax.annotate('', xy=(bh_right + 0.1, 12), xytext=(7.3, 12),
+                   arrowprops=dict(arrowstyle='->', color='black', lw=1.5))
         
-        # === QUERSCHNITT (kleiner, oben rechts) ===
-        ax_inset = fig.add_axes([0.65, 0.75, 0.3, 0.2])
-        ax_inset.set_title('Querschnitt', fontsize=8, fontweight='bold')
+        # === QUERSCHNITT (größer, nicht zusammengequetscht) ===
+        ax_inset = fig.add_axes([0.58, 0.52, 0.38, 0.42])  # Größer: breiter und höher
+        ax_inset.set_title('Querschnitt von oben', fontsize=10, fontweight='bold', pad=10)
         
         # Bohrloch-Kreis
-        bh_circle = Circle((0, 0), 1, facecolor='#d9d9d9', edgecolor='black', linewidth=2)
+        bh_circle = Circle((0, 0), 1, facecolor='#d9d9d9', edgecolor='black', linewidth=2.5, label='Bohrloch')
         ax_inset.add_patch(bh_circle)
         
-        # 4 Rohre
-        positions = [(-0.4, 0.4), (0.4, 0.4), (-0.4, -0.4), (0.4, -0.4)]
+        # 4 Rohre ENGER zusammen (wie in der Seitenansicht)
+        # Gleiche enge Anordnung
+        positions = [(-0.3, 0.3), (-0.1, 0.3), (0.1, -0.3), (0.3, -0.3)]
         colors = ['#ff6b6b', '#4ecdc4', '#ff6b6b', '#4ecdc4']
-        for i, ((x, y), color) in enumerate(zip(positions, colors)):
-            pipe_circle = Circle((x, y), 0.2, facecolor=color, edgecolor='black', linewidth=1)
+        labels = ['1 (V)', '2 (R)', '3 (V)', '4 (R)']
+        
+        for i, ((x, y), color, label) in enumerate(zip(positions, colors, labels)):
+            pipe_circle = Circle((x, y), 0.18, facecolor=color, edgecolor='black', linewidth=1.5)
             ax_inset.add_patch(pipe_circle)
             ax_inset.text(x, y, str(i+1), ha='center', va='center', 
-                         fontsize=7, fontweight='bold', color='white')
+                         fontsize=9, fontweight='bold', color='white')
         
-        ax_inset.set_xlim(-1.3, 1.3)
-        ax_inset.set_ylim(-1.3, 1.3)
+        # Legende
+        ax_inset.text(0, -1.6, 'V = Vorlauf (rot) | R = Rücklauf (blau)', 
+                     ha='center', fontsize=8, style='italic')
+        
+        ax_inset.set_xlim(-1.4, 1.4)
+        ax_inset.set_ylim(-1.8, 1.4)
         ax_inset.set_aspect('equal')
         ax_inset.axis('off')
         
-        # Hauptgrafik-Einstellungen
-        ax.set_xlim(-2, 10)
+        # Hauptgrafik-Einstellungen (angepasst für enge Sonde)
+        ax.set_xlim(0, 9)
         ax.set_ylim(-1, 18)
         ax.set_aspect('equal')
         ax.axis('off')
-        ax.legend(loc='upper left', fontsize=8)
+        ax.legend(loc='upper left', fontsize=9, framealpha=0.9)
         
         fig.tight_layout()
         
