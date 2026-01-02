@@ -32,7 +32,7 @@ jobs:
     
     - name: Build Windows executable
       run: |
-        pyinstaller --onefile --windowed --name GeothermieErdsondentool --icon=docs/icon.ico main.py
+        pyinstaller --onefile --windowed --name GeothermieErdsondentool main.py
     
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
