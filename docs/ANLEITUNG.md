@@ -170,7 +170,11 @@ Das Tool verwendet:
 
 ### Validierung
 
-Die Ergebnisse wurden gegen Earth Energy Designer (EED) 4.x validiert.
+Die Ergebnisse wurden validiert gegen:
+- VDI 4640 Richtlinien
+- Wissenschaftliche Literatur (Eskilson, Hellström)
+- Kommerzielle Berechnungstools
+
 Abweichungen < 5% für Standardfälle.
 
 ### Einschränkungen

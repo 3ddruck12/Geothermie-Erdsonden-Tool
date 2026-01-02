@@ -177,21 +177,21 @@ Das Tool basiert auf etablierten Methoden:
 
 ---
 
-## 🌟 Vergleich mit Earth Energy Designer (EED)
+## 🌟 Feature-Status
 
-| Feature | EED 4.x | Geothermietool | Status |
-|---------|---------|----------------|--------|
-| EED .dat Import | ✅ | ✅ | Implementiert |
-| Pipe.txt Import | ✅ | ✅ | Implementiert |
-| Single-U Berechnung | ✅ | ✅ | Implementiert |
-| Double-U Berechnung | ✅ | ✅ | Implementiert |
-| Koaxial-Rohr | ✅ | ✅ | Implementiert |
-| G-Funktionen | ✅ | ✅ | Implementiert |
-| Monatliche Analyse | ✅ | ✅ | Implementiert |
-| Bohrfeld-Berechnung | ✅ | ❌ | Geplant |
-| Kostenrechnung | ✅ | ❌ | Geplant |
-| 3D-Visualisierung | ❌ | ❌ | Geplant |
-| **Preis** | Kommerziell | **Open Source** | **Vorteil!** |
+| Feature | Status | Bemerkung |
+|---------|--------|-----------|
+| .dat File Import | ✅ | Standard-Dateiformat |
+| Pipe.txt Import | ✅ | Rohr-Datenbank |
+| Single-U Berechnung | ✅ | Implementiert |
+| Double-U Berechnung | ✅ | Implementiert |
+| Koaxial-Rohr | ✅ | Implementiert |
+| G-Funktionen | ✅ | Nach Eskilson |
+| Monatliche Analyse | ✅ | Implementiert |
+| Bohrfeld-Berechnung | ⏳ | In Planung |
+| Kostenrechnung | ⏳ | Geplant für V4.0 |
+| 3D-Visualisierung | ⏳ | Geplant für V4.0 |
+| **Lizenz** | **Open Source** | **MIT Lizenz** |
 
 ---
 
@@ -268,9 +268,9 @@ Bei Fragen oder Problemen:
 ## 📈 Validierung
 
 Die Berechnungen wurden validiert gegen:
-- Earth Energy Designer (EED) 4.x
 - VDI 4640 Richtlinien
-- Literaturwerte (Eskilson, Hellström)
+- Wissenschaftliche Literatur (Eskilson, Hellström)
+- Kommerzielle Berechnungstools
 
 **Abweichungen < 5%** für Standardfälle
 
