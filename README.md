@@ -213,82 +213,6 @@ Vollständige Dokumentation im [`docs/`](docs/) Ordner:
 
 ---
 
-## 🛠️ Entwicklung
-
-### Projekt-Struktur
-
-```
-GeothermieErdsondentool/
-├── main.py                    # Entry Point
-├── requirements.txt           # Python Dependencies
-├── geothermie.spec           # PyInstaller Build Config
-├── start.sh                  # Linux Start-Script
-│
-├── calculations/             # Berechnungsmodule
-│   ├── thermal.py           # Thermische Widerstände
-│   ├── g_functions.py       # G-Funktionen
-│   ├── borehole.py          # Haupt-Berechnungslogik
-│   └── hydraulics.py        # Hydraulik-Berechnungen
-│
-├── data/                    # Datenbanken
-│   ├── soil_types.py       # Bodendatenbank (VDI 4640)
-│   └── grout_materials.py  # Verfüllmaterial-DB
-│
-├── gui/                     # Grafische Oberfläche
-│   ├── main_window_extended.py  # Haupt-GUI
-│   └── tooltips.py              # Info-Buttons
-│
-├── parsers/                 # Datei-Parser
-│   ├── pipe_parser.py      # pipe.txt Parser
-│   └── eed_parser.py       # EED .dat Parser
-│
-├── utils/                   # Hilfsfunktionen
-│   ├── pdf_export.py       # PDF-Generierung
-│   └── pvgis_api.py        # PVGIS Klimadaten
-│
-├── docs/                    # Dokumentation
-└── .github/workflows/       # CI/CD Pipelines
-```
-
-### Entwicklungsumgebung einrichten
-
-```bash
-git clone https://github.com/3ddruck12/GeothermieErdsondentool.git
-cd GeothermieErdsondentool
-python3 -m venv venv
-source venv/bin/activate  # Linux/Mac
-# oder: venv\Scripts\activate  # Windows
-pip install -r requirements.txt
-python main.py
-```
-
-### Tests ausführen
-
-```bash
-# Modul-Tests
-python -m calculations.thermal
-python -m data.soil_types
-python -m utils.pvgis_api
-
-# Gesamt-Test
-python main.py
-```
-
-### Build erstellen
-
-**Windows:**
-```powershell
-pyinstaller geothermie.spec
-# Output: dist/GeothermieErdsondentool.exe
-```
-
-**Linux:**
-```bash
-pyinstaller geothermie.spec
-# Output: dist/geothermie-erdsondentool
-```
-
----
 
 ## 📈 Roadmap
 
@@ -304,19 +228,24 @@ Die detaillierte Roadmap mit allen geplanten Features findest du in [docs/ROADMA
 
 ## 🤝 Mitwirken
 
-Beiträge sind willkommen! Bitte:
+Beiträge sind willkommen! 
 
-1. Fork erstellen
-2. Feature-Branch erstellen (`git checkout -b feature/AmazingFeature`)
-3. Änderungen committen (`git commit -m 'Add AmazingFeature'`)
-4. Branch pushen (`git push origin feature/AmazingFeature`)
-5. Pull Request öffnen
+**Für Entwickler:**
+- 📖 [Beitragsrichtlinien](docs/CONTRIBUTING.md) - Code-Style, Workflow
+- 🔄 [Git-Workflow](docs/GIT_WORKFLOW.md) - Branch-Strategie, CI/CD
+- 📈 [Roadmap](docs/ROADMAP.md) - Geplante Features
 
-### Code-Style
-- PEP 8 für Python
-- Docstrings für alle Funktionen
-- Type Hints verwenden
-- Kommentare auf Deutsch
+**Quick Start:**
+```bash
+git clone https://github.com/3ddruck12/GeothermieErdsondentool.git
+cd GeothermieErdsondentool
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python main.py
+```
+
+Siehe [CONTRIBUTING.md](docs/CONTRIBUTING.md) für Details.
 
 ---
 
