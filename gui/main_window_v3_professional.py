@@ -737,8 +737,8 @@ class GeothermieGUIProfessional:
             text += f"  Bohrloch-Ø: {bh_diameter*1000:.0f} mm\n"
             text += f"  Rohre: {num_pipes} × Ø {pipe_diameter*1000:.0f} mm\n\n"
             text += f"Benötigte Mengen:\n"
-            text += f"  Volumen pro Bohrung: {volume_per_bh:.3f} m³\n"
-            text += f"  Volumen gesamt: {total_volume:.3f} m³\n"
+            text += f"  Volumen pro Bohrung: {volume_per_bh:.3f} m³ ({volume_per_bh*1000:.1f} Liter)\n"
+            text += f"  Volumen gesamt: {total_volume:.3f} m³ ({total_volume*1000:.1f} Liter)\n"
             text += f"  Masse gesamt: {amounts['mass_kg']:.1f} kg\n"
             text += f"  Säcke (25 kg): {amounts['bags_25kg']:.1f} Stück\n\n"
             text += f"Kosten:\n"
@@ -749,7 +749,7 @@ class GeothermieGUIProfessional:
             self.grout_result_text.delete("1.0", tk.END)
             self.grout_result_text.insert("1.0", text)
             
-            self.status_var.set(f"✓ Materialberechnung: {amounts['bags_25kg']:.0f} Säcke, {amounts['total_cost_eur']:.2f} EUR")
+            self.status_var.set(f"✓ Materialberechnung: {total_volume*1000:.0f} Liter ({amounts['bags_25kg']:.0f} Säcke), {amounts['total_cost_eur']:.2f} EUR")
             
         except Exception as e:
             messagebox.showerror("Fehler", f"Fehler bei Materialberechnung: {str(e)}")
