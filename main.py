@@ -14,14 +14,20 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Importiere die GUI
 try:
-    # Versuche zuerst die erweiterte V2 GUI (funktioniert garantiert)
-    from gui.main_window_extended import GeothermieGUIExtended as GUI
-    print("✓ Starte Extended GUI V2")
+    # Versuche zuerst die Professional V3 GUI mit allen Features
+    from gui.main_window_v3_professional import GeothermieGUIProfessional as GUI
+    print("✓ Starte Professional GUI V3")
 except ImportError as e:
-    print(f"Fehler beim Import der Extended GUI: {e}")
-    # Fallback auf Original
-    from gui.main_window import GeothermieGUI as GUI
-    print("✓ Starte Original GUI V1")
+    print(f"Fehler beim Import der V3 Professional GUI: {e}")
+    try:
+        # Fallback auf Extended V2 GUI
+        from gui.main_window_extended import GeothermieGUIExtended as GUI
+        print("✓ Starte Extended GUI V2 (Fallback)")
+    except ImportError as e2:
+        print(f"Fehler beim Import der Extended GUI: {e2}")
+        # Letzter Fallback auf Original
+        from gui.main_window import GeothermieGUI as GUI
+        print("✓ Starte Original GUI V1 (Fallback)")
 
 
 def main():

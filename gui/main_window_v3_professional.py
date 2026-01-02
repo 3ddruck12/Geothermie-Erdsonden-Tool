@@ -274,7 +274,7 @@ class GeothermieGUIProfessional:
     
     def _add_borehole_config_section(self, parent, row):
         """Bohrloch-Konfigurations-Sektion."""
-        self._add_entry(parent, row, "Bohrloch-Durchmesser [m]:", "borehole_diameter", "0.152", self.entries)
+        self._add_entry(parent, row, "Bohrloch-Durchmesser [mm]:", "borehole_diameter", "152", self.entries, "borehole_diameter")
         row += 1
         
         ttk.Label(parent, text="Rohrkonfiguration:").grid(row=row, column=0, sticky="w", padx=10, pady=5)
@@ -469,7 +469,7 @@ class GeothermieGUIProfessional:
     
     def _create_visualization_tab(self):
         """Erstellt den Visualisierungs-Tab."""
-        self.fig = Figure(figsize=(14, 8))
+        self.fig = Figure(figsize=(18, 6))  # Breiter für 3 Subplots
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.viz_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     
@@ -553,7 +553,7 @@ class GeothermieGUIProfessional:
         try:
             # Hole Parameter
             depth = float(self.entries["initial_depth"].get())
-            bh_diameter = float(self.entries["borehole_diameter"].get())
+            bh_diameter = float(self.entries["borehole_diameter"].get()) / 1000.0  # mm → m
             pipe_diameter = float(self.entries["pipe_outer_diameter"].get()) / 1000.0  # mm → m
             num_boreholes = int(self.borehole_entries["num_boreholes"].get())
             
@@ -818,9 +818,10 @@ class GeothermieGUIProfessional:
             for key, entry in self.entries.items():
                 params[key] = float(entry.get())
             
-            # Konvertiere mm → m für Rohr-Parameter
+            # Konvertiere mm → m für Rohr-Parameter und Bohrlochdurchmesser
             params["pipe_outer_diameter"] = params["pipe_outer_diameter"] / 1000.0
             params["pipe_thickness"] = params["pipe_thickness"] / 1000.0
+            params["borehole_diameter"] = params["borehole_diameter"] / 1000.0
             
             self.status_var.set("⏳ Berechnung läuft...")
             self.root.update()
@@ -906,14 +907,16 @@ class GeothermieGUIProfessional:
         self.results_text.config(state=tk.DISABLED)
     
     def _plot_results(self):
-        """Erstellt Visualisierungen."""
+        """Erstellt Visualisierungen: Temperaturen, Bohrloch-Querschnitt, Bohrfeld-Layout."""
         if not self.result:
             return
         
         self.fig.clear()
         
-        ax1 = self.fig.add_subplot(1, 2, 1)
-        ax2 = self.fig.add_subplot(1, 2, 2)
+        # 3 Subplots: Temperaturen links, Bohrfeld-Layout Mitte, Bohrloch-Querschnitt rechts
+        ax1 = self.fig.add_subplot(1, 3, 1)
+        ax2 = self.fig.add_subplot(1, 3, 2)
+        ax3 = self.fig.add_subplot(1, 3, 3)
         
         # Temperaturen
         months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
@@ -932,16 +935,97 @@ class GeothermieGUIProfessional:
         ax1.grid(True, alpha=0.3)
         ax1.legend(fontsize=9)
         
-        # Bohrloch
-        bh_d = float(self.entries["borehole_diameter"].get())
+        # === 2. BOHRFELD-LAYOUT (Draufsicht) ===
+        try:
+            from matplotlib.patches import Rectangle
+            
+            num_boreholes = int(self.borehole_entries["num_boreholes"].get())
+            spacing = float(self.borehole_entries["borehole_spacing"].get())
+            boundary_dist = float(self.borehole_entries["boundary_distance"].get())
+            house_dist = float(self.borehole_entries["house_distance"].get())
+            
+            # Grundstück zeichnen (Rechteck)
+            total_width = max(20, spacing * max(1, num_boreholes - 1) + 2 * boundary_dist + 10)
+            total_height = max(20, spacing + 2 * boundary_dist + house_dist + 10)
+            
+            # Grundstück (hellgrün)
+            property_rect = Rectangle((-total_width/2, -total_height/2), total_width, total_height,
+                                     facecolor='#e8f5e9', edgecolor='#4caf50', linewidth=2, 
+                                     label='Grundstück')
+            ax2.add_patch(property_rect)
+            
+            # Haus (grau, oben)
+            house_width = total_width * 0.4
+            house_height = min(house_dist * 0.8, total_height * 0.3)
+            house_y = total_height/2 - house_height - 2
+            house_rect = Rectangle((-house_width/2, house_y), house_width, house_height,
+                                  facecolor='#bdbdbd', edgecolor='#424242', linewidth=2,
+                                  label='Gebäude')
+            ax2.add_patch(house_rect)
+            
+            # Bohrungen anordnen (unten im Grundstück)
+            bh_y = -total_height/2 + boundary_dist + 3
+            if num_boreholes == 1:
+                bh_positions = [(0, bh_y)]
+            else:
+                start_x = -(num_boreholes - 1) * spacing / 2
+                bh_positions = [(start_x + i * spacing, bh_y) for i in range(num_boreholes)]
+            
+            # Bohrungen zeichnen
+            for i, (bh_x, bh_y_pos) in enumerate(bh_positions):
+                bh_circle = Circle((bh_x, bh_y_pos), 1.2, facecolor='#ff9800', 
+                                  edgecolor='#e65100', linewidth=2)
+                ax2.add_patch(bh_circle)
+                ax2.text(bh_x, bh_y_pos, str(i+1), ha='center', va='center', 
+                        fontsize=10, fontweight='bold', color='white')
+            
+            # Abstände als Pfeile mit Text
+            if num_boreholes > 1:
+                # Abstand zwischen Bohrungen
+                ax2.annotate('', xy=(bh_positions[1][0], bh_y-2), xytext=(bh_positions[0][0], bh_y-2),
+                           arrowprops=dict(arrowstyle='<->', color='#2196f3', lw=2))
+                ax2.text((bh_positions[0][0] + bh_positions[1][0])/2, bh_y-3, 
+                        f'{spacing}m', ha='center', fontsize=9, color='#1976d2', fontweight='bold',
+                        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#2196f3'))
+            
+            # Abstand zum Grundstücksrand
+            ax2.annotate('', xy=(bh_positions[0][0], -total_height/2), xytext=(bh_positions[0][0], bh_y-1.5),
+                       arrowprops=dict(arrowstyle='<->', color='#4caf50', lw=1.5))
+            ax2.text(bh_positions[0][0]+2, (-total_height/2 + bh_y-1.5)/2, 
+                    f'{boundary_dist}m', ha='left', fontsize=8, color='#2e7d32',
+                    bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#4caf50'))
+            
+            # Abstand zum Haus
+            ax2.annotate('', xy=(0, house_y), xytext=(0, bh_y+1.5),
+                       arrowprops=dict(arrowstyle='<->', color='#f44336', lw=1.5))
+            ax2.text(2.5, (house_y + bh_y+1.5)/2, 
+                    f'{house_dist}m', ha='left', fontsize=8, color='#c62828',
+                    bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#f44336'))
+            
+            ax2.set_xlim(-total_width/2-2, total_width/2+2)
+            ax2.set_ylim(-total_height/2-2, total_height/2+2)
+            ax2.set_aspect('equal')
+            ax2.set_title(f'Bohrfeld ({num_boreholes} Bohrung{"en" if num_boreholes > 1 else ""})', 
+                         fontsize=12, fontweight='bold')
+            ax2.axis('off')
+            ax2.legend(fontsize=8, loc='upper right')
+            
+        except Exception as e:
+            ax2.text(0.5, 0.5, f'Bohrfeld-Visualisierung\nfehlgeschlagen', 
+                    ha='center', va='center', fontsize=10, transform=ax2.transAxes)
+            ax2.axis('off')
+        
+        # === 3. BOHRLOCH-QUERSCHNITT ===
+        bh_d_mm = float(self.entries["borehole_diameter"].get())
         pipe_d = float(self.entries["pipe_outer_diameter"].get()) / 1000.0  # mm → m
+        bh_d = bh_d_mm / 1000.0  # mm → m für Skalierung
         
         scale = 100
         bh_r = (bh_d / 2) * scale
         pipe_r = (pipe_d / 2) * scale
         
         borehole = Circle((0, 0), bh_r, facecolor='#d9d9d9', edgecolor='black', linewidth=2)
-        ax2.add_patch(borehole)
+        ax3.add_patch(borehole)
         
         positions = [(-bh_r*0.5, bh_r*0.5), (bh_r*0.5, bh_r*0.5),
                     (-bh_r*0.5, -bh_r*0.5), (bh_r*0.5, -bh_r*0.5)]
@@ -949,14 +1033,19 @@ class GeothermieGUIProfessional:
         
         for i, ((x, y), color) in enumerate(zip(positions, colors)):
             pipe = Circle((x, y), pipe_r*1.5, facecolor=color, edgecolor='black', linewidth=1, alpha=0.8)
-            ax2.add_patch(pipe)
-            ax2.text(x, y, str(i+1), ha='center', va='center', fontsize=9, fontweight='bold', color='white')
+            ax3.add_patch(pipe)
+            ax3.text(x, y, str(i+1), ha='center', va='center', fontsize=9, fontweight='bold', color='white')
         
-        ax2.set_xlim(-bh_r*1.5, bh_r*1.5)
-        ax2.set_ylim(-bh_r*1.5, bh_r*1.5)
-        ax2.set_aspect('equal')
-        ax2.set_title(f'Bohrloch Ø {bh_d*1000:.0f}mm', fontsize=12, fontweight='bold')
-        ax2.axis('off')
+        # Durchmesser-Annotation
+        ax3.plot([-bh_r, bh_r], [0, 0], 'k--', linewidth=1, alpha=0.5)
+        ax3.text(0, -bh_r*1.7, f'Ø {bh_d_mm:.0f}mm', ha='center', fontsize=11, fontweight='bold',
+                bbox=dict(boxstyle='round,pad=0.4', facecolor='#ffeb3b', edgecolor='black'))
+        
+        ax3.set_xlim(-bh_r*1.8, bh_r*1.8)
+        ax3.set_ylim(-bh_r*1.9, bh_r*1.5)
+        ax3.set_aspect('equal')
+        ax3.set_title('Bohrloch-Querschnitt', fontsize=12, fontweight='bold')
+        ax3.axis('off')
         
         self.fig.tight_layout()
         self.canvas.draw()
