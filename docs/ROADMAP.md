@@ -37,6 +37,14 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 - ✅ **Separate COP/EER** für Heizen/Kühlen
 - ✅ **Langzeit-Simulation** (bis 25+ Jahre)
 - ✅ **Bohrfeld-Designer** mit verschiedenen Layouts (Rechteck, L, U, Linie)
+- ✅ **Fluid-Datenbank** (3.2)
+  - ✅ Wärmeträgerfluid-Datenbank (Text/XML)
+  - ✅ Wasser/Glykol-Gemische (verschiedene Konzentrationen)
+  - ✅ Thermische Eigenschaften (Dichte, Viskosität, spez. Wärmekapazität)
+  - ✅ Temperaturbereiche und Frostschutz
+  - ✅ Druckverlust-Eigenschaften
+  - ✅ Auswahl und Vergleich verschiedener Fluide
+  - ✅ Automatische Eigenschaften basierend auf Temperatur
 
 ---
 
@@ -49,14 +57,14 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 - [ ] Coaxial-Rohr-Konfigurationen
 - [ ] Erweiterte Datenbank für Rohrmaterialien
 
-#### 💧 Fluid-Datenbank
-- [ ] **Wärmeträgerfluid-Datenbank** (Text/XML)
-  - Wasser/Glykol-Gemische (verschiedene Konzentrationen)
-  - Thermische Eigenschaften (Dichte, Viskosität, spez. Wärmekapazität)
-  - Temperaturbereiche und Frostschutz
-  - Druckverlust-Eigenschaften
-- [ ] Auswahl und Vergleich verschiedener Fluide
-- [ ] Automatische Eigenschaften basierend auf Temperatur
+#### 💧 Fluid-Datenbank (bereits in 3.2 implementiert)
+- ✅ **Wärmeträgerfluid-Datenbank** (Text/XML) - 3.2
+  - ✅ Wasser/Glykol-Gemische (verschiedene Konzentrationen) - 3.2
+  - ✅ Thermische Eigenschaften (Dichte, Viskosität, spez. Wärmekapazität) - 3.2
+  - ✅ Temperaturbereiche und Frostschutz - 3.2
+  - ✅ Druckverlust-Eigenschaften - 3.2
+- ✅ Auswahl und Vergleich verschiedener Fluide - 3.2
+- ✅ Automatische Eigenschaften basierend auf Temperatur - 3.2
 
 #### 🌊 Erweiterte Hydraulik-Berechnungen
 - [ ] Pumpenauswahl-Assistent
