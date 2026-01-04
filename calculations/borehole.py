@@ -338,3 +338,6 @@ if __name__ == "__main__":
     print(f"Wärmeentzugsrate: {result.heat_extraction_rate} W/m")
 
 
+
+
+

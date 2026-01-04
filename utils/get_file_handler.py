@@ -35,7 +35,11 @@ class GETFileHandler:
         simulation: Dict[str, Any],
         climate_data: Optional[Dict[str, Any]] = None,
         borefield_data: Optional[Dict[str, Any]] = None,
-        results: Optional[Dict[str, Any]] = None
+        results: Optional[Dict[str, Any]] = None,
+        vdi4640_result: Optional[Dict[str, Any]] = None,
+        hydraulics_result: Optional[Dict[str, Any]] = None,
+        fluid_database_info: Optional[Dict[str, Any]] = None,
+        grout_calculation: Optional[Dict[str, Any]] = None
     ) -> bool:
         """
         Exportiert alle Daten in eine .get Datei.
@@ -54,6 +58,10 @@ class GETFileHandler:
             climate_data: Klimadaten (optional, von PVGIS)
             borefield_data: Bohrfeld-Daten für V3.2 (optional, pygfunction)
             results: Berechnungsergebnisse (optional)
+            vdi4640_result: VDI 4640 Berechnungsergebnis (optional)
+            hydraulics_result: Hydraulik-Berechnungsergebnis (optional)
+            fluid_database_info: Fluid-Datenbank-Informationen (optional, name, temperature)
+            grout_calculation: Verfüllmaterial-Berechnung (optional)
         
         Returns:
             True bei Erfolg, False bei Fehler
@@ -70,7 +78,7 @@ class GETFileHandler:
             data = {
                 "file_format": "GET",
                 "format_version": CURRENT_FORMAT_VERSION,
-                "created_with": f"Geothermie Erdsonden-Tool v{CURRENT_FORMAT_VERSION}.0",
+                "created_with": f"Geothermie Erdsonden-Tool v3.2.1",
                 "created_date": datetime.now().isoformat() + "Z",
                 "encoding": "UTF-8",
                 "metadata": metadata,
@@ -93,6 +101,19 @@ class GETFileHandler:
             
             if results:
                 data["results"] = results
+            
+            # NEU in V3.2.1: VDI 4640 Ergebnisse, Hydraulik, Fluid-Datenbank
+            if vdi4640_result:
+                data["vdi4640_result"] = vdi4640_result
+            
+            if hydraulics_result:
+                data["hydraulics_result"] = hydraulics_result
+            
+            if fluid_database_info:
+                data["fluid_database_info"] = fluid_database_info
+            
+            if grout_calculation:
+                data["grout_calculation"] = grout_calculation
             
             # Schreibe JSON mit Formatierung
             with open(filepath, 'w', encoding='utf-8') as f:
@@ -188,7 +209,7 @@ class GETFileHandler:
             from_version = "3.1"
             print("  ✓ Migriert auf 3.1")
         
-        # Migration 3.1 → 3.2
+            # Migration 3.1 → 3.2
         if from_version == "3.1":
             # Füge Bohrfeld-Daten hinzu (deaktiviert per Default)
             if "borefield_v32" not in data:
@@ -199,9 +220,20 @@ class GETFileHandler:
                     "num_boreholes_y": 1,
                     "spacing_x_m": 6.0,
                     "spacing_y_m": 6.0,
+                    "borehole_diameter_mm": 152.0,
                     "soil_thermal_diffusivity": 1.0e-6,
                     "simulation_years": 25
                 }
+            
+            # Füge neue Felder für V3.2 hinzu
+            if "vdi4640_result" not in data:
+                data["vdi4640_result"] = None
+            if "hydraulics_result" not in data:
+                data["hydraulics_result"] = None
+            if "fluid_database_info" not in data:
+                data["fluid_database_info"] = None
+            if "grout_calculation" not in data:
+                data["grout_calculation"] = None
             
             # Update Version
             data["format_version"] = "3.2"
@@ -278,4 +310,7 @@ class GETFileHandler:
         except Exception as e:
             print(f"Fehler beim Lesen der Datei-Info: {e}")
             return None
+
+
+
 

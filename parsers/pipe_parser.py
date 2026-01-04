@@ -119,3 +119,6 @@ if __name__ == "__main__":
         print(f"    Wärmeleitfähigkeit: {pipe.thermal_conductivity} W/m·K")
 
 
+
+
+

@@ -314,3 +314,6 @@ if __name__ == "__main__":
     print(f"Jährliche Wärmelast: {config.annual_heat_load} MWh")
 
 
+
+
+

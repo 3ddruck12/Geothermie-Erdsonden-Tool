@@ -27,7 +27,7 @@ from calculations.hydraulics import HydraulicsCalculator
 from calculations.vdi4640 import VDI4640Calculator
 from utils import PDFReportGenerator
 from utils.pvgis_api import PVGISClient, FALLBACK_CLIMATE_DATA
-from data import GroutMaterialDB, SoilTypeDB
+from data import GroutMaterialDB, SoilTypeDB, FluidDatabase, FluidDatabase
 from gui.tooltips import InfoButton
 from utils.get_file_handler import GETFileHandler
 
@@ -38,8 +38,8 @@ class GeothermieGUIProfessional:
     def __init__(self, root):
         """Initialisiert die Professional GUI."""
         self.root = root
-        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.2")
-        self.root.geometry("1700x1000")
+        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.2.1")
+        self.root.geometry("1800x1100")
         
         # Module
         self.pipe_parser = PipeParser()
@@ -51,6 +51,7 @@ class GeothermieGUIProfessional:
         self.pvgis_client = PVGISClient()
         self.grout_db = GroutMaterialDB()
         self.soil_db = SoilTypeDB()
+        self.fluid_db = FluidDatabase()
         self.get_handler = GETFileHandler()
         
         # Daten
@@ -329,8 +330,27 @@ class GeothermieGUIProfessional:
         row += 1
         self._add_entry(parent, row, "Rohr Wärmeleitfähigkeit [W/m·K]:", "pipe_thermal_cond", "0.42", self.entries)
         row += 1
-        self._add_entry(parent, row, "Schenkelabstand [m]:", "shank_spacing", "0.065", self.entries)
+        self._add_entry(parent, row, "Schenkelabstand [mm]:", "shank_spacing", "65", self.entries, "shank_spacing")
         row += 1
+        
+        # Max. Sondenlänge (wird nur bei VDI 4640 verwendet)
+        ttk.Label(parent, text="Max. Sondenlänge pro Bohrung [m]:", foreground="gray").grid(
+            row=row, column=0, sticky="w", padx=10, pady=5)
+        entry = ttk.Entry(parent, width=32)
+        entry.insert(0, "100")
+        entry.grid(row=row, column=1, sticky="w", padx=10, pady=5)
+        self.entries["max_depth_per_borehole"] = entry
+        row += 1
+        
+        # Info-Label
+        info_label = ttk.Label(parent, 
+            text="(wird nur bei VDI 4640 Methode verwendet)", 
+            foreground="gray", 
+            font=("Arial", 8, "italic")
+        )
+        info_label.grid(row=row, column=1, sticky="w", padx=10, pady=(0, 5))
+        row += 1
+        
         return row
     
     def _add_grout_section(self, parent, row):
@@ -343,6 +363,7 @@ class GeothermieGUIProfessional:
         grout_combo.grid(row=row, column=1, sticky="w", padx=10, pady=5)
         grout_combo.bind("<<ComboboxSelected>>", self._on_grout_selected)
         grout_combo.current(1)  # Zement-Bentonit verbessert
+        InfoButton.create_info_button(parent, row, 2, "grout_material")
         row += 1
         
         # Material-Info
@@ -365,11 +386,34 @@ class GeothermieGUIProfessional:
     
     def _add_fluid_hydraulics_section(self, parent, row):
         """Fluid und Hydraulik-Sektion."""
-        self._add_entry(parent, row, "Anzahl Solekreise:", "num_circuits", "1", self.hydraulics_entries)
-        row += 1
-        self._add_entry(parent, row, "Frostschutzkonzentration [Vol%]:", "antifreeze_concentration", "25", self.hydraulics_entries)
+        # Fluid-Auswahl
+        ttk.Label(parent, text="Wärmeträgerfluid:").grid(row=row, column=0, sticky="w", padx=10, pady=5)
+        self.fluid_var = tk.StringVar()
+        fluid_combo = ttk.Combobox(parent, textvariable=self.fluid_var,
+                                   values=self.fluid_db.get_all_names(),
+                                   state="readonly", width=30)
+        fluid_combo.grid(row=row, column=1, sticky="w", padx=10, pady=5)
+        fluid_combo.bind("<<ComboboxSelected>>", self._on_fluid_selected)
+        # Standard: Ethylenglykol 25%
+        if "Ethylenglykol 25%" in self.fluid_db.get_all_names():
+            fluid_combo.current(self.fluid_db.get_all_names().index("Ethylenglykol 25%"))
+        InfoButton.create_info_button(parent, row, 2, "fluid_selection")
         row += 1
         
+        # Temperatur für Fluid-Eigenschaften
+        temp_entry = ttk.Entry(parent, width=32)
+        temp_entry.insert(0, "5.0")
+        temp_entry.grid(row=row, column=1, sticky="w", padx=10, pady=5)
+        self.entries["fluid_temperature"] = temp_entry
+        ttk.Label(parent, text="Betriebstemperatur [°C]:").grid(row=row, column=0, sticky="w", padx=10, pady=5)
+        InfoButton.create_info_button(parent, row, 2, "fluid_temperature")
+        temp_entry.bind("<KeyRelease>", lambda e: self._on_fluid_temperature_changed())
+        row += 1
+        
+        self._add_entry(parent, row, "Anzahl Solekreise:", "num_circuits", "1", self.hydraulics_entries)
+        row += 1
+        
+        # Fluid-Eigenschaften (werden automatisch befüllt)
         self._add_entry(parent, row, "Volumenstrom [m³/s]:", "fluid_flow_rate", "0.0005", self.entries, "fluid_flow_rate")
         row += 1
         self._add_entry(parent, row, "Wärmeleitfähigkeit [W/m·K]:", "fluid_thermal_cond", "0.48", self.entries, "fluid_thermal_cond")
@@ -381,20 +425,28 @@ class GeothermieGUIProfessional:
         self._add_entry(parent, row, "Viskosität [Pa·s]:", "fluid_viscosity", "0.004", self.entries)
         row += 1
         
+        # Fluid-Info-Label
+        self.fluid_info_label = ttk.Label(parent, text="", foreground="blue", wraplength=400)
+        self.fluid_info_label.grid(row=row, column=0, columnspan=2, sticky="w", padx=10, pady=2)
+        row += 1
+        
         # Hydraulik-Button
         ttk.Button(parent, text="💨 Hydraulik berechnen", 
                   command=self._calculate_hydraulics).grid(
             row=row, column=0, columnspan=2, pady=5, padx=10)
         row += 1
+        
+        # Trigger initial selection
+        self._on_fluid_selected(None)
         return row
     
     def _add_heat_pump_section(self, parent, row):
         """Wärmepumpen-Sektion."""
-        self._add_entry(parent, row, "Wärmepumpenleistung [kW]:", "heat_pump_power", "6.0", self.heat_pump_entries)
+        self._add_entry(parent, row, "Wärmepumpenleistung [kW]:", "heat_pump_power", "6.0", self.heat_pump_entries, "heat_pump_power")
         row += 1
-        self._add_entry(parent, row, "COP Heizen (Coefficient of Performance):", "heat_pump_cop", "4.0", self.entries)
+        self._add_entry(parent, row, "COP Heizen (Coefficient of Performance):", "heat_pump_cop", "4.0", self.entries, "cop")
         row += 1
-        self._add_entry(parent, row, "EER Kühlen (Energy Efficiency Ratio):", "heat_pump_eer", "4.0", self.entries)
+        self._add_entry(parent, row, "EER Kühlen (Energy Efficiency Ratio):", "heat_pump_eer", "4.0", self.entries, "heat_pump_eer")
         row += 1
         
         # Kälteleistung wird automatisch berechnet
@@ -407,13 +459,13 @@ class GeothermieGUIProfessional:
         self._add_entry(parent, row, "Warmwasser (Anzahl Personen):", "num_persons_dhw", "4", self.heat_pump_entries)
         row += 1
         
-        self._add_entry(parent, row, "Jahres-Heizenergie [kWh]:", "annual_heating", "12000.0", self.entries)
+        self._add_entry(parent, row, "Jahres-Heizenergie [kWh]:", "annual_heating", "12000.0", self.entries, "annual_heating")
         row += 1
-        self._add_entry(parent, row, "Jahres-Kühlenergie [kWh]:", "annual_cooling", "0.0", self.entries)
+        self._add_entry(parent, row, "Jahres-Kühlenergie [kWh]:", "annual_cooling", "0.0", self.entries, "annual_cooling")
         row += 1
-        self._add_entry(parent, row, "Heiz-Spitzenlast [kW]:", "peak_heating", "6.0", self.entries)
+        self._add_entry(parent, row, "Heiz-Spitzenlast [kW]:", "peak_heating", "6.0", self.entries, "peak_heating")
         row += 1
-        self._add_entry(parent, row, "Kühl-Spitzenlast [kW]:", "peak_cooling", "0.0", self.entries)
+        self._add_entry(parent, row, "Kühl-Spitzenlast [kW]:", "peak_cooling", "0.0", self.entries, "peak_cooling")
         row += 1
         
         self._add_entry(parent, row, "Min. Fluidtemperatur [°C]:", "min_fluid_temp", "-2.0", self.entries)
@@ -532,16 +584,34 @@ class GeothermieGUIProfessional:
         ttk.Label(scrollable_frame, text="💧 Verfüllmaterial-Berechnung", 
                  font=("Arial", 14, "bold"), foreground="#1f4788").pack(pady=10)
         
-        self.grout_result_text = tk.Text(scrollable_frame, height=15, width=80, font=("Courier", 10))
-        self.grout_result_text.pack(padx=10, pady=5)
+        # Scrollbares Text-Widget für Materialmengen
+        grout_frame = ttk.Frame(scrollable_frame)
+        grout_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        grout_scrollbar = ttk.Scrollbar(grout_frame)
+        grout_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.grout_result_text = tk.Text(grout_frame, height=20, width=90, font=("Courier", 10),
+                                         wrap=tk.WORD, yscrollcommand=grout_scrollbar.set)
+        self.grout_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        grout_scrollbar.config(command=self.grout_result_text.yview)
         self.grout_result_text.insert("1.0", "Noch keine Berechnung durchgeführt.\n\nKlicken Sie auf 'Materialmengen berechnen'.")
         
         # Hydraulik-Anzeige
         ttk.Label(scrollable_frame, text="💨 Hydraulik-Berechnung", 
                  font=("Arial", 14, "bold"), foreground="#1f4788").pack(pady=10)
         
-        self.hydraulics_result_text = tk.Text(scrollable_frame, height=15, width=80, font=("Courier", 10))
-        self.hydraulics_result_text.pack(padx=10, pady=5)
+        # Scrollbares Text-Widget für Hydraulik
+        hydraulics_frame = ttk.Frame(scrollable_frame)
+        hydraulics_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        hydraulics_scrollbar = ttk.Scrollbar(hydraulics_frame)
+        hydraulics_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        self.hydraulics_result_text = tk.Text(hydraulics_frame, height=20, width=90, font=("Courier", 10),
+                                             wrap=tk.WORD, yscrollcommand=hydraulics_scrollbar.set)
+        self.hydraulics_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        hydraulics_scrollbar.config(command=self.hydraulics_result_text.yview)
         self.hydraulics_result_text.insert("1.0", "Noch keine Berechnung durchgeführt.\n\nKlicken Sie auf 'Hydraulik berechnen'.")
     
     def _create_visualization_tab(self):
@@ -704,6 +774,58 @@ class GeothermieGUIProfessional:
             info = f"{soil.description}\nλ: {soil.thermal_conductivity_min}-{soil.thermal_conductivity_max} W/m·K (typ: {soil.thermal_conductivity_typical})\nWärmeentzug: {soil.heat_extraction_rate_min}-{soil.heat_extraction_rate_max} W/m"
             self.soil_info_label.config(text=info)
     
+    def _on_fluid_selected(self, event):
+        """Wenn ein Fluid ausgewählt wird."""
+        self._update_fluid_properties()
+    
+    def _on_fluid_temperature_changed(self):
+        """Wenn die Betriebstemperatur geändert wird."""
+        self._update_fluid_properties()
+    
+    def _update_fluid_properties(self):
+        """Aktualisiert die Fluid-Eigenschaften basierend auf Auswahl und Temperatur."""
+        if not hasattr(self, 'fluid_var') or not self.fluid_var.get():
+            return
+        
+        fluid_name = self.fluid_var.get()
+        fluid = self.fluid_db.get_fluid(fluid_name)
+        
+        if fluid:
+            # Hole Betriebstemperatur
+            try:
+                temp_entry = self.entries.get("fluid_temperature")
+                if temp_entry:
+                    temp = float(temp_entry.get() or "5.0")
+                else:
+                    temp = 5.0
+            except (ValueError, AttributeError):
+                temp = 5.0
+            
+            # Hole Eigenschaften bei Betriebstemperatur
+            props = fluid.get_properties_at_temp(temp)
+            
+            # Update Werte
+            if "fluid_thermal_cond" in self.entries:
+                self.entries["fluid_thermal_cond"].delete(0, tk.END)
+                self.entries["fluid_thermal_cond"].insert(0, f"{props['thermal_conductivity']:.3f}")
+            
+            if "fluid_heat_cap" in self.entries:
+                self.entries["fluid_heat_cap"].delete(0, tk.END)
+                self.entries["fluid_heat_cap"].insert(0, f"{props['heat_capacity']:.1f}")
+            
+            if "fluid_density" in self.entries:
+                self.entries["fluid_density"].delete(0, tk.END)
+                self.entries["fluid_density"].insert(0, f"{props['density']:.1f}")
+            
+            if "fluid_viscosity" in self.entries:
+                self.entries["fluid_viscosity"].delete(0, tk.END)
+                self.entries["fluid_viscosity"].insert(0, f"{props['viscosity']:.6f}")
+            
+            # Info anzeigen
+            info = f"{fluid.name}\nFrostschutz: {fluid.min_temp:.1f}°C\nBetriebstemp: {temp:.1f}°C\nKonzentration: {fluid.concentration_percent:.0f}%"
+            if hasattr(self, 'fluid_info_label'):
+                self.fluid_info_label.config(text=info)
+    
     def _on_grout_selected(self, event):
         """Wenn ein Verfüllmaterial ausgewählt wird."""
         material_name = self.grout_material_var.get()
@@ -824,7 +946,26 @@ class GeothermieGUIProfessional:
         try:
             # Hole Parameter
             heat_power = float(self.heat_pump_entries["heat_pump_power"].get())
-            antifreeze_conc = float(self.hydraulics_entries["antifreeze_concentration"].get())
+            
+            # Hole Frostschutzkonzentration aus Fluid-Datenbank
+            if hasattr(self, 'fluid_var') and self.fluid_var.get():
+                fluid_name = self.fluid_var.get()
+                fluid = self.fluid_db.get_fluid(fluid_name)
+                if fluid:
+                    antifreeze_conc = fluid.concentration_percent
+                else:
+                    # Fallback: Versuche aus altem Eingabefeld
+                    try:
+                        antifreeze_conc = float(self.hydraulics_entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
+                    except (AttributeError, ValueError, KeyError):
+                        antifreeze_conc = 25.0  # Standard: 25%
+            else:
+                # Fallback: Versuche aus altem Eingabefeld
+                try:
+                    antifreeze_conc = float(self.hydraulics_entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
+                except (AttributeError, ValueError, KeyError):
+                    antifreeze_conc = 25.0  # Standard: 25%
+            
             num_circuits = int(self.hydraulics_entries["num_circuits"].get())
             depth = float(self.entries["initial_depth"].get())
             num_boreholes = int(self.borehole_entries["num_boreholes"].get())
@@ -833,9 +974,12 @@ class GeothermieGUIProfessional:
             pipe_thickness_m = float(self.entries["pipe_thickness"].get()) / 1000.0
             pipe_inner_d = pipe_outer_d_m - 2 * pipe_thickness_m
             
-            # Volumenstrom berechnen
+            # Hole COP für Volumenstrom-Berechnung
+            cop = float(self.entries["heat_pump_cop"].get())
+            
+            # Volumenstrom berechnen (verwendet COP statt hardcoded 3.0)
             flow = self.hydraulics_calc.calculate_required_flow_rate(
-                heat_power, 3.0, antifreeze_conc
+                heat_power, cop, antifreeze_conc
             )
             
             # System-Druckverlust
@@ -849,8 +993,7 @@ class GeothermieGUIProfessional:
                 flow['volume_flow_m3_h'], system['total_pressure_drop_bar']
             )
             
-            # Kälteleistung berechnen (COP)
-            cop = float(self.entries["heat_pump_cop"].get())
+            # Kälteleistung berechnen (COP wurde bereits oben geholt)
             cold_power = heat_power * (cop - 1) / cop
             self.cold_power_label.config(text=f"{cold_power:.2f} kW", foreground="blue")
             
@@ -1021,12 +1164,21 @@ class GeothermieGUIProfessional:
             # Sammle Parameter
             params = {}
             for key, entry in self.entries.items():
-                params[key] = float(entry.get())
+                value = entry.get()
+                if value:
+                    try:
+                        params[key] = float(value)
+                    except ValueError:
+                        params[key] = value  # String-Werte behalten
+                else:
+                    params[key] = 0.0  # Default für leere numerische Felder
             
             # Konvertiere mm → m für Rohr-Parameter und Bohrlochdurchmesser
             params["pipe_outer_diameter"] = params["pipe_outer_diameter"] / 1000.0
             params["pipe_thickness"] = params["pipe_thickness"] / 1000.0
             params["borehole_diameter"] = params["borehole_diameter"] / 1000.0
+            # Konvertiere Schenkelabstand von mm → m
+            params["shank_spacing"] = params["shank_spacing"] / 1000.0
             
             self.status_var.set("⏳ Berechnung läuft...")
             self.root.update()
@@ -1097,6 +1249,64 @@ class GeothermieGUIProfessional:
                     delta_t_fluid=params.get("delta_t_fluid", 3.0)
                 )
                 
+                # Prüfe maximale Sondenlänge (nur bei VDI 4640)
+                max_depth_entry = self.entries.get("max_depth_per_borehole")
+                if max_depth_entry:
+                    max_depth_per_borehole = float(max_depth_entry.get() or "999")
+                else:
+                    max_depth_per_borehole = 999.0
+                original_num_boreholes = num_boreholes
+                adjusted_boreholes = False
+                
+                if max_depth_per_borehole < 999 and self.vdi4640_result.required_depth_final > max_depth_per_borehole:
+                    # Automatisch Anzahl Bohrungen erhöhen
+                    max_iterations = 20
+                    
+                    for iteration in range(max_iterations):
+                        # Neue Anzahl berechnen
+                        num_boreholes = int(math.ceil(
+                            self.vdi4640_result.required_depth_final * original_num_boreholes / max_depth_per_borehole
+                        ))
+                        
+                        # Begrenze auf sinnvolle Werte
+                        num_boreholes = max(1, min(num_boreholes, 50))
+                        
+                        # Neu berechnen mit erhöhter Anzahl
+                        self.vdi4640_result = self.vdi4640_calc.calculate_complete(
+                            ground_thermal_conductivity=params["ground_thermal_cond"],
+                            ground_thermal_diffusivity=thermal_diffusivity,
+                            t_undisturbed=params["ground_temp"],
+                            borehole_diameter=params["borehole_diameter"] * 1000,
+                            borehole_depth_initial=params["initial_depth"],
+                            n_boreholes=num_boreholes,  # Neue Anzahl
+                            r_borehole=r_borehole,
+                            annual_heating_demand=params["annual_heating"],
+                            peak_heating_load=params["peak_heating"],
+                            annual_cooling_demand=params["annual_cooling"],
+                            peak_cooling_load=params["peak_cooling"],
+                            heat_pump_cop_heating=params["heat_pump_cop"],
+                            heat_pump_cop_cooling=params.get("heat_pump_eer", params["heat_pump_cop"]),
+                            t_fluid_min_required=params["min_fluid_temp"],
+                            t_fluid_max_required=params["max_fluid_temp"],
+                            delta_t_fluid=params.get("delta_t_fluid", 3.0)
+                        )
+                        
+                        # Prüfe ob jetzt OK
+                        if self.vdi4640_result.required_depth_final <= max_depth_per_borehole:
+                            adjusted_boreholes = True
+                            # Update Anzahl Bohrungen im Eingabefeld
+                            self.borehole_entries["num_boreholes"].delete(0, tk.END)
+                            self.borehole_entries["num_boreholes"].insert(0, str(num_boreholes))
+                            break
+                    
+                    if not adjusted_boreholes:
+                        # Konnte nicht angepasst werden
+                        messagebox.showwarning(
+                            "Warnung", 
+                            f"Konnte nicht unter {max_depth_per_borehole}m pro Bohrung bleiben. "
+                            f"Ergebnis: {self.vdi4640_result.required_depth_final:.1f}m"
+                        )
+                
                 # Erstelle BoreholeResult für Kompatibilität
                 from calculations.borehole import BoreholeResult
                 self.result = BoreholeResult(
@@ -1109,7 +1319,13 @@ class GeothermieGUIProfessional:
                     monthly_temperatures=[self.vdi4640_result.t_wp_aus_heating_min] * 12
                 )
                 
-                self.status_var.set(f"✓ VDI 4640 Berechnung: {self.vdi4640_result.required_depth_final:.1f}m (ausgelegt für {self.vdi4640_result.design_case.upper()})")
+                if adjusted_boreholes:
+                    self.status_var.set(
+                        f"✓ VDI 4640: {self.vdi4640_result.required_depth_final:.1f}m/Bohrung, "
+                        f"{num_boreholes} Bohrungen (angepasst von {original_num_boreholes} wegen max. {max_depth_per_borehole:.0f}m)"
+                    )
+                else:
+                    self.status_var.set(f"✓ VDI 4640 Berechnung: {self.vdi4640_result.required_depth_final:.1f}m (ausgelegt für {self.vdi4640_result.design_case.upper()})")
                 
             else:
                 # === ITERATIVE BERECHNUNG (Original) ===
@@ -1159,6 +1375,27 @@ class GeothermieGUIProfessional:
             messagebox.showerror("Fehler", f"Fehler bei der Berechnung: {str(e)}")
             self.status_var.set("❌ Berechnung fehlgeschlagen")
     
+    def _get_pipe_length_factor(self, pipe_config: str) -> int:
+        """
+        Gibt den Faktor für die Gesamtlänge der Leitungen zurück.
+        
+        Args:
+            pipe_config: Rohrkonfiguration (single-u, double-u, coaxial, etc.)
+        
+        Returns:
+            Anzahl der Leitungen pro Bohrung
+        """
+        config_lower = pipe_config.lower()
+        
+        if "single-u" in config_lower or "single" in config_lower:
+            return 2  # 2 Rohre: 1 Vorlauf + 1 Rücklauf = 2 Leitungen
+        elif "double-u" in config_lower or "double" in config_lower or "4-rohr" in config_lower:
+            return 4  # 4 Rohre: 2 Vorlauf + 2 Rücklauf = 4 Leitungen
+        elif "coaxial" in config_lower:
+            return 2  # Vorlauf + Rücklauf (ähnlich Single-U)
+        else:
+            return 2  # Standard: Single-U
+    
     def _get_pipe_positions(self, pipe_config, params):
         """Gibt Rohrpositionen für Bohrlochwiderstand zurück."""
         borehole_radius = params["borehole_diameter"] / 2
@@ -1192,7 +1429,7 @@ class GeothermieGUIProfessional:
         
         # === HEADER ===
         text = "=" * 80 + "\n"
-        text += "ERDWÄRMESONDEN-BERECHNUNGSERGEBNIS (Professional V3.2)\n"
+        text += "ERDWÄRMESONDEN-BERECHNUNGSERGEBNIS (Professional V3.2.1)\n"
         text += "=" * 80 + "\n\n"
         
         # Projekt Info
@@ -1220,7 +1457,14 @@ class GeothermieGUIProfessional:
                 text += f"  (Heizen würde nur {self.vdi4640_result.required_depth_heating:.1f} m benötigen)\n"
             text += f"\n  → Ausgelegte Sondenlänge: {self.vdi4640_result.required_depth_final:.1f} m\n"
             text += f"  → Anzahl Bohrungen: {num_bh}\n"
-            text += f"  → Gesamtlänge: {self.vdi4640_result.required_depth_final * num_bh:.1f} m\n\n"
+            text += f"  → Gesamtlänge (Bohrungen): {self.vdi4640_result.required_depth_final * num_bh:.1f} m\n"
+            
+            # Berechne Gesamtlänge der Leitungen
+            pipe_config = self.pipe_config_var.get()
+            pipe_length_factor = self._get_pipe_length_factor(pipe_config)
+            total_pipe_length = self.vdi4640_result.required_depth_final * num_bh * pipe_length_factor
+            text += f"  → Gesamtlänge (Leitungen): {total_pipe_length:.1f} m\n"
+            text += f"     ({pipe_length_factor} Leitungen pro Bohrung)\n\n"
             
             # === WÄRMEPUMPENAUSTRITTSTEMPERATUREN ===
             text += "🌡️  WÄRMEPUMPENAUSTRITTSTEMPERATUREN\n"
@@ -1273,7 +1517,14 @@ class GeothermieGUIProfessional:
             text += "-" * 80 + "\n"
             text += f"Anzahl Bohrungen:      {num_bh}\n"
             text += f"Tiefe pro Bohrung:     {self.result.required_depth:.1f} m\n"
-            text += f"Gesamtlänge:           {self.result.required_depth * num_bh:.1f} m\n\n"
+            text += f"Gesamtlänge (Bohrungen): {self.result.required_depth * num_bh:.1f} m\n"
+            
+            # Berechne Gesamtlänge der Leitungen
+            pipe_config = self.pipe_config_var.get()
+            pipe_length_factor = self._get_pipe_length_factor(pipe_config)
+            total_pipe_length = self.result.required_depth * num_bh * pipe_length_factor
+            text += f"Gesamtlänge (Leitungen): {total_pipe_length:.1f} m\n"
+            text += f"  ({pipe_length_factor} Leitungen pro Bohrung)\n\n"
             
             text += "🌡️  TEMPERATUREN\n"
             text += "-" * 80 + "\n"
@@ -1465,14 +1716,35 @@ class GeothermieGUIProfessional:
                 # Bohrfeld
                 borehole_config = {key: float(entry.get()) for key, entry in self.borehole_entries.items()}
                 
-                # PDF erstellen (mit optionalen Verfüllmaterial-, Hydraulik-, Bohrfeld- und VDI4640-Daten)
+                # Fluid-Info für PDF
+                fluid_info = None
+                if hasattr(self, 'fluid_var') and self.fluid_var.get():
+                    fluid_name = self.fluid_var.get()
+                    fluid = self.fluid_db.get_fluid(fluid_name)
+                    if fluid:
+                        try:
+                            temp = float(self.entries.get("fluid_temperature", ttk.Entry()).get() or "5.0")
+                        except (ValueError, AttributeError):
+                            temp = 5.0
+                        props = fluid.get_properties_at_temp(temp)
+                        fluid_info = {
+                            'name': fluid.name,
+                            'type': fluid.type,
+                            'concentration_percent': fluid.concentration_percent,
+                            'min_temp': fluid.min_temp,
+                            'max_temp': fluid.max_temp,
+                            **props
+                        }
+                
+                # PDF erstellen (mit optionalen Verfüllmaterial-, Hydraulik-, Bohrfeld-, VDI4640- und Fluid-Daten)
                 self.pdf_generator.generate_report(
                     filename, self.result, self.current_params,
                     project_info, borehole_config,
                     grout_calculation=getattr(self, 'grout_calculation', None),
                     hydraulics_result=getattr(self, 'hydraulics_result', None),
                     borefield_result=getattr(self, 'borefield_result', None),
-                    vdi4640_result=getattr(self, 'vdi4640_result', None)
+                    vdi4640_result=getattr(self, 'vdi4640_result', None),
+                    fluid_info=fluid_info
                 )
                 
                 self.status_var.set(f"✓ PDF erstellt: {os.path.basename(filename)}")
@@ -1902,7 +2174,7 @@ In diesem Tool verfügbar über:
                     "diameter_mm": params.get("borehole_diameter", 152.0),
                     "depth_m": params.get("initial_depth", 100.0),
                     "pipe_configuration": self.pipe_config_var.get(),
-                    "shank_spacing_mm": params.get("shank_spacing", 80.0),
+                    "shank_spacing_mm": float(self.entries.get("shank_spacing", ttk.Entry()).get() or "65"),  # Wert in mm direkt aus Entry
                     "num_boreholes": int(borehole_data.get("num_boreholes", 1))
                 },
                 pipe_props={
@@ -1927,6 +2199,11 @@ In diesem Tool verfügbar über:
                     "flow_rate_m3h": params.get("fluid_flow_rate", 2.5),
                     "freeze_temperature": -15.0
                 },
+                # NEU: Fluid-Datenbank-Informationen
+                fluid_database_info={
+                    "fluid_name": self.fluid_var.get() if hasattr(self, 'fluid_var') and self.fluid_var.get() else None,
+                    "operating_temperature": float(self.entries.get("fluid_temperature", ttk.Entry()).get() or "5.0") if "fluid_temperature" in self.entries else 5.0
+                } if (hasattr(self, 'fluid_var') and self.fluid_var.get()) else None,
                 loads={
                     "annual_heating_kwh": params.get("annual_heating", 45000.0),
                     "annual_cooling_kwh": params.get("annual_cooling", 0.0),
@@ -1943,14 +2220,19 @@ In diesem Tool verfügbar über:
                     "initial_depth": params.get("initial_depth", 100.0),
                     "calculation_method": self.calculation_method_var.get() if hasattr(self, 'calculation_method_var') else "iterativ",
                     "heat_pump_eer": params.get("heat_pump_eer", params.get("heat_pump_cop", 4.0)),
-                    "delta_t_fluid": params.get("delta_t_fluid", 3.0)
+                    "delta_t_fluid": params.get("delta_t_fluid", 3.0),
+                    "max_depth_per_borehole": float(self.borehole_entries.get("max_depth_per_borehole", ttk.Entry()).get() or "100.0") if "max_depth_per_borehole" in self.borehole_entries else 100.0
                 },
                 climate_data=self.climate_data,
                 borefield_data=self.borefield_config,
                 results={
                     "standard": self.result.__dict__ if self.result and hasattr(self.result, '__dict__') else None,
                     "vdi4640": self.vdi4640_result.__dict__ if hasattr(self, 'vdi4640_result') and self.vdi4640_result else None
-                }
+                },
+                # NEU: Separate Export-Felder für bessere Struktur
+                vdi4640_result=self.vdi4640_result.__dict__ if hasattr(self, 'vdi4640_result') and self.vdi4640_result else None,
+                hydraulics_result=self.hydraulics_result if hasattr(self, 'hydraulics_result') and self.hydraulics_result else None,
+                grout_calculation=self.grout_calculation if hasattr(self, 'grout_calculation') and self.grout_calculation else None
             )
             
             if success:
@@ -2059,6 +2341,76 @@ In diesem Tool verfügbar über:
                 self._set_entry("heat_pump_eer", sim.get("heat_pump_eer", 4.0))
             if "delta_t_fluid" in sim:
                 self._set_entry("delta_t_fluid", sim.get("delta_t_fluid", 3.0))
+            if "max_depth_per_borehole" in sim:
+                if "max_depth_per_borehole" in self.borehole_entries:
+                    self.borehole_entries["max_depth_per_borehole"].delete(0, tk.END)
+                    self.borehole_entries["max_depth_per_borehole"].insert(0, str(sim.get("max_depth_per_borehole", 100.0)))
+            
+            # NEU: Fluid-Datenbank-Informationen importieren
+            fluid_db_info = data.get("fluid_database_info")
+            if fluid_db_info and hasattr(self, 'fluid_var'):
+                fluid_name = fluid_db_info.get("fluid_name")
+                if fluid_name and fluid_name in self.fluid_db.get_all_names():
+                    self.fluid_var.set(fluid_name)
+                    # Trigger Fluid-Auswahl-Event
+                    self._on_fluid_selected(None)
+                # Betriebstemperatur setzen
+                if "operating_temperature" in fluid_db_info and "fluid_temperature" in self.entries:
+                    self.entries["fluid_temperature"].delete(0, tk.END)
+                    self.entries["fluid_temperature"].insert(0, str(fluid_db_info["operating_temperature"]))
+                    self._on_fluid_temperature_changed()
+            
+            # NEU: VDI 4640 Ergebnis importieren
+            vdi_result = data.get("vdi4640_result")
+            if vdi_result:
+                from calculations.vdi4640 import VDI4640Result
+                # Konvertiere Dict zurück zu VDI4640Result
+                if isinstance(vdi_result, dict):
+                    try:
+                        # Rekonstruiere VDI4640Result aus Dict (dataclass)
+                        self.vdi4640_result = VDI4640Result(**vdi_result)
+                    except Exception as e:
+                        print(f"⚠️ Konnte VDI4640Result nicht rekonstruieren: {e}")
+                        # Fallback: Speichere als Dict
+                        self.vdi4640_result = vdi_result
+                else:
+                    self.vdi4640_result = vdi_result
+            
+            # NEU: Hydraulik-Ergebnis importieren
+            hydraulics_result = data.get("hydraulics_result")
+            if hydraulics_result:
+                self.hydraulics_result = hydraulics_result
+                # Aktualisiere Hydraulik-Anzeige
+                if hasattr(self, 'hydraulics_result_text'):
+                    text = "=" * 60 + "\n"
+                    text += "HYDRAULIK-BERECHNUNG (aus .get Datei geladen)\n"
+                    text += "=" * 60 + "\n\n"
+                    flow = hydraulics_result.get('flow', {})
+                    system = hydraulics_result.get('system', {})
+                    pump = hydraulics_result.get('pump', {})
+                    if flow and system and pump:
+                        text += f"Volumenstrom: {flow.get('volume_flow_m3_h', 0):.3f} m³/h\n"
+                        text += f"Druckverlust: {system.get('total_pressure_drop_bar', 0):.2f} bar\n"
+                        text += f"Pumpenleistung: {pump.get('electric_power_w', 0):.0f} W\n"
+                    self.hydraulics_result_text.delete("1.0", tk.END)
+                    self.hydraulics_result_text.insert("1.0", text)
+            
+            # NEU: Verfüllmaterial-Berechnung importieren
+            grout_calc = data.get("grout_calculation")
+            if grout_calc:
+                self.grout_calculation = grout_calc
+                # Aktualisiere Material-Anzeige
+                if hasattr(self, 'grout_result_text'):
+                    material = grout_calc.get('material', {})
+                    amounts = grout_calc.get('amounts', {})
+                    text = "=" * 60 + "\n"
+                    text += "VERFÜLLMATERIAL-BERECHNUNG (aus .get Datei geladen)\n"
+                    text += "=" * 60 + "\n\n"
+                    if isinstance(material, dict):
+                        text += f"Material: {material.get('name', 'N/A')}\n"
+                        text += f"Volumen gesamt: {amounts.get('mass_kg', 0):.1f} kg\n"
+                    self.grout_result_text.delete("1.0", tk.END)
+                    self.grout_result_text.insert("1.0", text)
             
             # Klimadaten speichern
             self.climate_data = data.get("climate_data")

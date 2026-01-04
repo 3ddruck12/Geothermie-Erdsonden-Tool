@@ -93,6 +93,65 @@ Wichtig:
 - Aber auch höherer Druckverlust
 - Muss zum Bohrloch passen'''
         },
+        'fluid_selection': {
+            'title': 'Wärmeträgerfluid',
+            'text': '''Wärmeträgerflüssigkeit für die Erdwärmesonde.
+
+Typen:
+• Reines Wasser: Beste Wärmeübertragung, kein Frostschutz
+• Ethylenglykol: Standard Frostschutzmittel
+• Propylenglykol: Lebensmittelecht, umweltfreundlicher
+
+Konzentrationen:
+• 20%: Frostschutz bis -8°C
+• 25%: Frostschutz bis -12°C (Standard) ⭐
+• 30%: Frostschutz bis -18°C
+
+Wichtig:
+Höhere Konzentration = 
+- Bessere Frostsicherheit
+- Geringere Wärmeübertragung
+- Höhere Viskosität (mehr Pumpenleistung)
+
+Eigenschaften werden automatisch basierend auf
+Betriebstemperatur berechnet!'''
+        },
+        'fluid_temperature': {
+            'title': 'Betriebstemperatur',
+            'text': '''Temperatur des Wärmeträgerfluids im Betrieb.
+
+Typische Werte:
+• Heizen: 0-10°C (Sondeneintritt)
+• Kühlen: 15-25°C (Sondeneintritt)
+
+Wichtig:
+Die Fluid-Eigenschaften (Dichte, Viskosität, etc.)
+werden automatisch für diese Temperatur berechnet!
+
+Tipp: Verwenden Sie die erwartete mittlere
+Betriebstemperatur für beste Genauigkeit.'''
+        },
+        'grout_material': {
+            'title': 'Verfüllmaterial',
+            'text': '''Material zur Verfüllung des Bohrlochs zwischen Rohren und Bohrlochwand.
+
+Funktionen:
+• Thermische Verbindung zwischen Rohr und Erdreich
+• Schutz der Rohre vor Beschädigung
+• Abdichtung gegen Grundwasser
+
+Materialien:
+• Bentonit: Gute Abdichtung, geringe Wärmeleitfähigkeit
+• Zement-Bentonit: Standard, gute Balance
+• Thermisch verbessert: Höhere Wärmeleitfähigkeit, bessere Leistung
+• Hochleistung: Beste Wärmeleitfähigkeit, höhere Kosten
+
+Wichtig:
+Höhere Wärmeleitfähigkeit = Kürzere benötigte Bohrtiefe
+Aber: Höhere Materialkosten
+
+Kompromiss zwischen Kosten und Leistung!'''
+        },
         'shank_spacing': {
             'title': 'Schenkelabstand',
             'text': '''Abstand zwischen Vor- und Rücklauf im Bohrloch.
@@ -107,6 +166,39 @@ Schenkelabstand ≈ 40-50% des Bohrloch-Durchmessers
 
 Beeinflusst den thermischen Kurzschluss zwischen
 Vor- und Rücklauf!'''
+        },
+        'heat_pump_power': {
+            'title': 'Wärmepumpenleistung',
+            'text': '''Nennleistung der Wärmepumpe bei Normbedingungen.
+
+Typische Werte:
+• Einfamilienhaus (140 m²): 6-10 kW
+• Passivhaus (140 m²): 3-5 kW
+• Mehrfamilienhaus: 15-30 kW
+
+Wichtig:
+Sollte größer als die Spitzenlast sein!
+Empfehlung: Spitzenlast × 1.2
+
+Zu groß = häufiges Takten
+Zu klein = Heizstab wird benötigt'''
+        },
+        'heat_pump_eer': {
+            'title': 'EER - Energy Efficiency Ratio',
+            'text': '''Kühlleistungszahl der Wärmepumpe.
+
+Typische Werte:
+• 3.0-3.5 - Standard
+• 4.0-4.5 - Gute Anlagen ⭐
+• >4.5 - Sehr gute Anlagen
+
+Bedeutung:
+EER 4.0 = Aus 1 kW Strom werden 4 kW Kälte
+Davon 3 kW in die Erde abgegeben!
+
+Höherer EER = 
+- Geringere Erdbelastung
+- Niedrigere Betriebskosten'''
         },
         'annual_heating': {
             'title': 'Jahres-Heizenergie',
@@ -123,6 +215,57 @@ z.B. 6 kW × 2000h = 12,000 kWh
 
 Wichtig:
 Nur Raumheizung, OHNE Warmwasser!'''
+        },
+        'annual_cooling': {
+            'title': 'Jahres-Kühlenergie',
+            'text': '''Gesamte benötigte Kühlenergie pro Jahr.
+
+Typische Werte:
+• Wohngebäude: 0-2,000 kWh
+• Bürogebäude: 5,000-15,000 kWh
+• Gewerbe: 10,000-50,000 kWh
+
+Berechnung:
+Kühllast × Vollbenutzungsstunden
+z.B. 3 kW × 800h = 2,400 kWh
+
+Wichtig:
+Bei reiner Heizung: 0 kWh
+Kühlung kann die Erdwärmesonde entlasten!'''
+        },
+        'peak_heating': {
+            'title': 'Heiz-Spitzenlast',
+            'text': '''Maximale Heizleistung bei kältestem Tag.
+
+Typische Werte:
+• Einfamilienhaus (140 m²): 6-10 kW
+• Passivhaus (140 m²): 2-4 kW
+• Mehrfamilienhaus: 20-40 kW
+
+Berechnung:
+Gebäude-Wärmeverlust bei -15°C Außentemperatur
++ Warmwasser-Spitzenlast
+
+Wichtig:
+Bestimmt die Mindest-Wärmepumpenleistung!
+Sollte mit Gebäude-Energieberater abgestimmt werden.'''
+        },
+        'peak_cooling': {
+            'title': 'Kühl-Spitzenlast',
+            'text': '''Maximale Kühlleistung bei heißestem Tag.
+
+Typische Werte:
+• Wohngebäude: 0-3 kW
+• Bürogebäude: 10-30 kW
+• Gewerbe: 20-100 kW
+
+Berechnung:
+Gebäude-Wärmeeintrag bei +35°C Außentemperatur
++ Interne Lasten (Geräte, Personen)
+
+Wichtig:
+Bei reiner Heizung: 0 kW
+Kühllast kann die Erdwärmesonde belasten!'''
         },
         'cop': {
             'title': 'COP - Coefficient of Performance',

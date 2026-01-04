@@ -302,3 +302,6 @@ if __name__ == "__main__":
     print(f"   Elektrische Leistung: {pump['electric_power_w']:.0f} W ({pump['electric_power_kw']:.2f} kW)")
 
 
+
+
+

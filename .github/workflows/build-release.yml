@@ -24,6 +24,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: Read version
+      id: version
+      run: |
+        $version = (Get-Content VERSION).Trim()
+        echo "VERSION=$version" >> $env:GITHUB_ENV
+        echo "Version: $version"
+    
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -37,13 +44,17 @@ jobs:
     
     - name: Build Windows executable
       run: |
-        pyinstaller geothermie.spec
+        # Erstelle spec mit Version im Namen
+        $specContent = Get-Content geothermie.spec -Raw
+        $specContent = $specContent -replace "name='GeothermieErdsondentool'", "name='GeothermieErdsondentool-v$env:VERSION'"
+        $specContent | Set-Content geothermie-versioned.spec
+        pyinstaller geothermie-versioned.spec
     
     - name: Upload Windows artifact
       uses: actions/upload-artifact@v4
       with:
         name: GeothermieErdsondentool-Windows
-        path: dist/GeothermieErdsondentool.exe
+        path: dist/GeothermieErdsondentool-v*.exe
   
   build-linux:
     name: Build Linux DEB
@@ -52,6 +63,13 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+    
+    - name: Read version
+      id: version
+      run: |
+        VERSION=$(cat VERSION | tr -d '[:space:]')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "Version: $VERSION"
     
     - name: Set up Python
       uses: actions/setup-python@v5
@@ -108,15 +126,17 @@ jobs:
         cp LICENSE package/usr/share/doc/geothermie-erdsondentool/
         cp -r docs/* package/usr/share/doc/geothermie-erdsondentool/
         
-        # Create DEB
+        # Create DEB mit Version aus VERSION-Datei und Upgrade-Unterstützung
         fpm -s dir -t deb \
           -n geothermie-erdsondentool \
-          -v 3.1.0 \
+          -v $VERSION \
           --architecture amd64 \
           --description "Open-Source Tool zur Berechnung von Erdwärmesonden bis 100m Tiefe" \
           --url "https://github.com/3ddruck12/Geothermie-Erdsonden-Tool" \
           --maintainer "3ddruck12" \
           --license "MIT" \
+          --deb-priority optional \
+          --deb-no-default-config-files \
           -C package \
           usr/local/bin usr/share/applications usr/share/pixmaps usr/share/doc
     
@@ -133,6 +153,16 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/v')
     
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Read version
+      id: version
+      run: |
+        VERSION=$(cat VERSION | tr -d '[:space:]')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "Version: $VERSION"
+    
     - name: Download Windows artifact
       uses: actions/download-artifact@v4
       with:
@@ -147,14 +177,16 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          GeothermieErdsondentool.exe
+          GeothermieErdsondentool-v*.exe
           *.deb
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ env.VERSION }}
         body: |
-          ## Geothermie Erdsondentool Release
+          ## Geothermie Erdsondentool Release ${{ env.VERSION }}
           
           ### Downloads
-          - **Windows**: `GeothermieErdsondentool.exe`
-          - **Linux**: `geothermie-erdsondentool_3.1.0_amd64.deb`
+          - **Windows**: `GeothermieErdsondentool-v${{ env.VERSION }}.exe`
+          - **Linux**: `geothermie-erdsondentool_${{ env.VERSION }}_amd64.deb`
           
           ### Installation
           
@@ -164,7 +196,8 @@ jobs:
           
           #### Linux (Debian/Ubuntu)
           ```bash
-          sudo dpkg -i geothermie-erdsondentool_3.1.0_amd64.deb
+          # Upgrade (keine Deinstallation nötig)
+          sudo dpkg -i geothermie-erdsondentool_${{ env.VERSION }}_amd64.deb
           sudo apt-get install -f  # Falls Abhängigkeiten fehlen
           ```
           
@@ -176,6 +209,9 @@ jobs:
           - ✅ Bodendatenbank nach VDI 4640
           - ✅ Verfüllmaterial-Datenbank
           - ✅ Info-Buttons mit Hilfe
+          - ✅ VDI 4640 Berechnungsmethode
+          - ✅ Bohrfeld-Simulation mit g-Funktionen
+          - ✅ Fluid-Datenbank
           
           [Vollständige Dokumentation](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/tree/main/docs)
       env:

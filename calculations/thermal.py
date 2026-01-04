@@ -267,3 +267,6 @@ if __name__ == "__main__":
     print(f"Single-U Interner Widerstand R_a: {r_a:.4f} m·K/W")
 
 
+
+
+

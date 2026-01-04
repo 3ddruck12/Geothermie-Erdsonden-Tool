@@ -326,3 +326,6 @@ def check_pygfunction_installation() -> Tuple[bool, str]:
     except Exception as e:
         return False, f"Fehler: {e}"
 
+
+
+

@@ -205,3 +205,6 @@ GEÄNDERT:
 Die VDI 4640 Methode ist vollständig in GET V3.2 integriert und einsatzbereit!
 
 
+
+
+

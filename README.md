@@ -10,7 +10,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/3ddruck12/GeothermieErdsondentool/workflows/Build%20and%20Release/badge.svg)](https://github.com/3ddruck12/GeothermieErdsondentool/actions)
 [![GitHub release](https://img.shields.io/github/release/3ddruck12/GeothermieErdsondentool.svg)](https://github.com/3ddruck12/GeothermieErdsondentool/releases)
-![Version](https://img.shields.io/badge/version-3.2.0-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.2.1-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -58,7 +58,11 @@
 
 ## ✨ Features
 
-### 🆕 Neu in V3.2 (Januar 2026)
+### 🆕 Neu in V3.2.1 (Januar 2026)
+- 🔥 **Maximale Sondenlänge**: Automatische Anpassung der Bohrungsanzahl bei VDI 4640
+- 🔥 **Gesamtlänge der Leitungen**: Anzeige für beide Berechnungsmethoden
+
+### 🆕 Neu in V3.2.0 (Januar 2026)
 - 🔥 **VDI 4640 Berechnungsmethode**: Normkonforme Auslegung nach Koenigsdorff
 - 🔥 **Dominante Kühllast**: Automatische Erkennung und separate Auslegung
 - 🔥 **Wärmepumpenaustrittstemperatur**: Detaillierte Temperaturkomponenten
@@ -137,10 +141,10 @@ python main.py
 
 ```bash
 # Neueste Version herunterladen
-wget https://github.com/3ddruck12/GeothermieErdsondentool/releases/download/v3.2.0/geothermie-erdsondentool_3.2.0_amd64.deb
+wget https://github.com/3ddruck12/GeothermieErdsondentool/releases/download/v3.2.1/geothermie-erdsondentool_3.2.1_amd64.deb
 
-# Installieren
-sudo dpkg -i geothermie-erdsondentool_3.2.0_amd64.deb
+# Installieren/Upgraden (keine Deinstallation nötig)
+sudo dpkg -i geothermie-erdsondentool_3.2.1_amd64.deb
 sudo apt-get install -f  # Falls Abhängigkeiten fehlen
 
 # Starten

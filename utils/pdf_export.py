@@ -65,7 +65,9 @@ class PDFReportGenerator:
         borehole_config: dict,
         grout_calculation: dict = None,
         hydraulics_result: dict = None,
-        borefield_result: dict = None
+        borefield_result: dict = None,
+        vdi4640_result = None,
+        fluid_info: dict = None
     ):
         """
         Generiert einen kompletten PDF-Bericht.
@@ -79,6 +81,8 @@ class PDFReportGenerator:
             grout_calculation: Verfüllmaterial-Berechnung (optional)
             hydraulics_result: Hydraulik-Berechnung (optional)
             borefield_result: Bohrfeld g-Funktionen-Ergebnis (optional)
+            vdi4640_result: VDI 4640 Berechnungsergebnis (optional)
+            fluid_info: Wärmeträgerfluid-Informationen (optional)
         """
         # PDF erstellen
         doc = SimpleDocTemplate(
@@ -288,24 +292,140 @@ class PDFReportGenerator:
             story.append(grout_table)
             story.append(Spacer(1, 1*cm))
         
+        # === WÄRMETRÄGERFLUID (NEU) ===
+        if fluid_info:
+            story.append(Paragraph("Wärmeträgerfluid", self.styles['CustomHeading']))
+            
+            fluid_data = [
+                ['Parameter', 'Wert', 'Einheit'],
+                ['Fluid', fluid_info.get('name', 'N/A'), ''],
+                ['Typ', fluid_info.get('type', 'N/A'), ''],
+                ['Konzentration', f"{fluid_info.get('concentration_percent', 0):.1f}", '%'],
+                ['Frostschutz bis', f"{fluid_info.get('min_temp', 0):.1f}", '°C'],
+                ['Max. Betriebstemp.', f"{fluid_info.get('max_temp', 95):.1f}", '°C'],
+                ['Dichte (bei Betriebstemp.)', f"{fluid_info.get('density', 0):.1f}", 'kg/m³'],
+                ['Viskosität (bei Betriebstemp.)', f"{fluid_info.get('viscosity', 0):.6f}", 'Pa·s'],
+                ['Wärmeleitfähigkeit', f"{fluid_info.get('thermal_conductivity', 0):.3f}", 'W/m·K'],
+                ['Wärmekapazität', f"{fluid_info.get('heat_capacity', 0):.1f}", 'J/kg·K']
+            ]
+            
+            fluid_table = Table(fluid_data, colWidths=[9*cm, 5*cm, 3*cm])
+            fluid_table.setStyle(self._get_table_style())
+            story.append(fluid_table)
+            story.append(Spacer(1, 1*cm))
+        
         # === HYDRAULIK-BERECHNUNG ===
         if hydraulics_result:
             story.append(Paragraph("Hydraulik-Berechnung", self.styles['CustomHeading']))
             
+            # Unterstütze neue Datenstruktur (flow, system, pump) und alte Struktur
+            flow = hydraulics_result.get('flow', {})
+            system = hydraulics_result.get('system', {})
+            pump = hydraulics_result.get('pump', {})
+            
+            # Neue Struktur
+            if flow and system and pump:
+                volume_flow_m3h = flow.get('volume_flow_m3_h', 0)
+                volume_flow_lmin = flow.get('volume_flow_l_min', 0)
+                total_pressure_drop_bar = system.get('total_pressure_drop_bar', 0)
+                total_pressure_drop_mbar = system.get('total_pressure_drop_mbar', 0)
+                pressure_drop_borehole = system.get('pressure_drop_borehole_bar', 0)
+                reynolds = system.get('reynolds', 0)
+                velocity = system.get('velocity_m_s', 0)
+                hydraulic_power = pump.get('hydraulic_power_w', 0)
+                electric_power = pump.get('electric_power_w', 0)
+                electric_power_kw = pump.get('electric_power_kw', 0)
+            else:
+                # Alte Struktur (Fallback)
+                volume_flow_m3h = hydraulics_result.get('volume_flow_m3_h', 0)
+                volume_flow_lmin = volume_flow_m3h * 1000 / 60
+                total_pressure_drop_mbar = hydraulics_result.get('total_pressure_drop_mbar', 0)
+                total_pressure_drop_bar = total_pressure_drop_mbar / 1000
+                pressure_drop_borehole = hydraulics_result.get('pressure_drop_per_borehole_mbar', 0) / 1000
+                reynolds = hydraulics_result.get('reynolds_number', 0)
+                velocity = 0
+                hydraulic_power = hydraulics_result.get('pump_power_w', 0)
+                electric_power = hydraulic_power
+                electric_power_kw = electric_power / 1000
+            
             hydraulics_data = [
                 ['Parameter', 'Wert', 'Einheit'],
-                ['Benötigter Volumenstrom', f"{hydraulics_result.get('volume_flow_m3_h', 0):.3f}", 'm³/h'],
-                ['Volumenstrom', f"{hydraulics_result.get('volume_flow_m3_h', 0)*1000/60:.2f}", 'L/min'],
-                ['Druckverlust pro Bohrung', f"{hydraulics_result.get('pressure_drop_per_borehole_mbar', 0):.1f}", 'mbar'],
-                ['System-Gesamtdruckverlust', f"{hydraulics_result.get('total_pressure_drop_mbar', 0):.1f}", 'mbar'],
-                ['Benötigte Pumpenleistung', f"{hydraulics_result.get('pump_power_w', 0):.1f}", 'W'],
-                ['Reynolds-Zahl', f"{hydraulics_result.get('reynolds_number', 0):.0f}", '-'],
-                ['Strömungsregime', hydraulics_result.get('flow_regime', 'N/A'), '']
+                ['Volumenstrom (gesamt)', f"{volume_flow_m3h:.3f}", 'm³/h'],
+                ['Volumenstrom', f"{volume_flow_lmin:.2f}", 'L/min'],
+                ['Strömungsgeschwindigkeit', f"{velocity:.2f}", 'm/s'],
+                ['Reynolds-Zahl', f"{reynolds:.0f}", '-'],
+                ['Druckverlust Bohrungen', f"{pressure_drop_borehole:.2f}", 'bar'],
+                ['System-Gesamtdruckverlust', f"{total_pressure_drop_bar:.2f}", 'bar'],
+                ['System-Gesamtdruckverlust', f"{total_pressure_drop_mbar:.0f}", 'mbar'],
+                ['Hydraulische Pumpenleistung', f"{hydraulic_power:.0f}", 'W'],
+                ['Elektrische Pumpenleistung', f"{electric_power:.0f}", 'W'],
+                ['Elektrische Pumpenleistung', f"{electric_power_kw:.2f}", 'kW']
             ]
             
             hydraulics_table = Table(hydraulics_data, colWidths=[9*cm, 5*cm, 3*cm])
             hydraulics_table.setStyle(self._get_table_style())
             story.append(hydraulics_table)
+            story.append(Spacer(1, 1*cm))
+        
+        # === VDI 4640 BERECHNUNGSERGEBNISSE (NEU in V3.2) ===
+        if vdi4640_result:
+            story.append(PageBreak())
+            story.append(Paragraph("VDI 4640 Berechnungsergebnisse", self.styles['CustomHeading']))
+            story.append(Spacer(1, 0.5*cm))
+            
+            # Auslegungsfall
+            design_case = vdi4640_result.design_case if hasattr(vdi4640_result, 'design_case') else vdi4640_result.get('design_case', 'N/A')
+            story.append(Paragraph(f"<b>Auslegungsfall:</b> {design_case.upper()}", self.styles['CustomBody']))
+            story.append(Spacer(1, 0.3*cm))
+            
+            # Sondenlängen
+            vdi_data = [
+                ['Parameter', 'Wert', 'Einheit'],
+                ['Erforderliche Sondenlänge (Heizen)', f"{vdi4640_result.required_depth_heating if hasattr(vdi4640_result, 'required_depth_heating') else vdi4640_result.get('required_depth_heating', 0):.1f}", 'm'],
+                ['Erforderliche Sondenlänge (Kühlen)', f"{vdi4640_result.required_depth_cooling if hasattr(vdi4640_result, 'required_depth_cooling') else vdi4640_result.get('required_depth_cooling', 0):.1f}", 'm'],
+                ['Ausgelegte Sondenlänge', f"{vdi4640_result.required_depth_final if hasattr(vdi4640_result, 'required_depth_final') else vdi4640_result.get('required_depth_final', 0):.1f}", 'm'],
+                ['Min. WP-Austrittstemp. (Heizen)', f"{vdi4640_result.t_wp_aus_heating_min if hasattr(vdi4640_result, 't_wp_aus_heating_min') else vdi4640_result.get('t_wp_aus_heating_min', 0):.2f}", '°C'],
+                ['Max. WP-Austrittstemp. (Kühlen)', f"{vdi4640_result.t_wp_aus_cooling_max if hasattr(vdi4640_result, 't_wp_aus_cooling_max') else vdi4640_result.get('t_wp_aus_cooling_max', 0):.2f}", '°C']
+            ]
+            
+            vdi_table = Table(vdi_data, colWidths=[9*cm, 5*cm, 3*cm])
+            vdi_table.setStyle(self._get_table_style())
+            story.append(vdi_table)
+            story.append(Spacer(1, 0.5*cm))
+            
+            # Thermische Widerstände
+            story.append(Paragraph("Thermische Widerstände:", self.styles['CustomBody']))
+            resistances_data = [
+                ['Parameter', 'Wert', 'Einheit'],
+                ['R_Grundlast (10 Jahre)', f"{vdi4640_result.r_grundlast if hasattr(vdi4640_result, 'r_grundlast') else vdi4640_result.get('r_grundlast', 0):.6f}", 'm·K/W'],
+                ['R_Periodisch (1 Monat)', f"{vdi4640_result.r_per if hasattr(vdi4640_result, 'r_per') else vdi4640_result.get('r_per', 0):.6f}", 'm·K/W'],
+                ['R_Peak (6 Stunden)', f"{vdi4640_result.r_peak if hasattr(vdi4640_result, 'r_peak') else vdi4640_result.get('r_peak', 0):.6f}", 'm·K/W'],
+                ['R_Bohrloch', f"{vdi4640_result.r_borehole if hasattr(vdi4640_result, 'r_borehole') else vdi4640_result.get('r_borehole', 0):.6f}", 'm·K/W']
+            ]
+            
+            resistances_table = Table(resistances_data, colWidths=[9*cm, 5*cm, 3*cm])
+            resistances_table.setStyle(self._get_table_style())
+            story.append(resistances_table)
+            story.append(Spacer(1, 0.5*cm))
+            
+            # Lasten
+            story.append(Paragraph("Lasten:", self.styles['CustomBody']))
+            loads_data = [
+                ['Lasttyp', 'Heizen [kW]', 'Kühlen [kW]'],
+                ['Nettogrundlast', 
+                 f"{vdi4640_result.q_nettogrundlast_heating/1000 if hasattr(vdi4640_result, 'q_nettogrundlast_heating') else vdi4640_result.get('q_nettogrundlast_heating', 0)/1000:.3f}",
+                 f"{vdi4640_result.q_nettogrundlast_cooling/1000 if hasattr(vdi4640_result, 'q_nettogrundlast_cooling') else vdi4640_result.get('q_nettogrundlast_cooling', 0)/1000:.3f}"],
+                ['Periodisch', 
+                 f"{vdi4640_result.q_per_heating/1000 if hasattr(vdi4640_result, 'q_per_heating') else vdi4640_result.get('q_per_heating', 0)/1000:.3f}",
+                 f"{vdi4640_result.q_per_cooling/1000 if hasattr(vdi4640_result, 'q_per_cooling') else vdi4640_result.get('q_per_cooling', 0)/1000:.3f}"],
+                ['Peak', 
+                 f"{vdi4640_result.q_peak_heating/1000 if hasattr(vdi4640_result, 'q_peak_heating') else vdi4640_result.get('q_peak_heating', 0)/1000:.3f}",
+                 f"{vdi4640_result.q_peak_cooling/1000 if hasattr(vdi4640_result, 'q_peak_cooling') else vdi4640_result.get('q_peak_cooling', 0)/1000:.3f}"]
+            ]
+            
+            loads_table = Table(loads_data, colWidths=[6*cm, 5*cm, 5*cm])
+            loads_table.setStyle(self._get_table_style())
+            story.append(loads_table)
             story.append(Spacer(1, 1*cm))
         
         # === BOHRFELD-SIMULATION (NEU in V3.2) ===
@@ -379,7 +499,7 @@ class PDFReportGenerator:
         story.append(Spacer(1, 2*cm))
         footer = Paragraph(
             "<para align='center'><font size=8>"
-            "Dieser Bericht wurde automatisch mit dem Geothermie Erdsonden-Berechnungstool V3.2 erstellt.<br/>"
+            "Dieser Bericht wurde automatisch mit dem Geothermie Erdsonden-Berechnungstool V3.2.1 erstellt.<br/>"
             "Open Source Software - MIT Lizenz<br/>"
             "Berechnungen nach VDI 4640, Eskilson (1987), Hellström (1991) und pygfunction (2024)"
             "</font></para>",
