@@ -50,3 +50,7 @@ Keine Migration erforderlich. V3.2.1 ist vollständig kompatibel mit V3.2.0 `.ge
 
 **Vollständige Dokumentation**: Siehe [README.md](README.md) und [VDI4640_SCHNELLANLEITUNG.py](VDI4640_SCHNELLANLEITUNG.py)
 
+
+
+
+

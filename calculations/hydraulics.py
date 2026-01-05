@@ -162,7 +162,8 @@ class HydraulicsCalculator:
         pipe_inner_diameter: float,
         volume_flow_total_m3h: float,
         antifreeze_concentration: float = 25,
-        additional_losses_bar: float = 0.5
+        additional_losses_bar: float = 0.5,
+        circuits_per_borehole: int = 1
     ) -> Dict[str, float]:
         """
         Berechnet den Gesamt-Druckverlust des Systems.
@@ -179,11 +180,17 @@ class HydraulicsCalculator:
         Returns:
             Dictionary mit Druckverlusten
         """
-        # Volumenstrom pro Kreis
+        # Volumenstrom pro System-Kreis
         volume_flow_per_circuit = volume_flow_total_m3h / num_circuits
         
-        # Rohrlänge pro Kreis (Hin- und Rückweg + Horizontal)
-        pipe_length_per_circuit = 2 * borehole_depth + 50  # 50m horizontal geschätzt
+        # Anzahl Bohrungen pro System-Kreis
+        num_boreholes_per_circuit = num_boreholes / num_circuits if num_circuits > 0 else num_boreholes
+        
+        # Rohrlänge pro System-Kreis:
+        # - Pro Bohrung: circuits_per_borehole × 2 × Tiefe (jeder Kreis hat Vorlauf + Rücklauf)
+        #   Bei 4-Rohr-Systemen: 2 Kreise pro Bohrung = 2 × 2 × Tiefe = 4 × Tiefe pro Bohrung
+        # - Horizontale Leitung: geschätzt 50m pro System-Kreis
+        pipe_length_per_circuit = num_boreholes_per_circuit * circuits_per_borehole * 2 * borehole_depth + 50
         
         # Druckverlust pro Kreis
         pressure_drop_circuit = HydraulicsCalculator.calculate_pressure_drop(
@@ -300,6 +307,9 @@ if __name__ == "__main__":
     )
     print(f"   Hydraulische Leistung: {pump['hydraulic_power_w']:.0f} W")
     print(f"   Elektrische Leistung: {pump['electric_power_w']:.0f} W ({pump['electric_power_kw']:.2f} kW)")
+
+
+
 
 
 

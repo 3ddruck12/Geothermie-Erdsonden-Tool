@@ -8,6 +8,8 @@ Diese Implementierung berücksichtigt:
 """
 
 import math
+import os
+from datetime import datetime
 from typing import Dict, Tuple, List, Optional
 from dataclasses import dataclass
 
@@ -68,6 +70,40 @@ class VDI4640Calculator:
     - Berechnung der Wärmepumpenaustrittstemperatur
     """
     
+    def __init__(self, debug=False, debug_file=None):
+        """
+        Args:
+            debug: Wenn True, werden alle Berechnungsschritte protokolliert
+            debug_file: Pfad zur Debug-Datei (optional, Standard: vdi4640_debug.log)
+        """
+        self.debug = debug
+        self.debug_file = debug_file or "vdi4640_debug.log"
+        if self.debug:
+            self._init_debug_file()
+    
+    def _init_debug_file(self):
+        """Initialisiert die Debug-Datei."""
+        with open(self.debug_file, 'w', encoding='utf-8') as f:
+            f.write("=" * 80 + "\n")
+            f.write("VDI 4640 DEBUG-PROTOKOLL\n")
+            f.write(f"Erstellt: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write("=" * 80 + "\n\n")
+    
+    def _debug(self, message: str, values: Dict = None):
+        """Schreibt Debug-Informationen in die Datei."""
+        if not self.debug:
+            return
+        
+        with open(self.debug_file, 'a', encoding='utf-8') as f:
+            f.write(f"{message}\n")
+            if values:
+                for key, value in values.items():
+                    if isinstance(value, float):
+                        f.write(f"  {key}: {value:.6f}\n")
+                    else:
+                        f.write(f"  {key}: {value}\n")
+            f.write("\n")
+    
     def calculate_complete(
         self,
         # Bodeneigenschaften
@@ -110,6 +146,26 @@ class VDI4640Calculator:
             VDI4640Result mit allen Berechnungsdetails
         """
         
+        # === DEBUG: Eingabeparameter ===
+        self._debug("=== EINGABEPARAMETER ===", {
+            "Wärmeleitfähigkeit": ground_thermal_conductivity,
+            "Wärmediffusivität": ground_thermal_diffusivity,
+            "Ungestörte Bodentemperatur": t_undisturbed,
+            "Bohrdurchmesser": borehole_diameter,
+            "Startwert Tiefe": borehole_depth_initial,
+            "Anzahl Bohrungen": n_boreholes,
+            "R_Bohrloch": r_borehole,
+            "Jahres-Heizenergie": annual_heating_demand,
+            "Spitzenlast Heizen": peak_heating_load,
+            "Jahres-Kühlenergie": annual_cooling_demand,
+            "Spitzenlast Kühlen": peak_cooling_load,
+            "COP Heizen": heat_pump_cop_heating,
+            "COP Kühlen": heat_pump_cop_cooling,
+            "T_Fluid_min": t_fluid_min_required,
+            "T_Fluid_max": t_fluid_max_required,
+            "Delta_T_Fluid": delta_t_fluid
+        })
+        
         # Standardwerte für monatliche Faktoren
         if monthly_heating_factors is None:
             monthly_heating_factors = [
@@ -131,6 +187,15 @@ class VDI4640Calculator:
             borehole_diameter / 2000.0  # mm → m Radius
         )
         
+        self._debug("=== SCHRITT 1: THERMISCHE WIDERSTÄNDE ===", {
+            "R_Grundlast (10 Jahre)": resistances['r_grundlast'],
+            "R_Periodisch (1 Monat)": resistances['r_per'],
+            "R_Peak (6 Stunden)": resistances['r_peak'],
+            "g_Grundlast": resistances['g_grundlast'],
+            "g_Periodisch": resistances['g_per'],
+            "g_Peak": resistances['g_peak']
+        })
+        
         # === SCHRITT 2: Lasten berechnen ===
         
         # HEIZLASTEN
@@ -150,6 +215,15 @@ class VDI4640Calculator:
             cop=heat_pump_cop_cooling,
             is_heating=False
         )
+        
+        self._debug("=== SCHRITT 2: LASTEN ===", {
+            "HEIZEN - Q_Nettogrundlast": loads_heating['q_nettogrundlast'],
+            "HEIZEN - Q_Periodisch": loads_heating['q_per'],
+            "HEIZEN - Q_Peak": loads_heating['q_peak'],
+            "KÜHLEN - Q_Nettogrundlast": loads_cooling['q_nettogrundlast'],
+            "KÜHLEN - Q_Periodisch": loads_cooling['q_per'],
+            "KÜHLEN - Q_Peak": loads_cooling['q_peak']
+        })
         
         # === SCHRITT 3: Sondenlänge für HEIZEN berechnen ===
         h_heating = self._calculate_borehole_length(
@@ -181,6 +255,11 @@ class VDI4640Calculator:
             is_heating=False
         )
         
+        self._debug("=== SCHRITT 3 & 4: SONDENLÄNGE ===", {
+            "H_Heizen": h_heating,
+            "H_Kühlen": h_cooling
+        })
+        
         # === SCHRITT 5: Auslegungsrelevanten Fall bestimmen ===
         if h_heating > h_cooling:
             h_final = h_heating
@@ -188,6 +267,11 @@ class VDI4640Calculator:
         else:
             h_final = h_cooling
             design_case = "cooling"
+        
+        self._debug("=== SCHRITT 5: AUSLEGUNGSFALL ===", {
+            "Auslegungsfall": design_case,
+            "Erforderliche Sondenlänge": h_final
+        })
         
         # === SCHRITT 6: Wärmepumpenaustrittstemperaturen berechnen ===
         
@@ -224,6 +308,18 @@ class VDI4640Calculator:
             delta_t_fluid=delta_t_fluid,
             is_heating=False
         )
+        
+        # === DEBUG: Finale Ergebnisse ===
+        self._debug("=== FINALE ERGEBNISSE ===", {
+            "Erforderliche Sondenlänge": h_final,
+            "Anzahl Bohrungen": n_boreholes,
+            "Gesamtlänge": h_final * n_boreholes,
+            "WP-Austrittstemp. Heizen": t_wp_aus_heating,
+            "WP-Austrittstemp. Kühlen": t_wp_aus_cooling,
+            "Delta_T_Grundlast (Heizen)": deltas_heating[0],
+            "Delta_T_Periodisch (Heizen)": deltas_heating[1],
+            "Delta_T_Peak (Heizen)": deltas_heating[2]
+        })
         
         # === ERGEBNIS ===
         return VDI4640Result(
@@ -290,16 +386,38 @@ class VDI4640Calculator:
                 f"Prüfe Temperaturgrenzen!"
             )
         
-        # VDI 4640 Formel
-        numerator = (
-            abs(q_grundlast) * (r_grundlast + r_borehole) +
-            abs(q_per) * (r_per + r_borehole) +
-            abs(q_peak) * (r_peak + r_borehole)
-        )
+        # VDI 4640 Formel - Schritt für Schritt
+        term1 = abs(q_grundlast) * (r_grundlast + r_borehole)
+        term2 = abs(q_per) * (r_per + r_borehole)
+        term3 = abs(q_peak) * (r_peak + r_borehole)
         
+        numerator = term1 + term2 + term3
         denominator = delta_t_reaction * n_boreholes
         
         h_sonde = numerator / denominator
+        
+        # Debug-Ausgabe
+        if self.debug:
+            mode = "HEIZEN" if is_heating else "KÜHLEN"
+            self._debug(f"=== SONDENLÄNGE BERECHNUNG ({mode}) ===", {
+                "Q_Grundlast": q_grundlast,
+                "Q_Periodisch": q_per,
+                "Q_Peak": q_peak,
+                "R_Grundlast": r_grundlast,
+                "R_Periodisch": r_per,
+                "R_Peak": r_peak,
+                "R_Bohrloch": r_borehole,
+                "T_Erdreich": t_ground,
+                "T_Fluid_Limit": t_fluid_limit,
+                "Delta_T_Reaktion": delta_t_reaction,
+                "Anzahl Bohrungen": n_boreholes,
+                "Term 1 (Q_Grundlast)": term1,
+                "Term 2 (Q_Periodisch)": term2,
+                "Term 3 (Q_Peak)": term3,
+                "Zähler (Summe)": numerator,
+                "Nenner": denominator,
+                "H_Sonde": h_sonde
+            })
         
         return h_sonde
     
@@ -427,6 +545,23 @@ class VDI4640Calculator:
         
         # Spitzenlast
         q_peak = peak_load * 1000 * efficiency_factor  # W
+        
+        # Debug-Ausgabe
+        if self.debug:
+            mode = "HEIZEN" if is_heating else "KÜHLEN"
+            self._debug(f"=== LASTEN BERECHNUNG ({mode}) ===", {
+                "Jahresenergie (Eingabe)": annual_demand,
+                "Spitzenlast (Eingabe)": peak_load,
+                "COP": cop,
+                "Effizienzfaktor": efficiency_factor,
+                "Jahresenergie (Erdreich)": annual_extraction_kwh,
+                "Max. Monatsfaktor": max_monthly_factor,
+                "Monatsenergie (Eingabe)": monthly_energy_kwh,
+                "Monatsenergie (Erdreich)": monthly_extraction_kwh,
+                "Q_Nettogrundlast": q_nettogrundlast,
+                "Q_Periodisch": q_per,
+                "Q_Peak": q_peak
+            })
         
         return {
             'q_nettogrundlast': q_nettogrundlast,

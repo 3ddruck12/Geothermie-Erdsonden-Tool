@@ -379,20 +379,36 @@ Frostschutzkonzentration!'''
             'title': 'Volumenstrom Wärmeträgerflüssigkeit',
             'text': '''Durchflussrate der Sole durch die Erdwärmesonde.
 
-Typische Werte:
-• Einfamilienhaus: 0.0003-0.0006 m³/s (1.1-2.2 m³/h)
-• Pro kW Heizleistung: ~0.15 L/min
-• 6 kW WP: ~0.9 L/min = 0.00015 m³/s
+📊 BEREchnung:
+V̇ = Q / (c_p × ρ × ΔT)
 
-Wichtig:
-- Höherer Durchfluss = besserer Wärmeübergang
-- Aber auch höherer Druckverlust
-- Optimum: Re ≈ 3000-5000 (turbulent)
+Q = Entzugsleistung [kW]
+c_p = Spezifische Wärmekapazität [J/kg·K]
+ρ = Dichte [kg/m³]
+ΔT = Temperaturdifferenz Vor-/Rücklauf [K]
 
-Zu niedrig: Schlechter Wärmeübergang
-Zu hoch: Hohe Pumpenleistung, Lärm
+✅ EMPFOHLENE WERTE (Sole-Wasser-WP):
+• 0,8 - 1,5 l/s pro kW Wärmeleistung
+• ≈ 2,88 - 5,4 m³/h pro kW
+• Mindestens 2,1 m³/h pro Sonde (turbulente Strömung)
+• Temperaturdifferenz: 3 - 5 K
 
-Faustformel: 3 L/min pro kW Entzugsleistung'''
+📋 BEISPIEL (8 kW Wärmepumpe, COP=4):
+• Entzugsleistung: 6 kW
+• Empfohlen: 4,8 - 9 l/s (≈ 17 - 32 m³/h)
+• Bei ΔT = 3 K: ≈ 1,7 m³/h
+• Bei ΔT = 4 K: ≈ 1,3 m³/h
+
+⚙️ AUTOMATISCHE BEREchnung:
+Der Volumenstrom wird automatisch aus Entzugsleistung, Temperaturdifferenz (ΔT) und Frostschutzkonzentration berechnet und ins Feld übernommen.
+
+✏️ MANUELLE EINGABE:
+Aktivieren Sie "Volumenstrom manuell eingeben", um den Wert direkt zu setzen.
+
+⚠️ WICHTIG:
+• Zu niedrig: Schlechter Wärmeübergang, höhere Vorlauftemperatur nötig → JAZ-Reduktion 8-15%
+• Zu hoch: Hoher Druckverlust, hohe Pumpenleistung → Parasitäre Verluste 3-8%
+• Optimum: Reynolds-Zahl ≈ 3000-5000 (turbulent)'''
         },
         'pipe_wall_thickness': {
             'title': 'Rohr-Wandstärke',

@@ -45,7 +45,9 @@ class GeothermieGUIProfessional:
         self.pipe_parser = PipeParser()
         self.eed_parser = EEDParser()
         self.calculator = BoreholeCalculator()
-        self.vdi4640_calc = VDI4640Calculator()
+        # VDI 4640 Calculator mit Debug-Modus
+        debug_file = os.path.join(os.path.expanduser("~"), "vdi4640_debug.log")
+        self.vdi4640_calc = VDI4640Calculator(debug=True, debug_file=debug_file)
         self.hydraulics_calc = HydraulicsCalculator()
         self.pdf_generator = PDFReportGenerator()
         self.pvgis_client = PVGISClient()
@@ -413,8 +415,8 @@ class GeothermieGUIProfessional:
         self._add_entry(parent, row, "Anzahl Solekreise:", "num_circuits", "1", self.hydraulics_entries)
         row += 1
         
-        # Fluid-Eigenschaften (werden automatisch befüllt)
-        self._add_entry(parent, row, "Volumenstrom [m³/s]:", "fluid_flow_rate", "0.0005", self.entries, "fluid_flow_rate")
+        # Volumenstrom (immer editierbar, wird automatisch berechnet) - jetzt in m³/h
+        self._add_entry(parent, row, "Volumenstrom [m³/h]:", "fluid_flow_rate", "1.8", self.entries, "fluid_flow_rate")
         row += 1
         self._add_entry(parent, row, "Wärmeleitfähigkeit [W/m·K]:", "fluid_thermal_cond", "0.48", self.entries, "fluid_thermal_cond")
         row += 1
@@ -442,7 +444,14 @@ class GeothermieGUIProfessional:
     
     def _add_heat_pump_section(self, parent, row):
         """Wärmepumpen-Sektion."""
-        self._add_entry(parent, row, "Wärmepumpenleistung [kW]:", "heat_pump_power", "6.0", self.heat_pump_entries, "heat_pump_power")
+        heat_power_entry = ttk.Entry(parent, width=32)
+        heat_power_entry.insert(0, "6.0")
+        heat_power_entry.grid(row=row, column=1, sticky="w", padx=10, pady=5)
+        self.heat_pump_entries["heat_pump_power"] = heat_power_entry
+        ttk.Label(parent, text="Wärmepumpenleistung [kW]:").grid(row=row, column=0, sticky="w", padx=10, pady=5)
+        InfoButton.create_info_button(parent, row, 2, "heat_pump_power")
+        heat_power_entry.bind("<KeyRelease>", lambda e: self._on_parameter_changed())
+        row += 1
         row += 1
         self._add_entry(parent, row, "COP Heizen (Coefficient of Performance):", "heat_pump_cop", "4.0", self.entries, "cop")
         row += 1
@@ -472,7 +481,13 @@ class GeothermieGUIProfessional:
         row += 1
         self._add_entry(parent, row, "Max. Fluidtemperatur [°C]:", "max_fluid_temp", "15.0", self.entries)
         row += 1
-        self._add_entry(parent, row, "Temperaturdifferenz Fluid [K]:", "delta_t_fluid", "3.0", self.entries)
+        delta_t_entry = ttk.Entry(parent, width=32)
+        delta_t_entry.insert(0, "3.0")
+        delta_t_entry.grid(row=row, column=1, sticky="w", padx=10, pady=5)
+        self.entries["delta_t_fluid"] = delta_t_entry
+        ttk.Label(parent, text="Temperaturdifferenz Fluid [K]:").grid(row=row, column=0, sticky="w", padx=10, pady=5)
+        delta_t_entry.bind("<KeyRelease>", lambda e: self._on_parameter_changed())
+        row += 1
         row += 1
         return row
     
@@ -549,6 +564,10 @@ class GeothermieGUIProfessional:
         # Optional: Info-Button
         if info_key:
             InfoButton.create_info_button(parent, row, 2, info_key)
+        
+        # Spezialbehandlung für Anzahl Bohrungen: Event-Handler für automatische Solekreise
+        if key == "num_boreholes":
+            entry.bind("<KeyRelease>", self._on_borehole_count_changed)
     
     def _create_results_tab(self):
         """Erstellt den Ergebnisse-Tab."""
@@ -778,6 +797,14 @@ class GeothermieGUIProfessional:
         """Wenn ein Fluid ausgewählt wird."""
         self._update_fluid_properties()
     
+    def _on_parameter_changed(self):
+        """Wird aufgerufen, wenn sich Parameter ändern, die den Volumenstrom beeinflussen."""
+        # Automatische Neuberechnung
+        try:
+            self._calculate_hydraulics()
+        except:
+            pass  # Fehler ignorieren, wenn noch nicht alle Parameter gesetzt sind
+    
     def _on_fluid_temperature_changed(self):
         """Wenn die Betriebstemperatur geändert wird."""
         self._update_fluid_properties()
@@ -967,25 +994,61 @@ class GeothermieGUIProfessional:
                     antifreeze_conc = 25.0  # Standard: 25%
             
             num_circuits = int(self.hydraulics_entries["num_circuits"].get())
-            depth = float(self.entries["initial_depth"].get())
             num_boreholes = int(self.borehole_entries["num_boreholes"].get())
+            
+            # Verwende tatsächliche berechnete Tiefe (aus VDI 4640), falls vorhanden
+            if hasattr(self, 'vdi4640_result') and self.vdi4640_result and self.vdi4640_result.required_depth_final > 0:
+                depth = self.vdi4640_result.required_depth_final
+            else:
+                depth = float(self.entries["initial_depth"].get())
+            
             # Konvertiere mm → m für Innendurchmesser-Berechnung
             pipe_outer_d_m = float(self.entries["pipe_outer_diameter"].get()) / 1000.0
             pipe_thickness_m = float(self.entries["pipe_thickness"].get()) / 1000.0
             pipe_inner_d = pipe_outer_d_m - 2 * pipe_thickness_m
             
-            # Hole COP für Volumenstrom-Berechnung
+            # Hole COP für Kälteleistung
             cop = float(self.entries["heat_pump_cop"].get())
             
-            # Volumenstrom berechnen (verwendet COP statt hardcoded 3.0)
+            # Berechne Entzugsleistung (Kälteleistung) aus dem Erdreich
+            # Q_Entzug = Q_WP × (COP - 1) / COP
+            extraction_power = heat_power * (cop - 1) / cop
+            
+            # Hole Temperaturdifferenz für Volumenstrom-Berechnung (BUG-FIX: nicht COP!)
+            delta_t_fluid = float(self.entries.get("delta_t_fluid", ttk.Entry()).get() or "3.0")
+            
+            # Volumenstrom berechnen (KORREKT: delta_t_fluid statt COP)
+            # Verwende Entzugsleistung für physikalisch korrekte Berechnung
+            # Die Empfehlung 0.8-1.5 l/s/kW bezieht sich auf Wärmeleistung (mit Sicherheitsfaktor)
             flow = self.hydraulics_calc.calculate_required_flow_rate(
-                heat_power, cop, antifreeze_conc
+                extraction_power, delta_t_fluid, antifreeze_conc
             )
+            
+            # Automatische Übernahme des berechneten Volumenstroms (in m³/h)
+            calculated_flow_m3h = flow['volume_flow_m3_h']
+            flow_entry = self.entries.get("fluid_flow_rate")
+            if flow_entry:
+                flow_entry.delete(0, tk.END)
+                flow_entry.insert(0, f"{calculated_flow_m3h:.3f}")
+            
+            # Warnung bei abweichenden Werten (wird später im Ergebnis-Text angezeigt)
+            calculated_flow_m3s = flow['volume_flow_m3_s']
+            flow_warnings = self._check_flow_rate_warnings(
+                heat_power, calculated_flow_m3s, num_boreholes, 
+                delta_t_fluid, antifreeze_conc, extraction_power
+            )
+            
+            # Bestimme Anzahl Kreise pro Bohrung basierend auf Rohrkonfiguration
+            pipe_config = self.pipe_config_var.get()
+            if "4-rohr" in pipe_config.lower() or "double" in pipe_config.lower():
+                circuits_per_borehole = 2  # 4-Rohr-Systeme haben 2 Kreise pro Bohrung
+            else:
+                circuits_per_borehole = 1  # Single-U hat 1 Kreis pro Bohrung
             
             # System-Druckverlust
             system = self.hydraulics_calc.calculate_total_system_pressure_drop(
                 depth, num_boreholes, num_circuits, pipe_inner_d,
-                flow['volume_flow_m3_h'], antifreeze_conc
+                flow['volume_flow_m3_h'], antifreeze_conc, circuits_per_borehole
             )
             
             # Pumpenleistung
@@ -1011,9 +1074,14 @@ class GeothermieGUIProfessional:
             text += "=" * 60 + "\n\n"
             text += f"Wärmeleistung: {heat_power} kW\n"
             text += f"COP: {cop}\n"
-            text += f"Kälteleistung: {cold_power:.2f} kW\n"
+            text += f"Entzugsleistung (Kälteleistung): {extraction_power:.2f} kW\n"
             text += f"Frostschutz: {antifreeze_conc} Vol%\n"
-            text += f"Anzahl Kreise: {num_circuits}\n\n"
+            text += f"Anzahl System-Kreise: {num_circuits}\n"
+            text += f"Anzahl Bohrungen: {num_boreholes}\n"
+            text += f"Kreise pro Bohrung: {circuits_per_borehole}\n"
+            text += f"Bohrtiefe: {depth:.1f} m\n"
+            text += f"Bohrungen pro System-Kreis: {num_boreholes / num_circuits:.1f}\n"
+            text += f"Rohrlänge pro System-Kreis: {system['pipe_length_per_circuit_m']:.1f} m\n\n"
             text += f"Volumenstrom:\n"
             text += f"  Gesamt: {flow['volume_flow_m3_h']:.3f} m³/h ({flow['volume_flow_l_min']:.1f} l/min)\n"
             text += f"  Pro Kreis: {system['volume_flow_per_circuit_m3h']:.3f} m³/h\n"
@@ -1026,6 +1094,11 @@ class GeothermieGUIProfessional:
             text += f"Pumpe:\n"
             text += f"  Hydraulische Leistung: {pump['hydraulic_power_w']:.0f} W\n"
             text += f"  Elektrische Leistung: {pump['electric_power_w']:.0f} W ({pump['electric_power_kw']:.2f} kW)\n\n"
+            
+            # Warnungen einfügen (falls vorhanden)
+            if flow_warnings:
+                text += flow_warnings + "\n\n"
+            
             text += "=" * 60 + "\n"
             
             self.hydraulics_result_text.delete("1.0", tk.END)
@@ -1035,6 +1108,108 @@ class GeothermieGUIProfessional:
             
         except Exception as e:
             messagebox.showerror("Fehler", f"Fehler bei Hydraulik-Berechnung: {str(e)}")
+    
+    def _on_borehole_count_changed(self, event=None):
+        """Wird aufgerufen, wenn sich die Anzahl der Bohrungen ändert."""
+        try:
+            num_boreholes = int(self.borehole_entries["num_boreholes"].get() or "1")
+            pipe_config = self.pipe_config_var.get()
+            
+            # Bei 4-Rohr-Systemen: Anzahl Kreise = Anzahl Bohrungen × 2
+            # Bei Single-U: Anzahl Kreise = Anzahl Bohrungen
+            if "4-rohr" in pipe_config.lower() or "double" in pipe_config.lower():
+                suggested_circuits = num_boreholes * 2
+            else:
+                suggested_circuits = num_boreholes
+            
+            # Setze automatisch die Anzahl der Solekreise
+            if "num_circuits" in self.hydraulics_entries:
+                self.hydraulics_entries["num_circuits"].delete(0, tk.END)
+                self.hydraulics_entries["num_circuits"].insert(0, str(suggested_circuits))
+        except (ValueError, KeyError):
+            pass  # Ignoriere Fehler bei leerem Feld oder fehlendem Eintrag
+    
+    def _check_flow_rate_warnings(self, heat_power_kw: float, flow_rate_m3s: float, num_boreholes: int,
+                                   current_delta_t: float, antifreeze_conc: float, extraction_power: float):
+        """Prüft Volumenstrom auf empfohlene Werte und gibt Warnungen als Text zurück."""
+        # Empfohlene Werte: 0.8 - 1.5 l/s pro kW (für Sole-Wasser-WP)
+        recommended_min_ls_per_kw = 0.8  # l/s pro kW
+        recommended_max_ls_per_kw = 1.5   # l/s pro kW
+        
+        # Umrechnung: m³/s → l/s
+        flow_rate_ls = flow_rate_m3s * 1000
+        flow_rate_ls_per_kw = flow_rate_ls / heat_power_kw if heat_power_kw > 0 else 0
+        
+        # Mindestwert pro Sonde: 2.1 m³/h (≈0.000583 m³/s)
+        min_per_borehole_m3h = 2.1
+        flow_rate_m3h = flow_rate_m3s * 3600
+        flow_per_borehole_m3h = flow_rate_m3h / num_boreholes if num_boreholes > 0 else 0
+        
+        warnings = []
+        
+        # Prüfe Empfehlung pro kW (zeige auch in m³/h)
+        flow_rate_m3h = flow_rate_m3s * 3600
+        recommended_min_m3h = recommended_min_ls_per_kw * heat_power_kw * 3.6  # l/s → m³/h
+        recommended_max_m3h = recommended_max_ls_per_kw * heat_power_kw * 3.6
+        
+        if flow_rate_ls_per_kw < recommended_min_ls_per_kw:
+            # Berechne optimale ΔT für empfohlenen Mindest-Volumenstrom
+            # V̇ = Q / (c_p × ρ × ΔT) → ΔT = Q / (c_p × ρ × V̇)
+            props = self.hydraulics_calc._get_fluid_properties(antifreeze_conc)
+            target_flow_m3s = (recommended_min_ls_per_kw * heat_power_kw) / 1000  # l/s → m³/s
+            optimal_delta_t = (extraction_power * 1000) / (props['heat_capacity'] * props['density'] * target_flow_m3s)
+            
+            # Schätze Pumpenleistung bei optimalem Volumenstrom (grob)
+            # Druckverlust steigt quadratisch mit Volumenstrom
+            if hasattr(self, 'hydraulics_result') and self.hydraulics_result:
+                current_pump_w = self.hydraulics_result.get('pump', {}).get('electric_power_w', 0)
+                flow_ratio = target_flow_m3s / flow_rate_m3s if flow_rate_m3s > 0 else 1
+                estimated_pump_w = current_pump_w * (flow_ratio ** 2)
+            else:
+                estimated_pump_w = 150  # Schätzwert
+            
+            warnings.append(
+                f"⚠️ VOLUMENSTROM ZU NIEDRIG:\n"
+                f"   Aktuell: {flow_rate_m3h:.2f} m³/h ({flow_rate_ls_per_kw:.2f} l/s/kW)\n"
+                f"   Empfohlen: {recommended_min_m3h:.1f} - {recommended_max_m3h:.1f} m³/h\n"
+                f"   \n"
+                f"   💡 OPTIMIERUNGSVORSCHLAG:\n"
+                f"   • ΔT von {current_delta_t:.1f}K auf ca. {optimal_delta_t:.1f}K reduzieren\n"
+                f"   • Volumenstrom steigt dann auf ca. {target_flow_m3s * 3600:.2f} m³/h\n"
+                f"   • Pumpenleistung steigt auf ca. {estimated_pump_w:.0f} W\n"
+                f"   \n"
+                f"   ⚡ FOLGEN BEI ZU NIEDRIGEM VOLUMENSTROM:\n"
+                f"   • Schlechterer Wärmeübergang\n"
+                f"   • Höhere Vorlauftemperatur nötig\n"
+                f"   • JAZ-Reduktion: 8-15%"
+            )
+        elif flow_rate_ls_per_kw > recommended_max_ls_per_kw:
+            warnings.append(
+                f"⚠️ VOLUMENSTROM ZU HOCH:\n"
+                f"   Aktuell: {flow_rate_m3h:.2f} m³/h ({flow_rate_ls_per_kw:.2f} l/s/kW)\n"
+                f"   Empfohlen: {recommended_min_m3h:.1f} - {recommended_max_m3h:.1f} m³/h\n"
+                f"   \n"
+                f"   ⚡ FOLGEN:\n"
+                f"   • Hoher Druckverlust\n"
+                f"   • Hohe Pumpenleistung\n"
+                f"   • Parasitäre Verluste: 3-8%"
+            )
+        
+        # Prüfe Mindestwert pro Sonde
+        if flow_per_borehole_m3h < min_per_borehole_m3h:
+            warnings.append(
+                f"⚠️ VOLUMENSTROM PRO SONDE ZU NIEDRIG:\n"
+                f"   Aktuell: {flow_per_borehole_m3h:.2f} m³/h pro Sonde\n"
+                f"   Minimum: {min_per_borehole_m3h} m³/h pro Sonde\n"
+                f"   \n"
+                f"   ⚡ PROBLEM: Strömung nicht turbulent (Re < 2300)\n"
+                f"   → Schlechter Wärmeübergang"
+            )
+        
+        # Zeige Warnungen (nur erste, um nicht zu überladen)
+        if warnings:
+            return warnings[0]
+        return ""
     
     def _load_pvgis_data(self):
         """Lädt Klimadaten von PVGIS."""
@@ -1229,7 +1404,7 @@ class GeothermieGUIProfessional:
                 # Thermische Diffusivität
                 thermal_diffusivity = params["ground_thermal_cond"] / params["ground_heat_cap"]
                 
-                # VDI 4640 Berechnung
+                # VDI 4640 Berechnung (Debug-Modus ist bereits aktiviert)
                 self.vdi4640_result = self.vdi4640_calc.calculate_complete(
                     ground_thermal_conductivity=params["ground_thermal_cond"],
                     ground_thermal_diffusivity=thermal_diffusivity,
@@ -1249,63 +1424,42 @@ class GeothermieGUIProfessional:
                     delta_t_fluid=params.get("delta_t_fluid", 3.0)
                 )
                 
-                # Prüfe maximale Sondenlänge (nur bei VDI 4640)
+                # Prüfe maximale Sondenlänge (nur bei VDI 4640) - nur Warnung, keine automatische Anpassung
                 max_depth_entry = self.entries.get("max_depth_per_borehole")
                 if max_depth_entry:
                     max_depth_per_borehole = float(max_depth_entry.get() or "999")
                 else:
                     max_depth_per_borehole = 999.0
-                original_num_boreholes = num_boreholes
-                adjusted_boreholes = False
                 
+                # Nur Warnung anzeigen, wenn Tiefe über Maximum liegt
+                # KEINE automatische Anpassung der Bohrlochanzahl mehr!
                 if max_depth_per_borehole < 999 and self.vdi4640_result.required_depth_final > max_depth_per_borehole:
-                    # Automatisch Anzahl Bohrungen erhöhen
-                    max_iterations = 20
+                    # Berechne Vorschlag: Mehr Bohrungen mit geringerer Tiefe
+                    total_length_needed = self.vdi4640_result.required_depth_final * num_boreholes
+                    suggested_num_boreholes = int(num_boreholes) + 1
+                    suggested_depth = min(80.0, total_length_needed / suggested_num_boreholes)
                     
-                    for iteration in range(max_iterations):
-                        # Neue Anzahl berechnen
-                        num_boreholes = int(math.ceil(
-                            self.vdi4640_result.required_depth_final * original_num_boreholes / max_depth_per_borehole
-                        ))
-                        
-                        # Begrenze auf sinnvolle Werte
-                        num_boreholes = max(1, min(num_boreholes, 50))
-                        
-                        # Neu berechnen mit erhöhter Anzahl
-                        self.vdi4640_result = self.vdi4640_calc.calculate_complete(
-                            ground_thermal_conductivity=params["ground_thermal_cond"],
-                            ground_thermal_diffusivity=thermal_diffusivity,
-                            t_undisturbed=params["ground_temp"],
-                            borehole_diameter=params["borehole_diameter"] * 1000,
-                            borehole_depth_initial=params["initial_depth"],
-                            n_boreholes=num_boreholes,  # Neue Anzahl
-                            r_borehole=r_borehole,
-                            annual_heating_demand=params["annual_heating"],
-                            peak_heating_load=params["peak_heating"],
-                            annual_cooling_demand=params["annual_cooling"],
-                            peak_cooling_load=params["peak_cooling"],
-                            heat_pump_cop_heating=params["heat_pump_cop"],
-                            heat_pump_cop_cooling=params.get("heat_pump_eer", params["heat_pump_cop"]),
-                            t_fluid_min_required=params["min_fluid_temp"],
-                            t_fluid_max_required=params["max_fluid_temp"],
-                            delta_t_fluid=params.get("delta_t_fluid", 3.0)
-                        )
-                        
-                        # Prüfe ob jetzt OK
-                        if self.vdi4640_result.required_depth_final <= max_depth_per_borehole:
-                            adjusted_boreholes = True
-                            # Update Anzahl Bohrungen im Eingabefeld
-                            self.borehole_entries["num_boreholes"].delete(0, tk.END)
-                            self.borehole_entries["num_boreholes"].insert(0, str(num_boreholes))
+                    # Versuche verschiedene Konfigurationen
+                    for test_boreholes in range(int(num_boreholes) + 1, int(num_boreholes) + 4):
+                        test_depth = total_length_needed / test_boreholes
+                        if test_depth <= max_depth_per_borehole:
+                            suggested_num_boreholes = test_boreholes
+                            suggested_depth = test_depth
                             break
                     
-                    if not adjusted_boreholes:
-                        # Konnte nicht angepasst werden
-                        messagebox.showwarning(
-                            "Warnung", 
-                            f"Konnte nicht unter {max_depth_per_borehole}m pro Bohrung bleiben. "
-                            f"Ergebnis: {self.vdi4640_result.required_depth_final:.1f}m"
-                        )
+                    messagebox.showwarning(
+                        "Hinweis - Maximale Sondenlänge überschritten", 
+                        f"Die berechnete Sondenlänge beträgt {self.vdi4640_result.required_depth_final:.1f} m pro Bohrung "
+                        f"bei {num_boreholes} Bohrungen.\n\n"
+                        f"Dies überschreitet Ihr Maximum von {max_depth_per_borehole:.0f} m pro Bohrung.\n\n"
+                        f"📊 AKTUELLE KONFIGURATION:\n"
+                        f"   {num_boreholes} Bohrungen à {self.vdi4640_result.required_depth_final:.1f} m\n"
+                        f"   Gesamtlänge: {total_length_needed:.1f} m\n\n"
+                        f"💡 VORSCHLAG:\n"
+                        f"   {suggested_num_boreholes} Bohrungen à {suggested_depth:.1f} m\n"
+                        f"   Gesamtlänge: {total_length_needed:.1f} m\n\n"
+                        f"Bitte passen Sie die Anzahl der Bohrungen manuell an."
+                    )
                 
                 # Erstelle BoreholeResult für Kompatibilität
                 from calculations.borehole import BoreholeResult
@@ -1345,7 +1499,7 @@ class GeothermieGUIProfessional:
                     fluid_heat_capacity=params["fluid_heat_cap"],
                     fluid_density=params["fluid_density"],
                     fluid_viscosity=params["fluid_viscosity"],
-                    fluid_flow_rate=params["fluid_flow_rate"],
+                    fluid_flow_rate=params["fluid_flow_rate"] / 3600.0,  # m³/h → m³/s
                     annual_heating_demand=params["annual_heating"] / 1000,  # kWh → MWh
                     annual_cooling_demand=params["annual_cooling"] / 1000,  # kWh → MWh
                     peak_heating_load=params["peak_heating"],
@@ -1462,9 +1616,10 @@ class GeothermieGUIProfessional:
             # Berechne Gesamtlänge der Leitungen
             pipe_config = self.pipe_config_var.get()
             pipe_length_factor = self._get_pipe_length_factor(pipe_config)
-            total_pipe_length = self.vdi4640_result.required_depth_final * num_bh * pipe_length_factor
+            pipe_length_per_borehole = self.vdi4640_result.required_depth_final * pipe_length_factor
+            total_pipe_length = pipe_length_per_borehole * num_bh
             text += f"  → Gesamtlänge (Leitungen): {total_pipe_length:.1f} m\n"
-            text += f"     ({pipe_length_factor} Leitungen pro Bohrung)\n\n"
+            text += f"     ({pipe_length_factor} Leitungen pro Bohrung × {self.vdi4640_result.required_depth_final:.1f} m = {pipe_length_per_borehole:.1f} m pro Bohrung)\n\n"
             
             # === WÄRMEPUMPENAUSTRITTSTEMPERATUREN ===
             text += "🌡️  WÄRMEPUMPENAUSTRITTSTEMPERATUREN\n"
@@ -2196,7 +2351,7 @@ In diesem Tool verfügbar über:
                     "heat_capacity": params.get("fluid_heat_cap", 3795.0),
                     "density": params.get("fluid_density", 1042.0),
                     "viscosity": params.get("fluid_viscosity", 0.00345),
-                    "flow_rate_m3h": params.get("fluid_flow_rate", 2.5),
+                    "flow_rate_m3h": params.get("fluid_flow_rate", 1.8),  # bereits in m³/h
                     "freeze_temperature": -15.0
                 },
                 # NEU: Fluid-Datenbank-Informationen
@@ -2313,7 +2468,9 @@ In diesem Tool verfügbar über:
             self._set_entry("fluid_heat_cap", fluid.get("heat_capacity", 3795.0))
             self._set_entry("fluid_density", fluid.get("density", 1042.0))
             self._set_entry("fluid_viscosity", fluid.get("viscosity", 0.00345))
-            self._set_entry("fluid_flow_rate", fluid.get("flow_rate_m3h", 2.5))
+            # Volumenstrom ist bereits in m³/h
+            flow_rate_m3h = fluid.get("flow_rate_m3h", 1.8)
+            self._set_entry("fluid_flow_rate", flow_rate_m3h)
             
             # Lasten
             loads = data.get("loads", {})
@@ -2498,18 +2655,26 @@ In diesem Tool verfügbar über:
     
     def _set_entry(self, key: str, value: Any):
         """Hilfsmethode zum Setzen von Entry-Werten."""
+        entry = None
+        was_readonly = False
+        
         if key in self.entries:
-            self.entries[key].delete(0, tk.END)
-            self.entries[key].insert(0, str(value))
+            entry = self.entries[key]
         elif key in self.project_entries:
-            self.project_entries[key].delete(0, tk.END)
-            self.project_entries[key].insert(0, str(value))
+            entry = self.project_entries[key]
         elif key in self.borehole_entries:
-            self.borehole_entries[key].delete(0, tk.END)
-            self.borehole_entries[key].insert(0, str(value))
+            entry = self.borehole_entries[key]
         elif key in self.heat_pump_entries:
-            self.heat_pump_entries[key].delete(0, tk.END)
-            self.heat_pump_entries[key].insert(0, str(value))
+            entry = self.heat_pump_entries[key]
+        
+        if entry:
+            # Temporär readonly aufheben, falls nötig
+            was_readonly = entry.cget("state") == "readonly"
+            if was_readonly:
+                entry.config(state="normal")
+            entry.delete(0, tk.END)
+            entry.insert(0, str(value))
+            # Feld bleibt immer editierbar (readonly wird nicht wieder gesetzt)
 
 
 def main():
