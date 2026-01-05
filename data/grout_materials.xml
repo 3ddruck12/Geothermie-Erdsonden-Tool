@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grout_database>
+    <metadata>
+        <version>1.0</version>
+        <last_updated>2026-01-01</last_updated>
+        <description>Datenbank für Verfüllmaterialien (Hinterfüllungen) in Erdwärmesonden</description>
+        <source>VDI 4640 Blatt 2, Herstellerangaben</source>
+    </metadata>
+    
+    <!-- STANDARD-MATERIALIEN -->
+    <grout_category name="Standard" type="standard">
+        
+        <grout_material>
+            <name>Zement-Bentonit Standard</name>
+            <type>cement_bentonite</type>
+            <quality_class>standard</quality_class>
+            <thermal_properties>
+                <conductivity>0.8</conductivity>            <!-- W/m·K -->
+            </thermal_properties>
+            <physical_properties>
+                <density>1800</density>                     <!-- kg/m³ -->
+            </physical_properties>
+            <pricing>
+                <price_per_kg>0.15</price_per_kg>           <!-- EUR/kg -->
+                <price_range>budget</price_range>
+            </pricing>
+            <application>
+                <description>Standardmischung, kostengünstig</description>
+                <typical_use>Normale Böden, geringe Anforderungen</typical_use>
+                <advantages>
+                    <advantage>Sehr günstig</advantage>
+                    <advantage>Einfache Verarbeitung</advantage>
+                    <advantage>Weit verbreitet</advantage>
+                </advantages>
+                <disadvantages>
+                    <disadvantage>Niedrige Wärmeleitfähigkeit</disadvantage>
+                    <disadvantage>Nicht für hohe Leistungen</disadvantage>
+                </disadvantages>
+            </application>
+        </grout_material>
+        
+        <grout_material>
+            <name>Reiner Bentonit</name>
+            <type>bentonite</type>
+            <quality_class>basic</quality_class>
+            <thermal_properties>
+                <conductivity>0.6</conductivity>
+            </thermal_properties>
+            <physical_properties>
+                <density>1400</density>
+            </physical_properties>
+            <pricing>
+                <price_per_kg>0.20</price_per_kg>
+                <price_range>budget</price_range>
+            </pricing>
+            <application>
+                <description>Nur Bentonit, niedrige Wärmeleitfähigkeit</description>
+                <typical_use>Temporäre Verfüllung, spezielle Anwendungen</typical_use>
+                <advantages>
+                    <advantage>Gute Quelleigenschaften</advantage>
+                    <advantage>Abdichtung gegen Grundwasser</advantage>
+                </advantages>
+                <disadvantages>
+                    <disadvantage>Sehr niedrige Wärmeleitfähigkeit</disadvantage>
+                    <disadvantage>Nicht für Dauerbetrieb empfohlen</disadvantage>
+                </disadvantages>
+            </application>
+        </grout_material>
+        
+    </grout_category>
+    
+    <!-- VERBESSERTE MATERIALIEN -->
+    <grout_category name="Verbessert" type="enhanced">
+        
+        <grout_material>
+            <name>Zement-Bentonit verbessert</name>
+            <type>cement_bentonite</type>
+            <quality_class>enhanced</quality_class>
+            <thermal_properties>
+                <conductivity>1.3</conductivity>
+            </thermal_properties>
+            <physical_properties>
+                <density>1900</density>
+            </physical_properties>
+            <pricing>
+                <price_per_kg>0.25</price_per_kg>
+                <price_range>standard</price_range>
+            </pricing>
+            <application>
+                <description>Verbesserte Wärmeleitfähigkeit</description>
+                <typical_use>Standardanwendung, gutes Preis-Leistungs-Verhältnis</typical_use>
+                <advantages>
+                    <advantage>Gute Wärmeleitfähigkeit</advantage>
+                    <advantage>Bewährte Mischung</advantage>
+                    <advantage>Akzeptabler Preis</advantage>
+                </advantages>
+                <disadvantages>
+                    <disadvantage>Nicht für Hochleistungsanwendungen</disadvantage>
+                </disadvantages>
+            </application>
+            <notes>
+                <note>Empfohlen für die meisten Standardanwendungen</note>
+                <note>VDI 4640 konform</note>
+            </notes>
+        </grout_material>
+        
+        <grout_material>
+            <name>Zement-Bentonit mit Kies</name>
+            <type>cement_bentonite_gravel</type>
+            <quality_class>enhanced</quality_class>
+            <thermal_properties>
+                <conductivity>1.5</conductivity>
+            </thermal_properties>
+            <physical_properties>
+                <density>2050</density>
+            </physical_properties>
+            <pricing>
+                <price_per_kg>0.28</price_per_kg>
+                <price_range>standard</price_range>
+            </pricing>
+            <application>
+                <description>Mit Kies-Anteil, gute Wärmeleitfähigkeit</description>
+                <typical_use>Stabile Böden, gute Leistung</typical_use>
+                <advantages>
+                    <advantage>Höhere Wärmeleitfähigkeit durch Kies</advantage>
+                    <advantage>Gute Stabilität</advantage>
+                </advantages>
+                <disadvantages>
+                    <disadvantage>Schwerer (höhere Transportkosten)</disadvantage>
+                </disadvantages>
+            </application>
+        </grout_material>
+        
+    </grout_category>
+    
+    <!-- HOCHLEISTUNGS-MATERIALIEN -->
+    <grout_category name="Hochleistung" type="high_performance">
+        
+        <grout_material>
+            <name>Thermisch optimiert (Sand)</name>
+            <type>thermal_sand</type>
+            <quality_class>high_performance</quality_class>
+            <thermal_properties>
+                <conductivity>1.8</conductivity>
+            </thermal_properties>
+            <physical_properties>
+                <density>2000</density>
+            </physical_properties>
+            <pricing>
+                <price_per_kg>0.35</price_per_kg>
+                <price_range>premium</price_range>
+            </pricing>
+            <application>
+                <description>Mit Quarzsand, hohe Wärmeleitfähigkeit</description>
+                <typical_use>Hohe Leistungsanforderungen</typical_use>
+                <advantages>
+                    <advantage>Hohe Wärmeleitfähigkeit</advantage>
+                    <advantage>Reduzierte Bohrmeter möglich</advantage>
+                    <advantage>Gut für kompakte Systeme</advantage>
+                </advantages>
+                <disadvantages>
+                    <disadvantage>Höherer Preis</disadvantage>
+                </disadvantages>
+            </application>
+            <notes>
+                <note>Reduziert Sondenlänge um ca. 10-15%</note>
+            </notes>
+        </grout_material>
+        
+        <grout_material>
+            <name>Thermisch optimiert (Graphit)</name>
+            <type>thermal_graphite</type>
+            <quality_class>high_performance</quality_class>
+            <thermal_properties>
+                <conductivity>2.0</conductivity>
+            </thermal_properties>
+            <physical_properties>
+                <density>1950</density>
+            </physical_properties>
+            <pricing>
+                <price_per_kg>0.45</price_per_kg>
+                <price_range>premium</price_range>
+            </pricing>
+            <application>
+                <description>Mit Graphit-Zusatz, sehr hohe Wärmeleitfähigkeit</description>
+                <typical_use>Maximale Leistung, kompakte Systeme</typical_use>
+                <advantages>
+                    <advantage>Sehr hohe Wärmeleitfähigkeit</advantage>
+                    <advantage>Graphit verbessert Wärmeübertragung deutlich</advantage>
+                    <advantage>Ideal für begrenzte Bohrflächen</advantage>
+                </advantages>
+                <disadvantages>
+                    <disadvantage>Teuer</disadvantage>
+                    <disadvantage>Spezielle Verarbeitung nötig</disadvantage>
+                </disadvantages>
+            </application>
+            <notes>
+                <note>Reduziert Sondenlänge um ca. 15-20%</note>
+                <note>Besonders effektiv bei hohen Entzugsleistungen</note>
+            </notes>
+        </grout_material>
+        
+        <grout_material>
+            <name>Hochleistung (Spezial)</name>
+            <type>special_high_performance</type>
+            <quality_class>premium</quality_class>
+            <thermal_properties>
+                <conductivity>2.5</conductivity>
+            </thermal_properties>
+            <physical_properties>
+                <density>2100</density>
+            </physical_properties>
+            <pricing>
+                <price_per_kg>0.60</price_per_kg>
+                <price_range>premium_plus</price_range>
+            </pricing>
+            <application>
+                <description>Spezialmischung mit Hochleistungszusätzen</description>
+                <typical_use>Extreme Anforderungen, schwierige Böden</typical_use>
+                <advantages>
+                    <advantage>Höchste Wärmeleitfähigkeit</advantage>
+                    <advantage>Maximale Leistungsausbeute</advantage>
+                    <advantage>Auch in ungünstigen Böden effektiv</advantage>
+                </advantages>
+                <disadvantages>
+                    <disadvantage>Sehr teuer</disadvantage>
+                    <disadvantage>Nur für spezielle Anforderungen sinnvoll</disadvantage>
+                </disadvantages>
+            </application>
+            <notes>
+                <note>Reduziert Sondenlänge um ca. 20-25%</note>
+                <note>Wirtschaftlichkeit prüfen (Mehrkosten vs. Bohrmeter-Ersparnis)</note>
+                <note>Besonders bei sehr schlechten Böden (Ton) vorteilhaft</note>
+            </notes>
+        </grout_material>
+        
+    </grout_category>
+    
+</grout_database>
+
