@@ -39,7 +39,8 @@ class GETFileHandler:
         vdi4640_result: Optional[Dict[str, Any]] = None,
         hydraulics_result: Optional[Dict[str, Any]] = None,
         fluid_database_info: Optional[Dict[str, Any]] = None,
-        grout_calculation: Optional[Dict[str, Any]] = None
+        grout_calculation: Optional[Dict[str, Any]] = None,
+        custom_pipes_txt: Optional[str] = None
     ) -> bool:
         """
         Exportiert alle Daten in eine .get Datei.
@@ -62,6 +63,7 @@ class GETFileHandler:
             hydraulics_result: Hydraulik-Berechnungsergebnis (optional)
             fluid_database_info: Fluid-Datenbank-Informationen (optional, name, temperature)
             grout_calculation: Verfüllmaterial-Berechnung (optional)
+            custom_pipes_txt: Inhalt einer benutzerdefinierten pipe.txt (optional)
         
         Returns:
             True bei Erfolg, False bei Fehler
@@ -114,6 +116,9 @@ class GETFileHandler:
             
             if grout_calculation:
                 data["grout_calculation"] = grout_calculation
+            
+            if custom_pipes_txt:
+                data["custom_pipes_txt"] = custom_pipes_txt
             
             # Schreibe JSON mit Formatierung
             with open(filepath, 'w', encoding='utf-8') as f:
