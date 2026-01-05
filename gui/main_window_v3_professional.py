@@ -1186,6 +1186,9 @@ class GeothermieGUIProfessional:
         if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
             return
         
+        if not hasattr(self, 'energy_analysis_text'):
+            return
+        
         try:
             pump_power = self.hydraulics_result['pump']['electric_power_w']
             hours = 1800  # Standard-Betriebsstunden
@@ -1219,12 +1222,16 @@ class GeothermieGUIProfessional:
             self.energy_analysis_text.delete("1.0", tk.END)
             self.energy_analysis_text.insert("1.0", text)
         except Exception as e:
-            self.energy_analysis_text.delete("1.0", tk.END)
-            self.energy_analysis_text.insert("1.0", f"Fehler: {str(e)}")
+            if hasattr(self, 'energy_analysis_text'):
+                self.energy_analysis_text.delete("1.0", tk.END)
+                self.energy_analysis_text.insert("1.0", f"Fehler: {str(e)}")
     
     def _update_pressure_analysis(self):
         """Aktualisiert die Druckverlust-Analyse im Analyse-Tab."""
         if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            return
+        
+        if not hasattr(self, 'pressure_analysis_text'):
             return
         
         try:
@@ -1270,6 +1277,9 @@ class GeothermieGUIProfessional:
     def _update_pump_analysis(self):
         """Aktualisiert die Pumpen-Empfehlungen im Analyse-Tab."""
         if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            return
+        
+        if not hasattr(self, 'pump_analysis_text'):
             return
         
         try:
