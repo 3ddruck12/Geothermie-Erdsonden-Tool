@@ -572,8 +572,13 @@ class GeothermieGUIProfessional:
     
     def _create_results_tab(self):
         """Erstellt den Ergebnisse-Tab."""
-        text_frame = ttk.Frame(self.results_frame)
-        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Container für volle Breite
+        container = ttk.Frame(self.results_frame)
+        container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Text-Frame für Ergebnisse (volle Breite)
+        text_frame = ttk.LabelFrame(container, text="📊 Berechnungsergebnisse", padding=5)
+        text_frame.pack(fill=tk.BOTH, expand=True)
         
         scrollbar = ttk.Scrollbar(text_frame)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -611,7 +616,7 @@ class GeothermieGUIProfessional:
         grout_scrollbar = ttk.Scrollbar(grout_frame)
         grout_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.grout_result_text = tk.Text(grout_frame, height=20, width=90, font=("Courier", 10),
+        self.grout_result_text = tk.Text(grout_frame, height=20, font=("Courier", 10),
                                          wrap=tk.WORD, yscrollcommand=grout_scrollbar.set)
         self.grout_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         grout_scrollbar.config(command=self.grout_result_text.yview)
@@ -621,41 +626,49 @@ class GeothermieGUIProfessional:
         ttk.Label(scrollable_frame, text="💨 Hydraulik-Berechnung", 
                  font=("Arial", 14, "bold"), foreground="#1f4788").pack(pady=10)
         
-        # Zweispaltiges Layout: Ergebnisse links, Analysen rechts
+        # Layout untereinander: Ergebnisse → Buttons → Analysen (alle volle Breite)
         hydraulics_container = ttk.Frame(scrollable_frame)
         hydraulics_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
         
-        # Linke Spalte: Hauptergebnisse
-        left_column = ttk.Frame(hydraulics_container)
-        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        # 1. Hauptergebnisse (oben, volle Breite)
+        results_frame = ttk.LabelFrame(hydraulics_container, text="📊 Hydraulik-Ergebnisse", padding=5)
+        results_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
         
-        ttk.Label(left_column, text="Ergebnisse", font=("Arial", 10, "bold")).pack(anchor="w")
+        hydraulics_text_frame = ttk.Frame(results_frame)
+        hydraulics_text_frame.pack(fill=tk.BOTH, expand=True)
         
-        hydraulics_frame = ttk.Frame(left_column)
-        hydraulics_frame.pack(fill=tk.BOTH, expand=True)
-        
-        hydraulics_scrollbar = ttk.Scrollbar(hydraulics_frame)
+        hydraulics_scrollbar = ttk.Scrollbar(hydraulics_text_frame)
         hydraulics_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.hydraulics_result_text = tk.Text(hydraulics_frame, height=20, width=50, font=("Courier", 9),
+        self.hydraulics_result_text = tk.Text(hydraulics_text_frame, height=15, font=("Courier", 9),
                                              wrap=tk.WORD, yscrollcommand=hydraulics_scrollbar.set)
         self.hydraulics_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         hydraulics_scrollbar.config(command=self.hydraulics_result_text.yview)
         self.hydraulics_result_text.insert("1.0", "Noch keine Berechnung durchgeführt.\n\nKlicken Sie auf 'Hydraulik berechnen'.")
         
-        # Rechte Spalte: Analyse-Panel
-        right_column = ttk.LabelFrame(hydraulics_container, text="📊 Detailanalysen", padding=5)
-        right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
+        # 2. Buttons für Assistenten (mitte, volle Breite)
+        button_container = ttk.Frame(hydraulics_container)
+        button_container.pack(fill=tk.X, pady=5)
+        
+        ttk.Button(button_container, text="🔧 Pumpenauswahl-Assistent", 
+                  command=self._show_pump_selection, width=35).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Button(button_container, text="⚡ Durchfluss-Optimierung", 
+                  command=self._show_flow_optimizer, width=35).pack(side=tk.LEFT, padx=5)
+        
+        # 3. Schnellanalyse-Tabs (unten, volle Breite, volle Höhe)
+        analysis_frame = ttk.LabelFrame(hydraulics_container, text="📈 Detailanalysen", padding=5)
+        analysis_frame.pack(fill=tk.BOTH, expand=True, pady=(5, 0))
         
         # Notebook für verschiedene Analysen
-        self.analysis_notebook = ttk.Notebook(right_column)
+        self.analysis_notebook = ttk.Notebook(analysis_frame)
         self.analysis_notebook.pack(fill=tk.BOTH, expand=True)
         
         # Tab 1: Energieprognose
         energy_tab = ttk.Frame(self.analysis_notebook)
         self.analysis_notebook.add(energy_tab, text="💰 Energie")
         
-        self.energy_analysis_text = tk.Text(energy_tab, height=18, font=("Courier", 9), wrap=tk.WORD)
+        self.energy_analysis_text = tk.Text(energy_tab, font=("Courier", 9), wrap=tk.WORD)
         energy_scrollbar = ttk.Scrollbar(energy_tab, command=self.energy_analysis_text.yview)
         self.energy_analysis_text.config(yscrollcommand=energy_scrollbar.set)
         self.energy_analysis_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -666,7 +679,7 @@ class GeothermieGUIProfessional:
         pressure_tab = ttk.Frame(self.analysis_notebook)
         self.analysis_notebook.add(pressure_tab, text="🔍 Druckverlust")
         
-        self.pressure_analysis_text = tk.Text(pressure_tab, height=18, font=("Courier", 9), wrap=tk.WORD)
+        self.pressure_analysis_text = tk.Text(pressure_tab, font=("Courier", 9), wrap=tk.WORD)
         pressure_scrollbar = ttk.Scrollbar(pressure_tab, command=self.pressure_analysis_text.yview)
         self.pressure_analysis_text.config(yscrollcommand=pressure_scrollbar.set)
         self.pressure_analysis_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -677,24 +690,12 @@ class GeothermieGUIProfessional:
         pump_tab = ttk.Frame(self.analysis_notebook)
         self.analysis_notebook.add(pump_tab, text="🔧 Pumpen")
         
-        self.pump_analysis_text = tk.Text(pump_tab, height=18, font=("Courier", 9), wrap=tk.WORD)
+        self.pump_analysis_text = tk.Text(pump_tab, font=("Courier", 9), wrap=tk.WORD)
         pump_scrollbar = ttk.Scrollbar(pump_tab, command=self.pump_analysis_text.yview)
         self.pump_analysis_text.config(yscrollcommand=pump_scrollbar.set)
         self.pump_analysis_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         pump_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.pump_analysis_text.insert("1.0", "Pumpen-Empfehlungen werden nach\nHydraulik-Berechnung angezeigt.")
-        
-        # Button für Durchfluss-Optimierung (bleibt als Popup für interaktiven Slider)
-        optimizer_button_frame = ttk.Frame(self.materials_frame)
-        optimizer_button_frame.pack(fill="x", padx=5, pady=5)
-        
-        self.flow_optimizer_button = ttk.Button(
-            optimizer_button_frame,
-            text="🎯 Durchfluss-Optimierung (interaktiv)",
-            command=self._show_flow_optimizer,
-            state="disabled"
-        )
-        self.flow_optimizer_button.pack(side="left", padx=5)
     
     def _create_visualization_tab(self):
         """Erstellt den Visualisierungs-Tab."""
@@ -1293,18 +1294,20 @@ class GeothermieGUIProfessional:
             
             # Lade Pumpen-Datenbank
             pump_db = PumpDatabase()
+            
+            text = "═══ PUMPEN-EMPFEHLUNGEN ═══\n\n"
+            text += f"Volumenstrom: {flow_m3h:.2f} m³/h\n"
+            text += f"Förderhöhe: {head_m:.1f} m\n"
+            text += f"Leistung WP: {power_kw:.0f} kW\n"
+            text += f"Pumpen in DB: {len(pump_db.pumps)}\n\n"
+            text += "─────────────────────────────\n\n"
+            
             suitable_pumps = pump_db.find_suitable_pumps(
                 flow_m3h=flow_m3h,
                 head_m=head_m,
                 power_kw=power_kw,
                 max_results=5
             )
-            
-            text = "═══ PUMPEN-EMPFEHLUNGEN ═══\n\n"
-            text += f"Volumenstrom: {flow_m3h:.2f} m³/h\n"
-            text += f"Förderhöhe: {head_m:.1f} m\n"
-            text += f"Leistung WP: {power_kw:.0f} kW\n\n"
-            text += "─────────────────────────────\n\n"
             
             if suitable_pumps:
                 for i, (score, pump) in enumerate(suitable_pumps, 1):
@@ -1325,8 +1328,15 @@ class GeothermieGUIProfessional:
                     text += f"   Effizienz: {pump.efficiency_class}\n"
                     text += f"   Preis: {pump.price_eur:.0f} EUR\n\n"
             else:
-                text += "⚠️ Keine passenden Pumpen gefunden.\n"
-                text += "   Bitte Hydraulik prüfen!\n"
+                text += "⚠️ Keine passenden Pumpen gefunden.\n\n"
+                text += "Mögliche Gründe:\n"
+                text += f"• Volumenstrom zu hoch (> {flow_m3h/1.1:.1f} m³/h nötig)\n"
+                text += f"• Förderhöhe zu hoch (> {head_m/1.1:.1f} m nötig)\n"
+                text += "• Leistungsbereich passt nicht\n\n"
+                text += "Prüfen Sie:\n"
+                text += "- Anzahl Bohrungen erhöhen\n"
+                text += "- ΔT erhöhen (weniger Volumenstrom)\n"
+                text += "- Rohrdurchmesser vergrößern\n"
             
             text += "\n─────────────────────────────\n\n"
             text += "💡 Empfehlung: Geregelte Hocheffizienz-\n"
@@ -1370,7 +1380,7 @@ class GeothermieGUIProfessional:
             # Erstelle Dialog
             dialog = tk.Toplevel(self.root)
             dialog.title("Energieverbrauch-Prognose")
-            dialog.geometry("750x700")
+            dialog.geometry("1200x800")
             
             # Haupt-Frame
             main_frame = ttk.Frame(dialog)
@@ -1565,7 +1575,7 @@ class GeothermieGUIProfessional:
             # Erstelle Dialog
             dialog = tk.Toplevel(self.root)
             dialog.title("Detaillierte Druckverlust-Analyse")
-            dialog.geometry("700x600")
+            dialog.geometry("1200x800")
             
             # Text-Widget mit Scrollbar
             frame = ttk.Frame(dialog)
@@ -1645,13 +1655,13 @@ class GeothermieGUIProfessional:
         
         try:
             # Hole aktuelle Parameter
-            heat_power = float(self.entries.get("heat_pump_power", ttk.Entry()).get() or "0")
-            cop = float(self.entries.get("heat_pump_cop", ttk.Entry()).get() or "4.0")
-            depth = float(self.borehole_entries["depth"].get())
-            num_boreholes = int(self.borehole_entries["num_boreholes"].get())
-            num_circuits = int(self.entries.get("num_circuits", ttk.Entry()).get() or str(num_boreholes))
+            heat_power = float(self.heat_pump_entries.get("heat_pump_power", ttk.Entry()).get() or "11")
+            cop = float(self.heat_pump_entries.get("heat_pump_cop", ttk.Entry()).get() or "4.0")
+            depth = float(self.borehole_entries.get("depth", ttk.Entry()).get() or "100")
+            num_boreholes = int(self.borehole_entries.get("num_boreholes", ttk.Entry()).get() or "2")
+            num_circuits = int(self.hydraulics_entries.get("num_circuits", ttk.Entry()).get() or str(num_boreholes))
             pipe_inner_d = float(self.entries.get("pipe_inner_d", ttk.Entry()).get() or "0.026")
-            antifreeze_conc = float(self.antifreeze_var.get())
+            antifreeze_conc = float(self.hydraulics_entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
             current_delta_t = float(self.entries.get("delta_t_fluid", ttk.Entry()).get() or "3.0")
             
             extraction_power = heat_power * (cop - 1) / cop
@@ -1666,7 +1676,7 @@ class GeothermieGUIProfessional:
             # Erstelle Dialog
             dialog = tk.Toplevel(self.root)
             dialog.title("Durchfluss-Optimierung")
-            dialog.geometry("800x750")
+            dialog.geometry("1200x800")
             
             # Haupt-Frame
             main_frame = ttk.Frame(dialog)

@@ -40,7 +40,7 @@ class PumpSelectionDialog:
         # Erstelle Dialog
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("🔧 Pumpenauswahl-Assistent")
-        self.dialog.geometry("900x700")
+        self.dialog.geometry("1200x800")
         self.dialog.transient(parent)
         self.dialog.grab_set()
         
@@ -155,6 +155,9 @@ class PumpSelectionDialog:
     
     def _find_suitable_pumps(self):
         """Findet passende Pumpen und zeigt sie an."""
+        # Initialisiere pump_objects Dictionary
+        self.pump_objects = {}
+        
         # Extrahiere Hydraulik-Daten
         flow_m3h = self.hydraulics_data.get('flow', {}).get('volume_flow_m3_h', 0)
         total_dp = self.hydraulics_data.get('system', {}).get('total_pressure_drop_bar', 0)
@@ -170,9 +173,47 @@ class PumpSelectionDialog:
         )
         
         if not suitable_pumps:
-            messagebox.showwarning("Keine Pumpen gefunden",
-                                 "Es wurden keine passenden Pumpen in der Datenbank gefunden.\n"
-                                 "Bitte überprüfen Sie Ihre Hydraulik-Berechnung.")
+            # Zeige Info-Text im Treeview statt leere Liste
+            self.tree.insert("", "end", text="", values=(
+                "⚠️", 
+                "Keine passenden Pumpen", 
+                f"{flow_m3h:.2f} m³/h (benötigt)",
+                f"{head_m:.1f} m (benötigt)",
+                "",
+                ""
+            ))
+            
+            # Zeige Details im Detail-Text
+            msg = f"═══ KEINE PASSENDEN PUMPEN GEFUNDEN ═══\n\n"
+            msg += f"Anforderungen:\n"
+            msg += f"  • Volumenstrom: {flow_m3h:.2f} m³/h\n"
+            msg += f"  • Förderhöhe: {head_m:.1f} m\n"
+            msg += f"  • Leistung WP: {power_kw:.0f} kW\n\n"
+            msg += f"Pumpen in DB: {len(self.pump_db.pumps)}\n\n"
+            msg += f"═══ VERFÜGBARE PUMPEN ═══\n\n"
+            
+            # Sortiere nach max_flow_m3h absteigend
+            sorted_pumps = sorted(self.pump_db.pumps, key=lambda p: p.specs.max_flow_m3h, reverse=True)
+            for i, pump in enumerate(sorted_pumps, 1):
+                msg += f"{i}. {pump.get_full_name()}\n"
+                msg += f"   Flow: {pump.specs.max_flow_m3h} m³/h | Head: {pump.specs.max_head_m} m\n"
+                msg += f"   Typ: {'Geregelt' if pump.pump_type == 'regulated' else 'Konstant'} | Effizienz: {pump.efficiency_class}\n"
+                if i < len(sorted_pumps):
+                    msg += "\n"
+            
+            msg += f"\n"
+            msg += f"═══ OPTIMIERUNGSVORSCHLÄGE ═══\n\n"
+            msg += f"1. ΔT erhöhen (z.B. von 3K auf 4K)\n"
+            msg += f"   → Reduziert Volumenstrom\n\n"
+            msg += f"2. Anzahl Bohrungen erhöhen\n"
+            msg += f"   → Verteilt Volumenstrom auf mehr Kreise\n\n"
+            msg += f"3. Rohrdurchmesser vergrößern\n"
+            msg += f"   → Reduziert Druckverlust\n\n"
+            msg += f"4. Rohrlänge pro Kreis prüfen\n"
+            msg += f"   → Tiefere Bohrungen = höherer Druckverlust"
+            
+            self.detail_text.delete(1.0, tk.END)
+            self.detail_text.insert(1.0, msg)
             return
         
         # Fülle Treeview
