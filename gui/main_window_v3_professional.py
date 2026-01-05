@@ -1721,14 +1721,16 @@ class GeothermieGUIProfessional:
             return
         
         try:
-            # Hole Wärmeleistung
-            heat_power = float(self.entries.get("heat_pump_power", ttk.Entry()).get() or "11")
+            # Hole Wärmeleistung von der ersten Seite (Wärmepumpen-Tab)
+            heat_power = float(self.heat_pump_entries["heat_pump_power"].get() or "11")
             
-            # Erstelle Hydraulik-Daten für Dialog
+            # Erstelle Hydraulik-Daten für Dialog (mit allen benötigten Feldern)
             hydraulics_data = {
                 'heat_power': heat_power,
                 'flow': self.hydraulics_result.get('flow', {}),
-                'system': self.hydraulics_result.get('system', {})
+                'system': self.hydraulics_result.get('system', {}),
+                'depth': float(self.borehole_entries.get("depth", ttk.Entry()).get() or "100"),
+                'num_boreholes': int(self.borehole_entries.get("num_boreholes", ttk.Entry()).get() or "2")
             }
             
             # Zeige Dialog

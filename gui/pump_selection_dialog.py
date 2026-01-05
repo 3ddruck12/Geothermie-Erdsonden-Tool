@@ -30,8 +30,11 @@ class PumpSelectionDialog:
         # Lade Pumpen-Datenbank
         try:
             self.pump_db = PumpDatabase()
+            if len(self.pump_db.pumps) == 0:
+                raise ValueError("Keine Pumpen in Datenbank gefunden")
         except Exception as e:
-            messagebox.showerror("Fehler", f"Pumpen-Datenbank konnte nicht geladen werden:\n{e}")
+            messagebox.showerror("Fehler", f"Pumpen-Datenbank konnte nicht geladen werden:\n{e}\n\nPfad: {os.path.join(os.path.dirname(__file__), '..', 'data', 'pump_database.xml')}")
+            self.dialog = None
             return
         
         # Erstelle Dialog
@@ -285,8 +288,10 @@ class PumpSelectionDialog:
     
     def show(self) -> Optional[Any]:
         """Zeigt Dialog und gibt ausgewählte Pumpe zurück."""
-        self.dialog.wait_window()
-        return self.selected_pump
+        if self.dialog:
+            self.dialog.wait_window()
+            return self.selected_pump
+        return None
 
 
 # Test-Funktion
