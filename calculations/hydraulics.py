@@ -373,6 +373,98 @@ class HydraulicsCalculator:
         }
     
     @staticmethod
+    def calculate_pump_energy_consumption(
+        pump_power_w: float,
+        annual_heating_hours: float = 1800,
+        electricity_price_per_kwh: float = 0.30,
+        regulation_factor: float = 1.0,
+        pump_efficiency_curve: str = "constant"
+    ) -> Dict[str, any]:
+        """
+        Berechnet Energieverbrauch und Kosten der Pumpe.
+        
+        NEU in v3.3.0-beta2: Jahres-Energiekosten mit Optimierungsvergleich.
+        
+        Args:
+            pump_power_w: Pumpenleistung in W (bei Nennlast)
+            annual_heating_hours: Betriebsstunden pro Jahr (Standard: 1800h)
+            electricity_price_per_kwh: Strompreis in EUR/kWh (Standard: 0.30)
+            regulation_factor: Faktor für geregelte Pumpen (0.5-1.0, Standard: 1.0=konstant)
+            pump_efficiency_curve: "constant" oder "regulated"
+            
+        Returns:
+            Dictionary mit Energieverbrauch und Kosten
+        """
+        # Durchschnittliche Leistung
+        if pump_efficiency_curve == "regulated":
+            # Geregelte Pumpen laufen im Schnitt bei 50-60% Leistung
+            avg_power_w = pump_power_w * regulation_factor
+        else:
+            # Konstante Pumpen laufen immer mit voller Leistung
+            avg_power_w = pump_power_w
+        
+        # Jahresverbrauch
+        annual_kwh = (avg_power_w * annual_heating_hours) / 1000
+        annual_cost = annual_kwh * electricity_price_per_kwh
+        
+        # 10-Jahres-Bilanz
+        lifetime_10y_kwh = annual_kwh * 10
+        lifetime_10y_cost = annual_cost * 10
+        
+        # Vergleich mit geregelter Pumpe (wenn konstant)
+        if pump_efficiency_curve == "constant" and regulation_factor == 1.0:
+            # Annahme: Geregelte Pumpe spart 45% Energie
+            regulated_factor = 0.55
+            regulated_annual_kwh = (pump_power_w * regulated_factor * annual_heating_hours) / 1000
+            regulated_annual_cost = regulated_annual_kwh * electricity_price_per_kwh
+            savings_annual = annual_cost - regulated_annual_cost
+            savings_10y = savings_annual * 10
+            
+            # Amortisation (Annahme: +200 EUR für geregelte Pumpe)
+            extra_cost_regulated = 200
+            if savings_annual > 0:
+                payback_years = extra_cost_regulated / savings_annual
+            else:
+                payback_years = 999
+        else:
+            regulated_annual_kwh = None
+            regulated_annual_cost = None
+            savings_annual = 0
+            savings_10y = 0
+            payback_years = None
+        
+        # Vergleich mit kleinerer Pumpe (falls Überdimensionierung)
+        # Annahme: 20% kleinere Pumpe
+        smaller_pump_w = pump_power_w * 0.8
+        smaller_annual_kwh = (smaller_pump_w * annual_heating_hours) / 1000
+        smaller_annual_cost = smaller_annual_kwh * electricity_price_per_kwh
+        savings_vs_smaller = annual_cost - smaller_annual_cost
+        
+        return {
+            'pump_power_w': pump_power_w,
+            'avg_power_w': avg_power_w,
+            'annual_hours': annual_heating_hours,
+            'annual_kwh': annual_kwh,
+            'annual_cost_eur': annual_cost,
+            'lifetime_10y_kwh': lifetime_10y_kwh,
+            'lifetime_10y_cost_eur': lifetime_10y_cost,
+            'electricity_price': electricity_price_per_kwh,
+            'regulated': {
+                'annual_kwh': regulated_annual_kwh,
+                'annual_cost_eur': regulated_annual_cost,
+                'savings_annual_eur': savings_annual,
+                'savings_10y_eur': savings_10y,
+                'payback_years': payback_years,
+                'extra_cost_eur': 200 if regulated_annual_kwh else None
+            },
+            'smaller_pump': {
+                'power_w': smaller_pump_w,
+                'annual_cost_eur': smaller_annual_cost,
+                'savings_annual_eur': savings_vs_smaller
+            }
+        }
+    
+    @staticmethod
     def _get_fluid_properties(concentration: float) -> Dict[str, float]:
         """
         Interpoliert Fluid-Eigenschaften für gegebene Konzentration.

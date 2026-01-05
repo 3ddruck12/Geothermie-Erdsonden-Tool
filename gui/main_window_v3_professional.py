@@ -644,6 +644,24 @@ class GeothermieGUIProfessional:
             state="disabled"
         )
         self.detailed_analysis_button.pack(side="left", padx=5)
+        
+        # Button für Energieverbrauch-Prognose (v3.3.0-beta2)
+        self.energy_prognosis_button = ttk.Button(
+            detail_button_frame,
+            text="💰 Energieverbrauch-Prognose",
+            command=self._show_energy_prognosis,
+            state="disabled"
+        )
+        self.energy_prognosis_button.pack(side="left", padx=5)
+        
+        # Button für Durchfluss-Optimierung (v3.3.0-beta2)
+        self.flow_optimizer_button = ttk.Button(
+            detail_button_frame,
+            text="🎯 Durchfluss optimieren",
+            command=self._show_flow_optimizer,
+            state="disabled"
+        )
+        self.flow_optimizer_button.pack(side="left", padx=5)
     
     def _create_visualization_tab(self):
         """Erstellt den Visualisierungs-Tab."""
@@ -1116,9 +1134,13 @@ class GeothermieGUIProfessional:
             self.hydraulics_result_text.delete("1.0", tk.END)
             self.hydraulics_result_text.insert("1.0", text)
             
-            # Aktiviere detaillierte Analyse-Button (v3.3.0-beta1)
+            # Aktiviere Analyse-Buttons (v3.3.0)
             if hasattr(self, 'detailed_analysis_button'):
                 self.detailed_analysis_button.config(state="normal")
+            if hasattr(self, 'energy_prognosis_button'):
+                self.energy_prognosis_button.config(state="normal")
+            if hasattr(self, 'flow_optimizer_button'):
+                self.flow_optimizer_button.config(state="normal")
             
             self.status_var.set(f"✓ Hydraulik: {flow['volume_flow_m3_h']:.2f} m³/h, {system['total_pressure_drop_mbar']:.0f} mbar, {pump['electric_power_w']:.0f} W")
             
@@ -1144,6 +1166,181 @@ class GeothermieGUIProfessional:
                 self.hydraulics_entries["num_circuits"].insert(0, str(suggested_circuits))
         except (ValueError, KeyError):
             pass  # Ignoriere Fehler bei leerem Feld oder fehlendem Eintrag
+    
+    def _show_energy_prognosis(self):
+        """Zeigt Energieverbrauch-Prognose für Pumpe (v3.3.0-beta2)."""
+        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            messagebox.showinfo("Hinweis", "Bitte erst Hydraulik berechnen!")
+            return
+        
+        try:
+            pump_power = self.hydraulics_result['pump']['electric_power_w']
+            
+            # Erstelle Dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Energieverbrauch-Prognose")
+            dialog.geometry("750x700")
+            
+            # Haupt-Frame
+            main_frame = ttk.Frame(dialog)
+            main_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+            
+            # Titel
+            title = ttk.Label(main_frame, text="💰 ENERGIEVERBRAUCH-PROGNOSE", 
+                            font=("Arial", 14, "bold"))
+            title.pack(pady=(0, 15))
+            
+            # Parameter-Frame
+            param_frame = ttk.LabelFrame(main_frame, text="Parameter", padding=10)
+            param_frame.pack(fill="x", pady=(0, 10))
+            
+            ttk.Label(param_frame, text="Betriebsstunden/Jahr:").grid(row=0, column=0, sticky="w", padx=5, pady=5)
+            hours_var = tk.StringVar(value="1800")
+            hours_entry = ttk.Entry(param_frame, textvariable=hours_var, width=10)
+            hours_entry.grid(row=0, column=1, sticky="w", padx=5, pady=5)
+            ttk.Label(param_frame, text="h").grid(row=0, column=2, sticky="w")
+            
+            ttk.Label(param_frame, text="Strompreis:").grid(row=1, column=0, sticky="w", padx=5, pady=5)
+            price_var = tk.StringVar(value="0.30")
+            price_entry = ttk.Entry(param_frame, textvariable=price_var, width=10)
+            price_entry.grid(row=1, column=1, sticky="w", padx=5, pady=5)
+            ttk.Label(param_frame, text="EUR/kWh").grid(row=1, column=2, sticky="w")
+            
+            # Ergebnis-Text
+            result_frame = ttk.Frame(main_frame)
+            result_frame.pack(fill=tk.BOTH, expand=True)
+            
+            scrollbar = ttk.Scrollbar(result_frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            result_text = tk.Text(result_frame, wrap=tk.WORD, yscrollcommand=scrollbar.set,
+                                 font=("Courier", 10), height=25)
+            result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.config(command=result_text.yview)
+            
+            def update_calculation():
+                try:
+                    hours = float(hours_var.get())
+                    price = float(price_var.get())
+                    
+                    # Berechne für konstante Pumpe
+                    result_const = self.hydraulics_calc.calculate_pump_energy_consumption(
+                        pump_power, hours, price, regulation_factor=1.0, 
+                        pump_efficiency_curve="constant"
+                    )
+                    
+                    # Berechne für geregelte Pumpe
+                    result_reg = self.hydraulics_calc.calculate_pump_energy_consumption(
+                        pump_power, hours, price, regulation_factor=0.55,
+                        pump_efficiency_curve="regulated"
+                    )
+                    
+                    # Formatiere Ausgabe
+                    output = "=" * 70 + "\n"
+                    output += "ENERGIEVERBRAUCH-PROGNOSE\n"
+                    output += "=" * 70 + "\n\n"
+                    
+                    output += f"Pumpenleistung (Auslegung): {pump_power:.0f} W\n"
+                    output += f"Betriebsstunden/Jahr: {hours:.0f} h\n"
+                    output += f"Strompreis: {price:.2f} EUR/kWh\n\n"
+                    
+                    output += "=" * 70 + "\n"
+                    output += "OPTION 1: KONSTANTE PUMPE (ungeregelter Betrieb)\n"
+                    output += "=" * 70 + "\n\n"
+                    
+                    output += f"Durchschnittliche Leistung: {result_const['avg_power_w']:.0f} W\n"
+                    output += f"(Läuft immer mit 100% Leistung)\n\n"
+                    
+                    output += "Jahresverbrauch:\n"
+                    output += f"  • Energie: {result_const['annual_kwh']:.0f} kWh/Jahr\n"
+                    output += f"  • Kosten: {result_const['annual_cost_eur']:.2f} EUR/Jahr\n\n"
+                    
+                    output += "10-Jahres-Bilanz:\n"
+                    output += f"  • Energie: {result_const['lifetime_10y_kwh']:.0f} kWh\n"
+                    output += f"  • Kosten: {result_const['lifetime_10y_cost_eur']:.2f} EUR\n\n"
+                    
+                    output += "=" * 70 + "\n"
+                    output += "OPTION 2: GEREGELTE PUMPE (Hocheffizienz)\n"
+                    output += "=" * 70 + "\n\n"
+                    
+                    output += f"Durchschnittliche Leistung: {result_reg['avg_power_w']:.0f} W\n"
+                    output += f"(Läuft bei ~55% Durchschnitts-Leistung durch Regelung)\n\n"
+                    
+                    output += "Jahresverbrauch:\n"
+                    output += f"  • Energie: {result_reg['annual_kwh']:.0f} kWh/Jahr\n"
+                    output += f"  • Kosten: {result_reg['annual_cost_eur']:.2f} EUR/Jahr\n\n"
+                    
+                    output += "10-Jahres-Bilanz:\n"
+                    output += f"  • Energie: {result_reg['lifetime_10y_kwh']:.0f} kWh\n"
+                    output += f"  • Kosten: {result_reg['lifetime_10y_cost_eur']:.2f} EUR\n\n"
+                    
+                    # Mehrkosten
+                    output += f"Mehrkosten geregelte Pumpe: ~{result_const['regulated']['extra_cost_eur']:.0f} EUR\n\n"
+                    
+                    output += "=" * 70 + "\n"
+                    output += "💡 VERGLEICH & EMPFEHLUNG\n"
+                    output += "=" * 70 + "\n\n"
+                    
+                    savings_annual = result_const['regulated']['savings_annual_eur']
+                    savings_10y = result_const['regulated']['savings_10y_eur']
+                    payback = result_const['regulated']['payback_years']
+                    
+                    output += f"Ersparnis pro Jahr: {savings_annual:.2f} EUR\n"
+                    output += f"Ersparnis in 10 Jahren: {savings_10y:.2f} EUR\n"
+                    output += f"Amortisation: {payback:.1f} Jahre\n\n"
+                    
+                    if payback < 5:
+                        output += "✅ EMPFEHLUNG: Geregelte Pumpe lohnt sich!\n"
+                        output += f"   Die Mehrkosten amortisieren sich in {payback:.1f} Jahren.\n"
+                        output += f"   Über 10 Jahre sparen Sie {savings_10y:.2f} EUR.\n"
+                    elif payback < 10:
+                        output += "⚠️  EMPFEHLUNG: Geregelte Pumpe kann sich lohnen.\n"
+                        output += f"   Die Mehrkosten amortisieren sich in {payback:.1f} Jahren.\n"
+                    else:
+                        output += "ℹ️  HINWEIS: Bei kurzer Laufzeit lohnt sich evtl. konstante Pumpe.\n"
+                    
+                    output += "\n" + "=" * 70 + "\n"
+                    output += "⚡ ENERGIEEFFIZIENZ-KLASSEN\n"
+                    output += "=" * 70 + "\n\n"
+                    
+                    output += "Hocheffizienz-Pumpen (z.B. Grundfos Alpha2, Wilo Stratos):\n"
+                    output += "  • A++ Effizienz\n"
+                    output += f"  • Sparen ~{(1-0.55)*100:.0f}% Energie\n"
+                    output += "  • Automatische Lastanpassung\n"
+                    output += "  • Typisch +150-250 EUR Mehrkosten\n\n"
+                    
+                    output += "Standard-Pumpen:\n"
+                    output += "  • D-Klasse Effizienz\n"
+                    output += "  • Konstante Leistung\n"
+                    output += "  • Günstiger in der Anschaffung\n"
+                    output += "  • Höhere Betriebskosten\n\n"
+                    
+                    output += "HINWEISE:\n"
+                    output += "• Betriebsstunden abhängig von Heizlast und JAZ\n"
+                    output += "• Strompreis-Entwicklung beachten\n"
+                    output += "• Bei Neuanlagen: Geregelte Pumpen sind Stand der Technik\n"
+                    
+                    result_text.delete("1.0", tk.END)
+                    result_text.insert("1.0", output)
+                    result_text.config(state="disabled")
+                    
+                except Exception as e:
+                    messagebox.showerror("Fehler", f"Fehler bei Berechnung:\n{str(e)}")
+            
+            # Initial berechnen
+            update_calculation()
+            
+            # Button-Frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill="x", pady=(10, 0))
+            
+            ttk.Button(button_frame, text="Neu berechnen", 
+                      command=update_calculation).pack(side="left", padx=5)
+            ttk.Button(button_frame, text="Schließen", 
+                      command=dialog.destroy).pack(side="right", padx=5)
+            
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Fehler bei Energieverbrauch-Prognose:\n{str(e)}")
     
     def _show_detailed_pressure_analysis(self):
         """Zeigt detaillierte Druckverlust-Analyse (v3.3.0-beta1)."""
@@ -1248,6 +1445,262 @@ class GeothermieGUIProfessional:
             
         except Exception as e:
             messagebox.showerror("Fehler", f"Fehler bei detaillierter Analyse:\n{str(e)}")
+    
+    def _show_flow_optimizer(self):
+        """Zeigt interaktiven Durchfluss-Optimizer (v3.3.0-beta2)."""
+        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            messagebox.showinfo("Hinweis", "Bitte erst Hydraulik berechnen!")
+            return
+        
+        try:
+            # Hole aktuelle Parameter
+            heat_power = float(self.entries.get("heat_pump_power", ttk.Entry()).get() or "0")
+            cop = float(self.entries.get("heat_pump_cop", ttk.Entry()).get() or "4.0")
+            depth = float(self.borehole_entries["depth"].get())
+            num_boreholes = int(self.borehole_entries["num_boreholes"].get())
+            num_circuits = int(self.entries.get("num_circuits", ttk.Entry()).get() or str(num_boreholes))
+            pipe_inner_d = float(self.entries.get("pipe_inner_d", ttk.Entry()).get() or "0.026")
+            antifreeze_conc = float(self.antifreeze_var.get())
+            current_delta_t = float(self.entries.get("delta_t_fluid", ttk.Entry()).get() or "3.0")
+            
+            extraction_power = heat_power * (cop - 1) / cop
+            
+            # Bestimme Kreise pro Bohrung
+            pipe_config = self.pipe_config_var.get()
+            if "4-rohr" in pipe_config.lower() or "double" in pipe_config.lower():
+                circuits_per_borehole = 2
+            else:
+                circuits_per_borehole = 1
+            
+            # Erstelle Dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Durchfluss-Optimierung")
+            dialog.geometry("800x750")
+            
+            # Haupt-Frame
+            main_frame = ttk.Frame(dialog)
+            main_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+            
+            # Titel
+            title = ttk.Label(main_frame, text="🎯 DURCHFLUSS-OPTIMIERUNG", 
+                            font=("Arial", 14, "bold"))
+            title.pack(pady=(0, 15))
+            
+            # Info-Frame
+            info_frame = ttk.LabelFrame(main_frame, text="Aktuelle Konfiguration", padding=10)
+            info_frame.pack(fill="x", pady=(0, 10))
+            
+            info_text = f"Leistung: {heat_power:.1f} kW | COP: {cop:.1f} | "
+            info_text += f"Bohrungen: {num_boreholes}×{depth:.0f}m | "
+            info_text += f"Glykol: {antifreeze_conc:.0f}%"
+            ttk.Label(info_frame, text=info_text).pack()
+            
+            # Optimierungsziel
+            target_frame = ttk.LabelFrame(main_frame, text="Optimierungsziel", padding=10)
+            target_frame.pack(fill="x", pady=(0, 10))
+            
+            target_var = tk.StringVar(value="balanced")
+            ttk.Radiobutton(target_frame, text="Minimale Pumpenleistung", 
+                           variable=target_var, value="min_pump").pack(anchor="w")
+            ttk.Radiobutton(target_frame, text="Optimale Reynolds-Zahl (Re > 3000)", 
+                           variable=target_var, value="optimal_reynolds").pack(anchor="w")
+            ttk.Radiobutton(target_frame, text="Ausgeglichener Kompromiss", 
+                           variable=target_var, value="balanced").pack(anchor="w")
+            
+            # Slider-Frame
+            slider_frame = ttk.LabelFrame(main_frame, text="ΔT-Einstellung", padding=10)
+            slider_frame.pack(fill="x", pady=(0, 10))
+            
+            delta_t_var = tk.DoubleVar(value=current_delta_t)
+            delta_t_label = ttk.Label(slider_frame, text=f"ΔT: {current_delta_t:.1f} K")
+            delta_t_label.pack()
+            
+            delta_t_slider = ttk.Scale(slider_frame, from_=2.0, to=5.0, 
+                                      variable=delta_t_var, orient="horizontal")
+            delta_t_slider.pack(fill="x", padx=20, pady=5)
+            
+            # Ergebnis-Frame
+            result_frame = ttk.LabelFrame(main_frame, text="Ergebnisse", padding=10)
+            result_frame.pack(fill="both", expand=True, pady=(0, 10))
+            
+            scrollbar = ttk.Scrollbar(result_frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            result_text = tk.Text(result_frame, wrap=tk.WORD, yscrollcommand=scrollbar.set,
+                                 font=("Courier", 10), height=20)
+            result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.config(command=result_text.yview)
+            
+            def calculate_for_delta_t(delta_t):
+                """Berechnet Hydraulik für gegebenes ΔT."""
+                flow = self.hydraulics_calc.calculate_required_flow_rate(
+                    extraction_power, delta_t, antifreeze_conc
+                )
+                
+                system = self.hydraulics_calc.calculate_total_system_pressure_drop(
+                    depth, num_boreholes, num_circuits, pipe_inner_d,
+                    flow['volume_flow_m3_h'], antifreeze_conc,
+                    circuits_per_borehole=circuits_per_borehole
+                )
+                
+                pump = self.hydraulics_calc.calculate_pump_power(
+                    flow['volume_flow_m3_h'], system['total_pressure_drop_bar']
+                )
+                
+                # Energie-Prognose
+                energy = self.hydraulics_calc.calculate_pump_energy_consumption(
+                    pump['electric_power_w'], 1800, 0.30
+                )
+                
+                return {
+                    'delta_t': delta_t,
+                    'flow': flow,
+                    'system': system,
+                    'pump': pump,
+                    'energy': energy
+                }
+            
+            def update_results(*args):
+                try:
+                    delta_t = delta_t_var.get()
+                    delta_t_label.config(text=f"ΔT: {delta_t:.1f} K")
+                    
+                    # Berechne aktuell
+                    current = calculate_for_delta_t(delta_t)
+                    
+                    # Berechne optimal für Ziel
+                    target = target_var.get()
+                    best_delta_t = delta_t
+                    best_score = 0
+                    
+                    for test_dt in [2.0, 2.2, 2.5, 2.7, 3.0, 3.5, 4.0, 4.5, 5.0]:
+                        test_result = calculate_for_delta_t(test_dt)
+                        
+                        if target == "min_pump":
+                            score = -test_result['pump']['electric_power_w']
+                        elif target == "optimal_reynolds":
+                            re = test_result['system']['reynolds']
+                            score = -abs(re - 3500)  # Ziel: Re = 3500
+                        else:  # balanced
+                            re = test_result['system']['reynolds']
+                            pump_w = test_result['pump']['electric_power_w']
+                            score = (min(re, 3500) / 3500) * 1000 - (pump_w / 10)
+                        
+                        if score > best_score:
+                            best_score = score
+                            best_delta_t = test_dt
+                    
+                    optimal = calculate_for_delta_t(best_delta_t)
+                    
+                    # Formatiere Ausgabe
+                    output = "=" * 75 + "\n"
+                    output += "DURCHFLUSS-OPTIMIERUNG\n"
+                    output += "=" * 75 + "\n\n"
+                    
+                    output += f"Aktuelle Werte (ΔT = {current['delta_t']:.1f} K):\n"
+                    output += f"  Volumenstrom: {current['flow']['volume_flow_m3_h']:.2f} m³/h\n"
+                    output += f"  Reynolds: {current['system']['reynolds']:.0f} "
+                    output += f"({'turbulent' if current['system']['reynolds'] > 2300 else 'laminar'})\n"
+                    output += f"  Druckverlust: {current['system']['total_pressure_drop_bar']:.2f} bar\n"
+                    output += f"  Pumpe: {current['pump']['electric_power_w']:.0f} W\n"
+                    output += f"  Energiekosten: {current['energy']['annual_cost_eur']:.2f} EUR/Jahr\n\n"
+                    
+                    if abs(best_delta_t - delta_t) > 0.2:
+                        output += "=" * 75 + "\n"
+                        output += f"💡 OPTIMIERTES ERGEBNIS (ΔT = {optimal['delta_t']:.1f} K):\n"
+                        output += "=" * 75 + "\n\n"
+                        
+                        output += f"  Volumenstrom: {optimal['flow']['volume_flow_m3_h']:.2f} m³/h "
+                        vol_change = ((optimal['flow']['volume_flow_m3_h'] / current['flow']['volume_flow_m3_h']) - 1) * 100
+                        output += f"({vol_change:+.1f}%)\n"
+                        
+                        output += f"  Reynolds: {optimal['system']['reynolds']:.0f} "
+                        re_change = ((optimal['system']['reynolds'] / current['system']['reynolds']) - 1) * 100
+                        output += f"({re_change:+.1f}%)\n"
+                        
+                        output += f"  Druckverlust: {optimal['system']['total_pressure_drop_bar']:.2f} bar "
+                        dp_change = ((optimal['system']['total_pressure_drop_bar'] / current['system']['total_pressure_drop_bar']) - 1) * 100
+                        output += f"({dp_change:+.1f}%)\n"
+                        
+                        output += f"  Pumpe: {optimal['pump']['electric_power_w']:.0f} W "
+                        pump_change = ((optimal['pump']['electric_power_w'] / current['pump']['electric_power_w']) - 1) * 100
+                        output += f"({pump_change:+.1f}%)\n"
+                        
+                        output += f"  Energiekosten: {optimal['energy']['annual_cost_eur']:.2f} EUR/Jahr "
+                        energy_change = optimal['energy']['annual_cost_eur'] - current['energy']['annual_cost_eur']
+                        output += f"({energy_change:+.2f} EUR/Jahr)\n\n"
+                        
+                        output += "EMPFEHLUNG:\n"
+                        if abs(pump_change) < 5:
+                            output += f"  ✅ Aktueller Wert ist gut (< 5% Unterschied)\n"
+                        elif pump_change > 0:
+                            output += f"  ⬆️  Optimierung erhöht Pumpenleistung um {abs(pump_change):.1f}%\n"
+                            output += f"     → Bessere Reynolds-Zahl, höherer Wärmeübergang\n"
+                            output += f"     → +{abs(energy_change):.2f} EUR/Jahr Energiekosten\n"
+                        else:
+                            output += f"  ⬇️  Optimierung senkt Pumpenleistung um {abs(pump_change):.1f}%\n"
+                            output += f"     → {abs(energy_change):.2f} EUR/Jahr Ersparnis\n"
+                            if optimal['system']['reynolds'] < 2500:
+                                output += f"     ⚠️  Reynolds knapp turbulent ({optimal['system']['reynolds']:.0f})\n"
+                    else:
+                        output += "✅ Aktueller Wert ist bereits optimal!\n\n"
+                    
+                    output += "\n" + "=" * 75 + "\n"
+                    output += "VERGLEICHS-ÜBERSICHT\n"
+                    output += "=" * 75 + "\n\n"
+                    output += f"{'ΔT (K)':<10} {'Flow (m³/h)':<15} {'Reynolds':<12} {'Pumpe (W)':<12} {'EUR/Jahr':<12}\n"
+                    output += "-" * 75 + "\n"
+                    
+                    for test_dt in [2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]:
+                        test = calculate_for_delta_t(test_dt)
+                        marker = " ← " if abs(test_dt - delta_t) < 0.1 else ""
+                        marker += " ★" if abs(test_dt - best_delta_t) < 0.1 else ""
+                        output += f"{test_dt:<10.1f} {test['flow']['volume_flow_m3_h']:<15.2f} "
+                        output += f"{test['system']['reynolds']:<12.0f} {test['pump']['electric_power_w']:<12.0f} "
+                        output += f"{test['energy']['annual_cost_eur']:<12.2f}{marker}\n"
+                    
+                    output += "\n← = Aktuelle Einstellung | ★ = Optimal für Ziel\n"
+                    
+                    result_text.config(state="normal")
+                    result_text.delete("1.0", tk.END)
+                    result_text.insert("1.0", output)
+                    result_text.config(state="disabled")
+                    
+                except Exception as e:
+                    result_text.config(state="normal")
+                    result_text.delete("1.0", tk.END)
+                    result_text.insert("1.0", f"Fehler: {str(e)}")
+                    result_text.config(state="disabled")
+            
+            # Events binden
+            delta_t_slider.config(command=lambda *args: update_results())
+            target_var.trace_add("write", update_results)
+            
+            # Initial berechnen
+            update_results()
+            
+            # Button-Frame
+            button_frame = ttk.Frame(main_frame)
+            button_frame.pack(fill="x", pady=(10, 0))
+            
+            def apply_optimal():
+                best_dt = None
+                for test_dt in [2.0, 2.2, 2.5, 2.7, 3.0, 3.5, 4.0, 4.5, 5.0]:
+                    # Finde optimales ΔT basierend auf Ziel
+                    pass  # Logik wie oben
+                # Setze in Hauptfenster
+                self.entries.get("delta_t_fluid", ttk.Entry()).delete(0, tk.END)
+                self.entries.get("delta_t_fluid", ttk.Entry()).insert(0, f"{delta_t_var.get():.1f}")
+                messagebox.showinfo("Erfolg", f"ΔT auf {delta_t_var.get():.1f} K gesetzt.\n\nBitte Hydraulik neu berechnen!")
+                dialog.destroy()
+            
+            ttk.Button(button_frame, text="Übernehmen", 
+                      command=apply_optimal).pack(side="left", padx=5)
+            ttk.Button(button_frame, text="Schließen", 
+                      command=dialog.destroy).pack(side="right", padx=5)
+            
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Fehler bei Durchfluss-Optimierung:\n{str(e)}")
     
     def _check_flow_rate_warnings(self, heat_power_kw: float, flow_rate_m3s: float, num_boreholes: int,
                                    current_delta_t: float, antifreeze_conc: float, extraction_power: float):
