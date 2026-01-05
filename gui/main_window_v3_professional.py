@@ -29,6 +29,7 @@ from utils import PDFReportGenerator
 from utils.pvgis_api import PVGISClient, FALLBACK_CLIMATE_DATA
 from data import GroutMaterialDB, SoilTypeDB, FluidDatabase, FluidDatabase
 from gui.tooltips import InfoButton
+from gui.pump_selection_dialog import PumpSelectionDialog
 from utils.get_file_handler import GETFileHandler
 
 
@@ -662,6 +663,15 @@ class GeothermieGUIProfessional:
             state="disabled"
         )
         self.flow_optimizer_button.pack(side="left", padx=5)
+        
+        # Button für Pumpenauswahl-Assistent (v3.3.0-beta3)
+        self.pump_selection_button = ttk.Button(
+            detail_button_frame,
+            text="🔧 Pumpenauswahl-Assistent",
+            command=self._show_pump_selection,
+            state="disabled"
+        )
+        self.pump_selection_button.pack(side="left", padx=5)
     
     def _create_visualization_tab(self):
         """Erstellt den Visualisierungs-Tab."""
@@ -1141,6 +1151,8 @@ class GeothermieGUIProfessional:
                 self.energy_prognosis_button.config(state="normal")
             if hasattr(self, 'flow_optimizer_button'):
                 self.flow_optimizer_button.config(state="normal")
+            if hasattr(self, 'pump_selection_button'):
+                self.pump_selection_button.config(state="normal")
             
             self.status_var.set(f"✓ Hydraulik: {flow['volume_flow_m3_h']:.2f} m³/h, {system['total_pressure_drop_mbar']:.0f} mbar, {pump['electric_power_w']:.0f} W")
             
@@ -1701,6 +1713,48 @@ class GeothermieGUIProfessional:
             
         except Exception as e:
             messagebox.showerror("Fehler", f"Fehler bei Durchfluss-Optimierung:\n{str(e)}")
+    
+    def _show_pump_selection(self):
+        """Zeigt Pumpenauswahl-Assistenten (v3.3.0-beta3)."""
+        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            messagebox.showinfo("Hinweis", "Bitte erst Hydraulik berechnen!")
+            return
+        
+        try:
+            # Hole Wärmeleistung
+            heat_power = float(self.entries.get("heat_pump_power", ttk.Entry()).get() or "11")
+            
+            # Erstelle Hydraulik-Daten für Dialog
+            hydraulics_data = {
+                'heat_power': heat_power,
+                'flow': self.hydraulics_result.get('flow', {}),
+                'system': self.hydraulics_result.get('system', {})
+            }
+            
+            # Zeige Dialog
+            dialog = PumpSelectionDialog(self.root, hydraulics_data)
+            selected_pump = dialog.show()
+            
+            if selected_pump:
+                # Zeige Bestätigung mit Details
+                msg = f"Ausgewählte Pumpe:\n\n"
+                msg += f"{selected_pump.get_full_name()}\n\n"
+                msg += f"Typ: {'Geregelt' if selected_pump.pump_type == 'regulated' else 'Konstant'}\n"
+                msg += f"Effizienz: {selected_pump.efficiency_class}\n"
+                msg += f"Max. Flow: {selected_pump.specs.max_flow_m3h} m³/h\n"
+                msg += f"Max. Head: {selected_pump.specs.max_head_m} m\n"
+                msg += f"Leistung: {selected_pump.specs.power_avg_w} W\n"
+                msg += f"Preis: {selected_pump.price_eur:.2f} EUR\n\n"
+                msg += "Diese Informationen wurden in die Zwischenablage kopiert."
+                
+                # Kopiere in Zwischenablage
+                self.root.clipboard_clear()
+                self.root.clipboard_append(msg)
+                
+                messagebox.showinfo("Pumpe ausgewählt", msg)
+        
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Fehler bei Pumpenauswahl:\n{str(e)}")
     
     def _check_flow_rate_warnings(self, heat_power_kw: float, flow_rate_m3s: float, num_boreholes: int,
                                    current_delta_t: float, antifreeze_conc: float, extraction_power: float):
