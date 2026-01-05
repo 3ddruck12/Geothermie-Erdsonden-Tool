@@ -238,3 +238,11 @@ if __name__ == "__main__":
     )
     print(f"\nTemperaturänderung nach 25 Jahren: {delta_T:.2f} K")
 
+
+
+
+
+
+
+
+

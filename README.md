@@ -10,6 +10,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/3ddruck12/GeothermieErdsondentool/workflows/Build%20and%20Release/badge.svg)](https://github.com/3ddruck12/GeothermieErdsondentool/actions)
 [![GitHub release](https://img.shields.io/github/release/3ddruck12/GeothermieErdsondentool.svg)](https://github.com/3ddruck12/GeothermieErdsondentool/releases)
+![Version](https://img.shields.io/badge/version-3.2.1-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -57,12 +58,30 @@
 
 ## ✨ Features
 
+### 🆕 Neu in V3.2.1 (Januar 2026)
+- 🔥 **Maximale Sondenlänge**: Automatische Anpassung der Bohrungsanzahl bei VDI 4640
+- 🔥 **Gesamtlänge der Leitungen**: Anzeige für beide Berechnungsmethoden
+
+### 🆕 Neu in V3.2.0 (Januar 2026)
+- 🔥 **VDI 4640 Berechnungsmethode**: Normkonforme Auslegung nach Koenigsdorff
+- 🔥 **Dominante Kühllast**: Automatische Erkennung und separate Auslegung
+- 🔥 **Wärmepumpenaustrittstemperatur**: Detaillierte Temperaturkomponenten
+- 🔥 **Drei Zeitskalen**: Grundlast (10 Jahre), Periodisch (1 Monat), Peak (6 Stunden)
+- 🔥 **`.get` Dateiformat**: Natives Projektformat mit Versionierung
+- 🔥 **Import/Export**: Speichern und Laden kompletter Projekte (Strg+S / Strg+O)
+- 🔥 **pygfunction Integration**: Bohrfeld-Simulationen mit g-Funktionen
+- 🔥 **Abwärtskompatibilität**: Automatische Migration von V3.0/3.1 Dateien
+
 ### 🔧 Berechnungen
+- ✅ **Zwei Berechnungsmethoden**:
+  - **Iterativ**: Eskilson/Hellström (klassisch)
+  - **VDI 4640**: Koenigsdorff-Methode (normkonform)
+- ✅ **Dominante Kühllast**: Automatische Erkennung
 - ✅ **Erdwärmesonden bis 100m Tiefe**
 - ✅ **Multiple Konfigurationen**: Single-U, Double-U, 4-Rohr-Systeme
 - ✅ **PE 100 RC Rohre**: 32mm mit Dual- und 4-Verbinder
 - ✅ **Thermische Widerstände**: Multipole-Methode nach Hellström
-- ✅ **G-Funktionen**: Nach Eskilson
+- ✅ **G-Funktionen**: Nach Eskilson & pygfunction
 - ✅ **Hydraulik-Berechnungen**: Druckverlust, Pumpenleistung
 - ✅ **Multi-Bohrfeld**: Mehrere Bohrungen mit Abstandsberechnung
 
@@ -122,10 +141,10 @@ python main.py
 
 ```bash
 # Neueste Version herunterladen
-wget https://github.com/3ddruck12/GeothermieErdsondentool/releases/download/v3.1.0/geothermie-erdsondentool_3.1.0_amd64.deb
+wget https://github.com/3ddruck12/GeothermieErdsondentool/releases/download/v3.2.1/geothermie-erdsondentool_3.2.1_amd64.deb
 
-# Installieren
-sudo dpkg -i geothermie-erdsondentool_3.1.0_amd64.deb
+# Installieren/Upgraden (keine Deinstallation nötig)
+sudo dpkg -i geothermie-erdsondentool_3.2.1_amd64.deb
 sudo apt-get install -f  # Falls Abhängigkeiten fehlen
 
 # Starten
@@ -166,7 +185,16 @@ python main.py
 - Adresse: "Musterstraße 1, 12345 Musterstadt"
 ```
 
-### 2. Bohrfeld konfigurieren
+### 2. Projekt speichern (NEU in V3.2)
+
+```
+💾 Speichern:
+- Menü: Datei → Als .get speichern (Strg+S)
+- Später laden: Datei → .get Projekt laden (Strg+O)
+- Format: JSON-basiert, menschenlesbar
+```
+
+### 3. Bohrfeld konfigurieren
 
 ```
 🏗️ Bohrfeld:
@@ -176,21 +204,21 @@ python main.py
 - Abstand zum Gebäude: 3 m
 ```
 
-### 3. Bodentyp wählen
+### 4. Bodentyp wählen
 
 ```
 🌍 Boden:
 - Dropdown: "Sand" → λ = 1.8 W/m·K automatisch gesetzt
 ```
 
-### 4. Verfüllmaterial wählen
+### 5. Verfüllmaterial wählen
 
 ```
 🏗️ Verfüllung:
 - Dropdown: "Zement-Bentonit verbessert" → λ = 1.3 W/m·K
 ```
 
-### 5. Heizlast eingeben
+### 6. Heizlast eingeben
 
 ```
 🔥 Heizlast:
@@ -286,6 +314,8 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) f�
 
 ## 🙏 Danksagungen
 
+- **Prof. Dr.-Ing. Roland Koenigsdorff**: VDI 4640 Berechnungsmethode und wissenschaftliche Grundlagen
+- **Dr. Massimo Cimmino**: [pygfunction](https://github.com/MassimoCimmino/pygfunction) - Hervorragende g-Funktionen Library
 - **VDI 4640**: Bodenwerte und Berechnungsstandards
 - **PVGIS**: EU-Klimadatenbank  
 - **Wissenschaftliche Community**: Für Forschung und Methodik im Bereich Geothermie

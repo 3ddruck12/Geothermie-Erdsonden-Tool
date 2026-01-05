@@ -118,3 +118,11 @@ if __name__ == "__main__":
         print(f"    Wandstärke: {pipe.thickness_mm} mm")
         print(f"    Wärmeleitfähigkeit: {pipe.thermal_conductivity} W/m·K")
 
+
+
+
+
+
+
+
+

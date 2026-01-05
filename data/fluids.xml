@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fluid_database>
+    <metadata>
+        <version>1.0</version>
+        <last_updated>2026-01-01</last_updated>
+        <description>Datenbank für Wärmeträgerflüssigkeiten in Erdwärmesonden-Systemen</description>
+        <source>VDI-Wärmeatlas D3.1, Herstellerangaben</source>
+    </metadata>
+    
+    <!-- WASSER -->
+    <fluid_category name="Wasser" type="water">
+        
+        <fluid>
+            <name>Reines Wasser</name>
+            <type>water</type>
+            <concentration_percent>0.0</concentration_percent>
+            <properties_at_20c>
+                <density>998.2</density>                      <!-- kg/m³ -->
+                <viscosity>0.001002</viscosity>               <!-- Pa·s -->
+                <heat_capacity>4182.0</heat_capacity>         <!-- J/kg·K -->
+                <thermal_conductivity>0.598</thermal_conductivity>  <!-- W/m·K -->
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>0.0</min_temp>          <!-- °C - Frostschutzgrenze -->
+                <max_temp>95.0</max_temp>         <!-- °C - Max. Betriebstemperatur -->
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.025</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Nur für frostfreie Anwendungen</note>
+                <note>Beste Wärmeübertragung</note>
+                <note>Keine Frostschutz-Eigenschaften</note>
+            </notes>
+        </fluid>
+        
+    </fluid_category>
+    
+    <!-- ETHYLENGLYKOL-MISCHUNGEN -->
+    <fluid_category name="Ethylenglykol-Mischungen" type="glycol_mix">
+        
+        <fluid>
+            <name>Ethylenglykol 10%</name>
+            <type>glycol_mix</type>
+            <glycol_type>ethylene_glycol</glycol_type>
+            <concentration_percent>10.0</concentration_percent>
+            <properties_at_20c>
+                <density>1013.0</density>
+                <viscosity>0.0020</viscosity>
+                <heat_capacity>4050.0</heat_capacity>
+                <thermal_conductivity>0.55</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-4.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.026</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Leichter Frostschutz bis -4°C</note>
+                <note>Geringe Viskositätserhöhung</note>
+            </notes>
+        </fluid>
+        
+        <fluid>
+            <name>Ethylenglykol 20%</name>
+            <type>glycol_mix</type>
+            <glycol_type>ethylene_glycol</glycol_type>
+            <concentration_percent>20.0</concentration_percent>
+            <properties_at_20c>
+                <density>1028.0</density>
+                <viscosity>0.0025</viscosity>
+                <heat_capacity>3900.0</heat_capacity>
+                <thermal_conductivity>0.52</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-8.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.028</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Frostschutz bis -8°C</note>
+                <note>Standard für milde Klimazonen</note>
+            </notes>
+        </fluid>
+        
+        <fluid>
+            <name>Ethylenglykol 25%</name>
+            <type>glycol_mix</type>
+            <glycol_type>ethylene_glycol</glycol_type>
+            <concentration_percent>25.0</concentration_percent>
+            <properties_at_20c>
+                <density>1035.0</density>
+                <viscosity>0.0030</viscosity>
+                <heat_capacity>3850.0</heat_capacity>
+                <thermal_conductivity>0.48</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-12.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.030</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Frostschutz bis -12°C</note>
+                <note>Standard für Deutschland (VDI-Empfehlung)</note>
+                <note>Guter Kompromiss Frostschutz/Wärmeübertragung</note>
+            </notes>
+        </fluid>
+        
+        <fluid>
+            <name>Ethylenglykol 30%</name>
+            <type>glycol_mix</type>
+            <glycol_type>ethylene_glycol</glycol_type>
+            <concentration_percent>30.0</concentration_percent>
+            <properties_at_20c>
+                <density>1042.0</density>
+                <viscosity>0.0038</viscosity>
+                <heat_capacity>3800.0</heat_capacity>
+                <thermal_conductivity>0.45</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-18.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.032</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Frostschutz bis -18°C</note>
+                <note>Für kalte Regionen</note>
+                <note>Höhere Viskosität → höherer Druckverlust</note>
+            </notes>
+        </fluid>
+        
+        <fluid>
+            <name>Ethylenglykol 35%</name>
+            <type>glycol_mix</type>
+            <glycol_type>ethylene_glycol</glycol_type>
+            <concentration_percent>35.0</concentration_percent>
+            <properties_at_20c>
+                <density>1048.0</density>
+                <viscosity>0.0048</viscosity>
+                <heat_capacity>3750.0</heat_capacity>
+                <thermal_conductivity>0.42</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-23.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.034</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Frostschutz bis -23°C</note>
+                <note>Für sehr kalte Regionen</note>
+                <note>Deutlich höhere Viskosität</note>
+            </notes>
+        </fluid>
+        
+        <fluid>
+            <name>Ethylenglykol 40%</name>
+            <type>glycol_mix</type>
+            <glycol_type>ethylene_glycol</glycol_type>
+            <concentration_percent>40.0</concentration_percent>
+            <properties_at_20c>
+                <density>1055.0</density>
+                <viscosity>0.0060</viscosity>
+                <heat_capacity>3700.0</heat_capacity>
+                <thermal_conductivity>0.40</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-26.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.036</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Frostschutz bis -26°C</note>
+                <note>Für extreme Kälte</note>
+                <note>Hohe Viskosität → deutlich höherer Druckverlust</note>
+                <note>Nur bei Notwendigkeit verwenden</note>
+            </notes>
+        </fluid>
+        
+    </fluid_category>
+    
+    <!-- PROPYLENGLYKOL-MISCHUNGEN -->
+    <fluid_category name="Propylenglykol-Mischungen (Lebensmittelgeeignet)" type="glycol_mix">
+        
+        <fluid>
+            <name>Propylenglykol 20%</name>
+            <type>glycol_mix</type>
+            <glycol_type>propylene_glycol</glycol_type>
+            <concentration_percent>20.0</concentration_percent>
+            <properties_at_20c>
+                <density>1020.0</density>
+                <viscosity>0.0030</viscosity>
+                <heat_capacity>3920.0</heat_capacity>
+                <thermal_conductivity>0.50</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-8.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.029</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Lebensmittelgeeignet (FDA-zugelassen)</note>
+                <note>Umweltfreundlicher als Ethylenglykol</note>
+                <note>Frostschutz bis -8°C</note>
+                <note>Etwas höhere Viskosität als Ethylenglykol</note>
+            </notes>
+        </fluid>
+        
+        <fluid>
+            <name>Propylenglykol 25%</name>
+            <type>glycol_mix</type>
+            <glycol_type>propylene_glycol</glycol_type>
+            <concentration_percent>25.0</concentration_percent>
+            <properties_at_20c>
+                <density>1028.0</density>
+                <viscosity>0.0038</viscosity>
+                <heat_capacity>3870.0</heat_capacity>
+                <thermal_conductivity>0.47</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-11.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.031</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Lebensmittelgeeignet (FDA-zugelassen)</note>
+                <note>Für Trinkwasserschutzgebiete empfohlen</note>
+                <note>Frostschutz bis -11°C</note>
+            </notes>
+        </fluid>
+        
+        <fluid>
+            <name>Propylenglykol 30%</name>
+            <type>glycol_mix</type>
+            <glycol_type>propylene_glycol</glycol_type>
+            <concentration_percent>30.0</concentration_percent>
+            <properties_at_20c>
+                <density>1035.0</density>
+                <viscosity>0.0045</viscosity>
+                <heat_capacity>3850.0</heat_capacity>
+                <thermal_conductivity>0.46</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-18.0</min_temp>
+                <max_temp>95.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.033</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Lebensmittelgeeignet (FDA-zugelassen)</note>
+                <note>Für Trinkwasserschutzgebiete in kalten Regionen</note>
+                <note>Frostschutz bis -18°C</note>
+                <note>Höhere Viskosität als Ethylenglykol</note>
+            </notes>
+        </fluid>
+        
+    </fluid_category>
+    
+    <!-- SPEZIAL-FLUIDE -->
+    <fluid_category name="Spezial-Fluide" type="special">
+        
+        <fluid>
+            <name>Kaliumkarbonat 30%</name>
+            <type>special</type>
+            <concentration_percent>30.0</concentration_percent>
+            <properties_at_20c>
+                <density>1280.0</density>
+                <viscosity>0.0025</viscosity>
+                <heat_capacity>3450.0</heat_capacity>
+                <thermal_conductivity>0.52</thermal_conductivity>
+            </properties_at_20c>
+            <temperature_range>
+                <min_temp>-20.0</min_temp>
+                <max_temp>100.0</max_temp>
+            </temperature_range>
+            <hydraulics>
+                <friction_factor_base>0.027</friction_factor_base>
+            </hydraulics>
+            <notes>
+                <note>Anorganischer Frostschutz</note>
+                <note>Höhere Dichte → höhere Pumpenleistung</note>
+                <note>Umweltverträglich</note>
+                <note>Leicht korrosiv (Korrosionsschutz nötig)</note>
+            </notes>
+        </fluid>
+        
+    </fluid_category>
+    
+</fluid_database>
+

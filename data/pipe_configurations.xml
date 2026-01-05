@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipe_configuration_database>
+    <metadata>
+        <version>1.0</version>
+        <last_updated>2026-01-01</last_updated>
+        <description>Rohrkonfigurationen für Erdwärmesonden</description>
+        <source>VDI 4640, technische Normen</source>
+    </metadata>
+    
+    <!-- SINGLE-U SONDEN -->
+    <configuration>
+        <id>single-u</id>
+        <name>Single-U</name>
+        <display_name>Single-U (1x2 Rohre)</display_name>
+        <type>u_tube</type>
+        <description>Ein U-Rohr pro Bohrung, Standard-Konfiguration</description>
+        
+        <geometry>
+            <pipes_per_borehole>2</pipes_per_borehole>
+            <circuits_per_borehole>1</circuits_per_borehole>
+            <pipe_arrangement>U-shaped</pipe_arrangement>
+            <typical_shank_spacing>0.052</typical_shank_spacing>  <!-- m -->
+        </geometry>
+        
+        <thermal_properties>
+            <borehole_resistance_typical>0.12</borehole_resistance_typical>  <!-- m·K/W -->
+            <borehole_resistance_min>0.08</borehole_resistance_min>
+            <borehole_resistance_max>0.18</borehole_resistance_max>
+        </thermal_properties>
+        
+        <hydraulics>
+            <flow_path_multiplier>1.0</flow_path_multiplier>
+            <typical_pressure_drop_factor>1.0</typical_pressure_drop_factor>
+        </hydraulics>
+        
+        <application>
+            <typical_use>Standard für kleine bis mittlere Anlagen</typical_use>
+            <power_range_kw>
+                <min>3</min>
+                <max>15</max>
+            </power_range_kw>
+            <advantages>
+                <advantage>Einfache Installation</advantage>
+                <advantage>Kostengünstig</advantage>
+                <advantage>Bewährte Technik</advantage>
+                <advantage>Geringer Druckverlust</advantage>
+            </advantages>
+            <disadvantages>
+                <disadvantage>Geringere Entzugsleistung als Double-U</disadvantage>
+                <disadvantage>Höherer Bohrlochwiderstand</disadvantage>
+            </disadvantages>
+        </application>
+        
+        <recommended>true</recommended>
+    </configuration>
+    
+    <!-- DOUBLE-U SONDEN -->
+    <configuration>
+        <id>double-u</id>
+        <name>Double-U</name>
+        <display_name>Double-U (2x2 Rohre)</display_name>
+        <type>u_tube</type>
+        <description>Zwei U-Rohre pro Bohrung, höhere Leistung</description>
+        
+        <geometry>
+            <pipes_per_borehole>4</pipes_per_borehole>
+            <circuits_per_borehole>2</circuits_per_borehole>
+            <pipe_arrangement>Double U-shaped</pipe_arrangement>
+            <typical_shank_spacing>0.065</typical_shank_spacing>
+        </geometry>
+        
+        <thermal_properties>
+            <borehole_resistance_typical>0.09</borehole_resistance_typical>
+            <borehole_resistance_min>0.06</borehole_resistance_min>
+            <borehole_resistance_max>0.13</borehole_resistance_max>
+        </thermal_properties>
+        
+        <hydraulics>
+            <flow_path_multiplier>1.0</flow_path_multiplier>
+            <typical_pressure_drop_factor>0.95</typical_pressure_drop_factor>
+        </hydraulics>
+        
+        <application>
+            <typical_use>Mittlere bis große Anlagen, höhere Leistungsanforderungen</typical_use>
+            <power_range_kw>
+                <min>8</min>
+                <max>25</max>
+            </power_range_kw>
+            <advantages>
+                <advantage>Höhere Entzugsleistung</advantage>
+                <advantage>Niedrigerer Bohrlochwiderstand</advantage>
+                <advantage>Bessere Wärmeübertragung</advantage>
+                <advantage>Redundanz (2 Kreise)</advantage>
+            </advantages>
+            <disadvantages>
+                <disadvantage>Teurer als Single-U</disadvantage>
+                <disadvantage>Komplexere Installation</disadvantage>
+                <disadvantage>Größerer Bohrloch-Durchmesser empfohlen</disadvantage>
+            </disadvantages>
+        </application>
+        
+        <recommended>true</recommended>
+    </configuration>
+    
+    <!-- 4-ROHR MIT DUAL-VERBINDER -->
+    <configuration>
+        <id>4-rohr-dual</id>
+        <name>4-Rohr-Dual</name>
+        <display_name>4-Rohr-System (Dual-Verbinder)</display_name>
+        <type>multi_pipe</type>
+        <description>4 Einzelrohre mit Dual-Verbinder am Boden, 2 Kreise</description>
+        
+        <geometry>
+            <pipes_per_borehole>4</pipes_per_borehole>
+            <circuits_per_borehole>2</circuits_per_borehole>
+            <pipe_arrangement>Dual-connected</pipe_arrangement>
+            <typical_shank_spacing>0.070</typical_shank_spacing>
+        </geometry>
+        
+        <thermal_properties>
+            <borehole_resistance_typical>0.08</borehole_resistance_typical>
+            <borehole_resistance_min>0.05</borehole_resistance_min>
+            <borehole_resistance_max>0.12</borehole_resistance_max>
+        </thermal_properties>
+        
+        <hydraulics>
+            <flow_path_multiplier>1.0</flow_path_multiplier>
+            <typical_pressure_drop_factor>0.90</typical_pressure_drop_factor>
+        </hydraulics>
+        
+        <application>
+            <typical_use>Professionelle Systeme, hohe Qualitätsansprüche</typical_use>
+            <power_range_kw>
+                <min>10</min>
+                <max>30</max>
+            </power_range_kw>
+            <advantages>
+                <advantage>Sehr gute thermische Eigenschaften</advantage>
+                <advantage>Gleichmäßige Durchströmung</advantage>
+                <advantage>Geringe Kurzschlussströme</advantage>
+                <advantage>Professioneller Standard</advantage>
+            </advantages>
+            <disadvantages>
+                <disadvantage>Teurer</disadvantage>
+                <disadvantage>Spezielle Verbinder nötig</disadvantage>
+                <disadvantage>Komplexe Installation</disadvantage>
+            </disadvantages>
+        </application>
+        
+        <recommended>true</recommended>
+    </configuration>
+    
+    <!-- 4-ROHR MIT 4-VERBINDER -->
+    <configuration>
+        <id>4-rohr-4verbinder</id>
+        <name>4-Rohr-4Verbinder</name>
+        <display_name>4-Rohr-System (4-Verbinder)</display_name>
+        <type>multi_pipe</type>
+        <description>4 Einzelrohre mit 4-Wege-Verbinder am Boden, 1 Kreis</description>
+        
+        <geometry>
+            <pipes_per_borehole>4</pipes_per_borehole>
+            <circuits_per_borehole>1</circuits_per_borehole>
+            <pipe_arrangement>4-way-connected</pipe_arrangement>
+            <typical_shank_spacing>0.070</typical_shank_spacing>
+        </geometry>
+        
+        <thermal_properties>
+            <borehole_resistance_typical>0.07</borehole_resistance_typical>
+            <borehole_resistance_min>0.05</borehole_resistance_min>
+            <borehole_resistance_max>0.11</borehole_resistance_max>
+        </thermal_properties>
+        
+        <hydraulics>
+            <flow_path_multiplier>2.0</flow_path_multiplier>
+            <typical_pressure_drop_factor>0.50</typical_pressure_drop_factor>
+        </hydraulics>
+        
+        <application>
+            <typical_use>Maximale Leistung pro Bohrung, geringer Druckverlust</typical_use>
+            <power_range_kw>
+                <min>12</min>
+                <max>35</max>
+            </power_range_kw>
+            <advantages>
+                <advantage>Niedrigster Bohrlochwiderstand</advantage>
+                <advantage>Geringster Druckverlust</advantage>
+                <advantage>Maximale Entzugsleistung</advantage>
+                <advantage>Ideal für tiefe Bohrungen</advantage>
+            </advantages>
+            <disadvantages>
+                <disadvantage>Sehr teuer</disadvantage>
+                <disadvantage>Komplexe Hydraulik</disadvantage>
+                <disadvantage>Risiko ungleichmäßiger Durchströmung</disadvantage>
+            </disadvantages>
+        </application>
+        
+        <recommended>false</recommended>
+        <notes>
+            <note>Nur für spezielle Anforderungen</note>
+            <note>Hydraulische Auslegung kritisch</note>
+        </notes>
+    </configuration>
+    
+    <!-- KOAXIAL-SONDEN -->
+    <configuration>
+        <id>coaxial</id>
+        <name>Koaxial</name>
+        <display_name>Koaxial-Sonde</display_name>
+        <type>coaxial</type>
+        <description>Rohr-in-Rohr System, konzentrischer Aufbau</description>
+        
+        <geometry>
+            <pipes_per_borehole>2</pipes_per_borehole>
+            <circuits_per_borehole>1</circuits_per_borehole>
+            <pipe_arrangement>Concentric</pipe_arrangement>
+            <typical_shank_spacing>0.000</typical_shank_spacing>
+        </geometry>
+        
+        <thermal_properties>
+            <borehole_resistance_typical>0.15</borehole_resistance_typical>
+            <borehole_resistance_min>0.10</borehole_resistance_min>
+            <borehole_resistance_max>0.25</borehole_resistance_max>
+        </thermal_properties>
+        
+        <hydraulics>
+            <flow_path_multiplier>1.0</flow_path_multiplier>
+            <typical_pressure_drop_factor>1.20</typical_pressure_drop_factor>
+        </hydraulics>
+        
+        <application>
+            <typical_use>Spezialanwendungen, schwierige Bohrverhältnisse</typical_use>
+            <power_range_kw>
+                <min>5</min>
+                <max>20</max>
+            </power_range_kw>
+            <advantages>
+                <advantage>Einfache Installation (1 Teil)</advantage>
+                <advantage>Gut für instabile Bohrungen</advantage>
+                <advantage>Keine Umlenkkopf nötig</advantage>
+                <advantage>Kein Kurzschluss zwischen Vor-/Rücklauf</advantage>
+            </advantages>
+            <disadvantages>
+                <disadvantage>Höherer Bohrlochwiderstand</disadvantage>
+                <disadvantage>Höherer Druckverlust im Ringraum</disadvantage>
+                <disadvantage>Teuer</disadvantage>
+                <disadvantage>Spezielle Komponenten nötig</disadvantage>
+            </disadvantages>
+        </application>
+        
+        <recommended>false</recommended>
+        <notes>
+            <note>Typisch: Außenrohr DN 80-110mm, Innenrohr DN 32-40mm</note>
+            <note>Strömung im Innerohr nach unten, im Ringraum nach oben</note>
+            <note>Nur bei besonderen Anforderungen (z.B. instabile Böden)</note>
+        </notes>
+    </configuration>
+    
+</pipe_configuration_database>
+

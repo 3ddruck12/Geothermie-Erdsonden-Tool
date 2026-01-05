@@ -313,3 +313,11 @@ if __name__ == "__main__":
     print(f"Rohrkonfiguration: {config.pipe_configuration}")
     print(f"Jährliche Wärmelast: {config.annual_heat_load} MWh")
 
+
+
+
+
+
+
+
+

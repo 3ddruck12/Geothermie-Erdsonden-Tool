@@ -337,3 +337,11 @@ if __name__ == "__main__":
     print(f"Effektiver Widerstand: {result.effective_resistance} m·K/W")
     print(f"Wärmeentzugsrate: {result.heat_extraction_rate} W/m")
 
+
+
+
+
+
+
+
+

@@ -266,3 +266,11 @@ if __name__ == "__main__":
     print(f"Single-U Bohrloch-Widerstand R_b: {r_b:.4f} m·K/W")
     print(f"Single-U Interner Widerstand R_a: {r_a:.4f} m·K/W")
 
+
+
+
+
+
+
+
+

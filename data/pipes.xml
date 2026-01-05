@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pipe_database>
+    <metadata>
+        <version>1.0</version>
+        <last_updated>2026-01-01</last_updated>
+        <description>Datenbank für Erdwärmesonden-Rohre</description>
+        <source>Herstellerangaben (JANSEN, diverse Hersteller)</source>
+    </metadata>
+    
+    <!-- PE (Polyethylen) ROHRE - Standard für Erdwärmesonden -->
+    <pipe_category name="PE (Polyethylen)" material="polyethylene">
+        
+        <!-- PE SDR-17 Serie -->
+        <pipe>
+            <name>PE DN20 SDR-17</name>
+            <material>PE</material>
+            <standard>SDR-17</standard>
+            <dimensions>
+                <outer_diameter>0.0200</outer_diameter>     <!-- m -->
+                <wall_thickness>0.0020</wall_thickness>     <!-- m -->
+                <inner_diameter>0.0160</inner_diameter>     <!-- m (berechnet) -->
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>           <!-- W/m·K -->
+            </thermal_properties>
+            <application>
+                <typical_use>Kleine Anlagen, geringe Durchflüsse</typical_use>
+                <flow_range_m3h>0.2-0.8</flow_range_m3h>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE DN25 SDR-17</name>
+            <material>PE</material>
+            <standard>SDR-17</standard>
+            <dimensions>
+                <outer_diameter>0.0250</outer_diameter>
+                <wall_thickness>0.0020</wall_thickness>
+                <inner_diameter>0.0210</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Standard für kleine bis mittlere Anlagen</typical_use>
+                <flow_range_m3h>0.4-1.2</flow_range_m3h>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE DN32 SDR-17</name>
+            <material>PE</material>
+            <standard>SDR-17</standard>
+            <dimensions>
+                <outer_diameter>0.0320</outer_diameter>
+                <wall_thickness>0.0020</wall_thickness>
+                <inner_diameter>0.0280</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Standard für mittlere Anlagen (bis 15 kW)</typical_use>
+                <flow_range_m3h>0.8-2.5</flow_range_m3h>
+                <recommended>true</recommended>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE DN40 SDR-17</name>
+            <material>PE</material>
+            <standard>SDR-17</standard>
+            <dimensions>
+                <outer_diameter>0.0400</outer_diameter>
+                <wall_thickness>0.0024</wall_thickness>
+                <inner_diameter>0.0352</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Große Anlagen (15-25 kW)</typical_use>
+                <flow_range_m3h>1.5-4.0</flow_range_m3h>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE DN50 SDR-17</name>
+            <material>PE</material>
+            <standard>SDR-17</standard>
+            <dimensions>
+                <outer_diameter>0.0500</outer_diameter>
+                <wall_thickness>0.0029</wall_thickness>
+                <inner_diameter>0.0442</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Sehr große Anlagen (über 25 kW)</typical_use>
+                <flow_range_m3h>2.5-6.0</flow_range_m3h>
+            </application>
+        </pipe>
+        
+        <!-- PE SDR-11 Serie (Dickwandig, höherer Druck) -->
+        <pipe>
+            <name>PE DN25 SDR-11</name>
+            <material>PE</material>
+            <standard>SDR-11</standard>
+            <dimensions>
+                <outer_diameter>0.0250</outer_diameter>
+                <wall_thickness>0.0023</wall_thickness>
+                <inner_diameter>0.0204</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Hoher Betriebsdruck, stabile Verhältnisse</typical_use>
+                <flow_range_m3h>0.4-1.2</flow_range_m3h>
+                <pressure_rating>PN16</pressure_rating>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE DN32 SDR-11</name>
+            <material>PE</material>
+            <standard>SDR-11</standard>
+            <dimensions>
+                <outer_diameter>0.0320</outer_diameter>
+                <wall_thickness>0.0030</wall_thickness>
+                <inner_diameter>0.0260</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Standard für mittlere Anlagen, hoher Druck</typical_use>
+                <flow_range_m3h>0.8-2.5</flow_range_m3h>
+                <pressure_rating>PN16</pressure_rating>
+                <recommended>true</recommended>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE DN40 SDR-11</name>
+            <material>PE</material>
+            <standard>SDR-11</standard>
+            <dimensions>
+                <outer_diameter>0.0400</outer_diameter>
+                <wall_thickness>0.0037</wall_thickness>
+                <inner_diameter>0.0326</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Große Anlagen, hoher Druck</typical_use>
+                <flow_range_m3h>1.5-4.0</flow_range_m3h>
+                <pressure_rating>PN16</pressure_rating>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE DN50 SDR-11</name>
+            <material>PE</material>
+            <standard>SDR-11</standard>
+            <dimensions>
+                <outer_diameter>0.0500</outer_diameter>
+                <wall_thickness>0.0046</wall_thickness>
+                <inner_diameter>0.0408</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Sehr große Anlagen, hoher Druck</typical_use>
+                <flow_range_m3h>2.5-6.0</flow_range_m3h>
+                <pressure_rating>PN16</pressure_rating>
+            </application>
+        </pipe>
+        
+        <!-- PE 100 RC (Rohrverbindungen) -->
+        <pipe>
+            <name>PE 100 RC DN32 Single-U</name>
+            <material>PE 100 RC</material>
+            <standard>DIN 8074</standard>
+            <dimensions>
+                <outer_diameter>0.0320</outer_diameter>
+                <wall_thickness>0.0030</wall_thickness>
+                <inner_diameter>0.0260</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Single-U Sonde, 1 Kreis pro Bohrung</typical_use>
+                <flow_range_m3h>0.6-1.5</flow_range_m3h>
+                <configuration>single_u</configuration>
+                <recommended>true</recommended>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PE 100 RC DN32 Double-U</name>
+            <material>PE 100 RC</material>
+            <standard>DIN 8074</standard>
+            <dimensions>
+                <outer_diameter>0.0320</outer_diameter>
+                <wall_thickness>0.0030</wall_thickness>
+                <inner_diameter>0.0260</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.42</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Double-U Sonde, 2 Kreise pro Bohrung</typical_use>
+                <flow_range_m3h>1.2-3.0</flow_range_m3h>
+                <configuration>double_u</configuration>
+                <recommended>true</recommended>
+            </application>
+        </pipe>
+        
+    </pipe_category>
+    
+    <!-- PP (Polypropylen) ROHRE -->
+    <pipe_category name="PP (Polypropylen)" material="polypropylene">
+        
+        <pipe>
+            <name>PP DN25 PN6</name>
+            <material>PP</material>
+            <standard>PN6</standard>
+            <dimensions>
+                <outer_diameter>0.0250</outer_diameter>
+                <wall_thickness>0.0027</wall_thickness>
+                <inner_diameter>0.0196</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.22</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Spezielle Anwendungen, niedriger Druck</typical_use>
+                <flow_range_m3h>0.4-1.0</flow_range_m3h>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PP DN32 PN6</name>
+            <material>PP</material>
+            <standard>PN6</standard>
+            <dimensions>
+                <outer_diameter>0.0320</outer_diameter>
+                <wall_thickness>0.0030</wall_thickness>
+                <inner_diameter>0.0260</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.22</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Spezielle Anwendungen</typical_use>
+                <flow_range_m3h>0.8-2.0</flow_range_m3h>
+            </application>
+        </pipe>
+        
+        <pipe>
+            <name>PP DN40 PN6</name>
+            <material>PP</material>
+            <standard>PN6</standard>
+            <dimensions>
+                <outer_diameter>0.0400</outer_diameter>
+                <wall_thickness>0.0037</wall_thickness>
+                <inner_diameter>0.0326</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.22</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Große Anlagen, spezielle Anwendungen</typical_use>
+                <flow_range_m3h>1.5-3.5</flow_range_m3h>
+            </application>
+        </pipe>
+        
+    </pipe_category>
+    
+    <!-- KUPFER ROHRE -->
+    <pipe_category name="Kupfer" material="copper">
+        
+        <pipe>
+            <name>CuF30 DN20 25x2</name>
+            <material>Copper (CuF30)</material>
+            <standard>DIN EN 12735</standard>
+            <dimensions>
+                <outer_diameter>0.0250</outer_diameter>
+                <wall_thickness>0.0020</wall_thickness>
+                <inner_diameter>0.0210</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>390.0</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Höchste Wärmeleitfähigkeit, Premium-Anlagen</typical_use>
+                <flow_range_m3h>0.4-1.2</flow_range_m3h>
+            </application>
+            <notes>
+                <note>Sehr teuer</note>
+                <note>Beste Wärmeübertragung</note>
+                <note>Korrosionsschutz beachten</note>
+            </notes>
+        </pipe>
+        
+        <pipe>
+            <name>CuF30 DN25 30x2.5</name>
+            <material>Copper (CuF30)</material>
+            <standard>DIN EN 12735</standard>
+            <dimensions>
+                <outer_diameter>0.0300</outer_diameter>
+                <wall_thickness>0.0025</wall_thickness>
+                <inner_diameter>0.0250</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>390.0</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Premium-Anlagen, hohe Leistung</typical_use>
+                <flow_range_m3h>0.6-1.8</flow_range_m3h>
+            </application>
+        </pipe>
+        
+    </pipe_category>
+    
+    <!-- STAHL ROHRE -->
+    <pipe_category name="Stahl" material="steel">
+        
+        <pipe>
+            <name>St37.2 25x2</name>
+            <material>Steel (St37.2)</material>
+            <standard>DIN 2448</standard>
+            <dimensions>
+                <outer_diameter>0.0250</outer_diameter>
+                <wall_thickness>0.0020</wall_thickness>
+                <inner_diameter>0.0210</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>60.0</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Ältere Anlagen, industrielle Anwendungen</typical_use>
+                <flow_range_m3h>0.4-1.2</flow_range_m3h>
+            </application>
+            <notes>
+                <note>Korrosionsschutz erforderlich</note>
+                <note>Schwer</note>
+                <note>Heute selten verwendet</note>
+            </notes>
+        </pipe>
+        
+    </pipe_category>
+    
+    <!-- SPEZIAL-ROHRE -->
+    <pipe_category name="Spezial" material="special">
+        
+        <pipe>
+            <name>PE JANSEN powerwave SDR-22</name>
+            <material>PE (reinforced)</material>
+            <standard>SDR-22</standard>
+            <dimensions>
+                <outer_diameter>0.0630</outer_diameter>
+                <wall_thickness>0.0118</wall_thickness>
+                <inner_diameter>0.0394</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>4.70</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Koaxial-Sonden, große Leistungen</typical_use>
+                <flow_range_m3h>3.0-8.0</flow_range_m3h>
+                <configuration>coaxial</configuration>
+            </application>
+            <notes>
+                <note>Außenrohr für Koaxial-Systeme</note>
+                <note>Sehr gute thermische Eigenschaften</note>
+                <note>JANSEN Spezialsystem</note>
+            </notes>
+        </pipe>
+        
+        <pipe>
+            <name>PE-Al-PE JANSEN hipress PN35</name>
+            <material>PE-Al-PE composite</material>
+            <standard>PN35</standard>
+            <dimensions>
+                <outer_diameter>0.0420</outer_diameter>
+                <wall_thickness>0.0035</wall_thickness>
+                <inner_diameter>0.0350</inner_diameter>
+            </dimensions>
+            <thermal_properties>
+                <conductivity>0.48</conductivity>
+            </thermal_properties>
+            <application>
+                <typical_use>Diffusionsdicht, hoher Druck, Premium</typical_use>
+                <flow_range_m3h>1.5-4.0</flow_range_m3h>
+                <pressure_rating>PN35</pressure_rating>
+            </application>
+            <notes>
+                <note>Diffusionsdicht durch Aluminiumschicht</note>
+                <note>Verhindert Sauerstoffeintritt</note>
+                <note>Premium-Produkt</note>
+            </notes>
+        </pipe>
+        
+    </pipe_category>
+    
+</pipe_database>
+

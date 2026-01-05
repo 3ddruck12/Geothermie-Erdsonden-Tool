@@ -1,0 +1,75 @@
+{
+  "file_format": "GET",
+  "format_version": "3.2",
+  "created_with": "Geothermie Erdsonden-Tool v3.2.1",
+  "created_date": "2026-01-03T10:04:47.823173Z",
+  "encoding": "UTF-8",
+  "metadata": {
+    "project_name": "Einfamilienhaus Mustermann",
+    "location": "München, Bayern",
+    "designer": "Ingenieurbüro Beispiel GmbH",
+    "date": "2026-01-03",
+    "notes": "Neubau mit Wärmepumpe und Erdwärmesonde"
+  },
+  "ground_properties": {
+    "thermal_conductivity": 2.5,
+    "heat_capacity": 2400000.0,
+    "undisturbed_temp": 10.5,
+    "geothermal_gradient": 0.03,
+    "soil_type": "Sand - feucht"
+  },
+  "borehole_config": {
+    "diameter_mm": 152.0,
+    "depth_m": 140.0,
+    "pipe_configuration": "2-rohr-u (Serie)",
+    "shank_spacing_mm": 80.0,
+    "num_boreholes": 2
+  },
+  "pipe_properties": {
+    "material": "PE-100 RC DN32 Dual",
+    "outer_diameter_mm": 32.0,
+    "wall_thickness_mm": 2.9,
+    "thermal_conductivity": 0.42,
+    "inner_diameter_mm": 26.2
+  },
+  "grout_material": {
+    "name": "Zement-Bentonit verbessert",
+    "thermal_conductivity": 1.3,
+    "density": 1800.0,
+    "volume_per_borehole_liters": 2750.0
+  },
+  "heat_carrier_fluid": {
+    "type": "Wasser/Glykol 30%",
+    "thermal_conductivity": 0.48,
+    "heat_capacity": 3795.0,
+    "density": 1042.0,
+    "viscosity": 0.00345,
+    "flow_rate_m3h": 2.5,
+    "freeze_temperature": -15.0
+  },
+  "loads": {
+    "annual_heating_kwh": 48000.0,
+    "annual_cooling_kwh": 0.0,
+    "peak_heating_kw": 13.5,
+    "peak_cooling_kw": 0.0,
+    "heat_pump_cop": 4.5
+  },
+  "temperature_limits": {
+    "min_fluid_temp": -3.0,
+    "max_fluid_temp": 20.0
+  },
+  "simulation_settings": {
+    "years": 50,
+    "initial_depth": 120.0
+  },
+  "borefield_v32": {
+    "enabled": true,
+    "layout": "rectangle",
+    "num_boreholes_x": 2,
+    "num_boreholes_y": 1,
+    "spacing_x_m": 7.0,
+    "spacing_y_m": 7.0,
+    "soil_thermal_diffusivity": 1.04e-06,
+    "simulation_years": 25
+  }
+}

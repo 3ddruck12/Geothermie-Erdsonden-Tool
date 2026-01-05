@@ -404,3 +404,11 @@ git commit -m "merge: Konflikte aufgelöst"
 
 **Bei Fragen: [GitHub Issues](https://github.com/3ddruck12/GeothermieErdsondentool/issues) öffnen**
 
+
+
+
+
+
+
+
+

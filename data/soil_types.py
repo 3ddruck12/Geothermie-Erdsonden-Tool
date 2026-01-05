@@ -1,7 +1,9 @@
 """Datenbank für Bodentypen mit typischen Werten."""
 
-from dataclasses import dataclass
-from typing import List, Dict
+import os
+import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
+from typing import List, Dict, Optional
 
 
 @dataclass
@@ -18,171 +20,180 @@ class SoilType:
     heat_extraction_rate_max: float  # W/m
     description: str
     moisture_dependency: str
+    
+    # Zusatzinformationen
+    type: Optional[str] = None  # "sediment", "sedimentary_rock", "igneous_rock"
+    subtype: Optional[str] = None  # "sand", "clay", "granite_gneiss", etc.
+    permeability: Optional[str] = None  # "sehr gering", "gering", "mittel", "hoch", "sehr hoch"
+    notes: List[str] = field(default_factory=list)  # Geologische Hinweise
 
 
 class SoilTypeDB:
     """Datenbank für Bodentypen nach VDI 4640."""
     
-    SOIL_TYPES = {
-        "Sand": SoilType(
-            name="Sand",
-            thermal_conductivity_min=0.3,
-            thermal_conductivity_max=2.4,
-            thermal_conductivity_typical=1.8,
-            heat_capacity_min=2.0,
-            heat_capacity_max=2.8,
-            heat_capacity_typical=2.4,
-            heat_extraction_rate_min=40,
-            heat_extraction_rate_max=80,
-            description="Sand, trocken bis wassergesättigt",
-            moisture_dependency="Stark abhängig von Wassergehalt"
-        ),
-        "Lehm": SoilType(
-            name="Lehm",
-            thermal_conductivity_min=1.1,
-            thermal_conductivity_max=1.8,
-            thermal_conductivity_typical=1.5,
-            heat_capacity_min=2.0,
-            heat_capacity_max=2.8,
-            heat_capacity_typical=2.4,
-            heat_extraction_rate_min=35,
-            heat_extraction_rate_max=55,
-            description="Lehm, feuchter Zustand",
-            moisture_dependency="Mittlere Abhängigkeit vom Wassergehalt"
-        ),
-        "Schluff": SoilType(
-            name="Schluff",
-            thermal_conductivity_min=1.0,
-            thermal_conductivity_max=1.9,
-            thermal_conductivity_typical=1.4,
-            heat_capacity_min=2.0,
-            heat_capacity_max=2.6,
-            heat_capacity_typical=2.3,
-            heat_extraction_rate_min=30,
-            heat_extraction_rate_max=60,
-            description="Schluff, feinkörnig",
-            moisture_dependency="Stark abhängig von Wassergehalt"
-        ),
-        "Sandigerton und Kalkstein": SoilType(
-            name="Sandigerton und Kalkstein",
-            thermal_conductivity_min=2.2,
-            thermal_conductivity_max=2.8,
-            thermal_conductivity_typical=2.5,
-            heat_capacity_min=2.2,
-            heat_capacity_max=2.8,
-            heat_capacity_typical=2.5,
-            heat_extraction_rate_min=55,
-            heat_extraction_rate_max=70,
-            description="Sandiger Ton mit Kalkstein, kompakt",
-            moisture_dependency="Geringe Abhängigkeit vom Wassergehalt"
-        ),
-        "Mergelstein/Kalkstein": SoilType(
-            name="Mergelstein/Kalkstein",
-            thermal_conductivity_min=2.5,
-            thermal_conductivity_max=4.0,
-            thermal_conductivity_typical=3.2,
-            heat_capacity_min=2.4,
-            heat_capacity_max=2.8,
-            heat_capacity_typical=2.6,
-            heat_extraction_rate_min=60,
-            heat_extraction_rate_max=80,
-            description="Festgestein, hohe Wärmeleitfähigkeit",
-            moisture_dependency="Sehr geringe Abhängigkeit"
-        ),
-        "Granit/Gneis": SoilType(
-            name="Granit/Gneis",
-            thermal_conductivity_min=2.9,
-            thermal_conductivity_max=4.1,
-            thermal_conductivity_typical=3.5,
-            heat_capacity_min=2.2,
-            heat_capacity_max=2.7,
-            heat_capacity_typical=2.4,
-            heat_extraction_rate_min=65,
-            heat_extraction_rate_max=85,
-            description="Kristallines Festgestein",
-            moisture_dependency="Keine Abhängigkeit"
-        ),
-        "Basalt": SoilType(
-            name="Basalt",
-            thermal_conductivity_min=1.7,
-            thermal_conductivity_max=2.5,
-            thermal_conductivity_typical=2.1,
-            heat_capacity_min=2.1,
-            heat_capacity_max=2.6,
-            heat_capacity_typical=2.3,
-            heat_extraction_rate_min=50,
-            heat_extraction_rate_max=70,
-            description="Vulkanisches Gestein",
-            moisture_dependency="Keine Abhängigkeit"
-        ),
-        "Sandstein": SoilType(
-            name="Sandstein",
-            thermal_conductivity_min=2.3,
-            thermal_conductivity_max=2.8,
-            thermal_conductivity_typical=2.5,
-            heat_capacity_min=2.2,
-            heat_capacity_max=2.6,
-            heat_capacity_typical=2.4,
-            heat_extraction_rate_min=55,
-            heat_extraction_rate_max=75,
-            description="Sedimentgestein",
-            moisture_dependency="Geringe Abhängigkeit"
-        ),
-        "Ton (trocken)": SoilType(
-            name="Ton (trocken)",
-            thermal_conductivity_min=0.5,
-            thermal_conductivity_max=1.0,
-            thermal_conductivity_typical=0.8,
-            heat_capacity_min=1.8,
-            heat_capacity_max=2.3,
-            heat_capacity_typical=2.0,
-            heat_extraction_rate_min=20,
-            heat_extraction_rate_max=35,
-            description="Ton, trockener Zustand, ungünstig",
-            moisture_dependency="Sehr stark abhängig"
-        ),
-        "Ton (feucht)": SoilType(
-            name="Ton (feucht)",
-            thermal_conductivity_min=1.1,
-            thermal_conductivity_max=1.7,
-            thermal_conductivity_typical=1.4,
-            heat_capacity_min=2.0,
-            heat_capacity_max=2.6,
-            heat_capacity_typical=2.3,
-            heat_extraction_rate_min=35,
-            heat_extraction_rate_max=50,
-            description="Ton, feuchter Zustand",
-            moisture_dependency="Stark abhängig"
-        ),
-        "Kies (wasserführend)": SoilType(
-            name="Kies (wasserführend)",
-            thermal_conductivity_min=1.6,
-            thermal_conductivity_max=2.5,
-            thermal_conductivity_typical=2.0,
-            heat_capacity_min=2.2,
-            heat_capacity_max=2.8,
-            heat_capacity_typical=2.5,
-            heat_extraction_rate_min=80,
-            heat_extraction_rate_max=100,
-            description="Kies mit Grundwasser, sehr günstig",
-            moisture_dependency="Optimal bei Wassersättigung"
-        ),
-    }
+    def __init__(self, xml_file: Optional[str] = None):
+        """
+        Initialisiert die Bodentypn-Datenbank.
+        
+        Args:
+            xml_file: Pfad zur XML-Datei (Standard: soil_types.xml)
+        """
+        if xml_file is None:
+            # Standard: XML-Datei im gleichen Verzeichnis
+            current_dir = os.path.dirname(__file__)
+            xml_file = os.path.join(current_dir, 'soil_types.xml')
+        
+        self.xml_file = xml_file
+        self.soil_types: Dict[str, SoilType] = {}
+        self.categories: Dict[str, List[SoilType]] = {}
+        
+        # Lade Bodentypen aus XML
+        self._load_from_xml()
     
-    @classmethod
-    def get_soil_type(cls, name: str) -> SoilType:
+    def _load_from_xml(self):
+        """Lädt Bodentypen aus XML-Datei."""
+        try:
+            tree = ET.parse(self.xml_file)
+            root = tree.getroot()
+            
+            for category in root.findall('soil_category'):
+                category_name = category.get('name')
+                category_type = category.get('type')
+                self.categories[category_name] = []
+                
+                for soil_elem in category.findall('soil_type'):
+                    soil = self._parse_soil_type(soil_elem, category_type)
+                    self.soil_types[soil.name] = soil
+                    self.categories[category_name].append(soil)
+        
+        except FileNotFoundError:
+            print(f"⚠️ Bodentyp-Datenbank nicht gefunden: {self.xml_file}")
+            print(f"⚠️ Verwende Fallback-Bodentypen")
+            self._load_fallback_soil_types()
+        except Exception as e:
+            print(f"⚠️ Fehler beim Laden der Bodentyp-Datenbank: {e}")
+            self._load_fallback_soil_types()
+    
+    def _parse_soil_type(self, elem: ET.Element, category_type: str) -> SoilType:
+        """Parst einen Bodentyp aus XML-Element."""
+        # Basis-Infos
+        name = elem.find('name').text
+        soil_type = elem.find('type').text
+        
+        # Optional: Subtyp
+        subtype_elem = elem.find('subtype')
+        subtype = subtype_elem.text if subtype_elem is not None else None
+        
+        # Thermische Eigenschaften
+        thermal_elem = elem.find('thermal_properties')
+        cond_min = float(thermal_elem.find('conductivity_min').text)
+        cond_max = float(thermal_elem.find('conductivity_max').text)
+        cond_typ = float(thermal_elem.find('conductivity_typical').text)
+        
+        # Wärmekapazität
+        capacity_elem = elem.find('heat_capacity')
+        cap_min = float(capacity_elem.find('min').text)
+        cap_max = float(capacity_elem.find('max').text)
+        cap_typ = float(capacity_elem.find('typical').text)
+        
+        # Entzugsrate
+        extraction_elem = elem.find('heat_extraction_rate')
+        extr_min = float(extraction_elem.find('min').text)
+        extr_max = float(extraction_elem.find('max').text)
+        
+        # Eigenschaften
+        props_elem = elem.find('properties')
+        description = props_elem.find('description').text
+        moisture_dep = props_elem.find('moisture_dependency').text
+        
+        # Optional: Durchlässigkeit
+        permeability_elem = props_elem.find('permeability')
+        permeability = permeability_elem.text if permeability_elem is not None else None
+        
+        # Optional: Hinweise
+        notes_elem = elem.find('notes')
+        notes = []
+        if notes_elem is not None:
+            notes = [note.text for note in notes_elem.findall('note')]
+        
+        return SoilType(
+            name=name,
+            thermal_conductivity_min=cond_min,
+            thermal_conductivity_max=cond_max,
+            thermal_conductivity_typical=cond_typ,
+            heat_capacity_min=cap_min,
+            heat_capacity_max=cap_max,
+            heat_capacity_typical=cap_typ,
+            heat_extraction_rate_min=extr_min,
+            heat_extraction_rate_max=extr_max,
+            description=description,
+            moisture_dependency=moisture_dep,
+            type=soil_type,
+            subtype=subtype,
+            permeability=permeability,
+            notes=notes
+        )
+    
+    def _load_fallback_soil_types(self):
+        """Lädt minimale Fallback-Bodentypen falls XML nicht geladen werden kann."""
+        fallback_types = [
+            SoilType(
+                name="Sand",
+                thermal_conductivity_min=0.3,
+                thermal_conductivity_max=2.4,
+                thermal_conductivity_typical=1.8,
+                heat_capacity_min=2.0,
+                heat_capacity_max=2.8,
+                heat_capacity_typical=2.4,
+                heat_extraction_rate_min=40,
+                heat_extraction_rate_max=80,
+                description="Sand, trocken bis wassergesättigt",
+                moisture_dependency="Stark abhängig von Wassergehalt",
+                notes=["Fallback: XML nicht geladen"]
+            ),
+            SoilType(
+                name="Granit/Gneis",
+                thermal_conductivity_min=2.9,
+                thermal_conductivity_max=4.1,
+                thermal_conductivity_typical=3.5,
+                heat_capacity_min=2.2,
+                heat_capacity_max=2.7,
+                heat_capacity_typical=2.4,
+                heat_extraction_rate_min=65,
+                heat_extraction_rate_max=85,
+                description="Kristallines Festgestein",
+                moisture_dependency="Keine Abhängigkeit",
+                notes=["Fallback: XML nicht geladen"]
+            ),
+        ]
+        
+        self.categories["Fallback"] = fallback_types
+        for soil in fallback_types:
+            self.soil_types[soil.name] = soil
+    
+    def get_soil_type(self, name: str) -> Optional[SoilType]:
         """Holt einen Bodentyp nach Namen."""
-        return cls.SOIL_TYPES.get(name)
+        return self.soil_types.get(name)
     
-    @classmethod
-    def get_all_names(cls) -> List[str]:
+    def get_all_names(self) -> List[str]:
         """Gibt alle Bodentypnamen zurück."""
-        return list(cls.SOIL_TYPES.keys())
+        return sorted(self.soil_types.keys())
     
-    @classmethod
-    def get_all_soil_types(cls) -> Dict[str, SoilType]:
+    def get_all_soil_types(self) -> Dict[str, SoilType]:
         """Gibt alle Bodentypen zurück."""
-        return cls.SOIL_TYPES
+        return self.soil_types
+    
+    def get_soil_types_by_category(self, category: str) -> List[SoilType]:
+        """Gibt alle Bodentypen einer Kategorie zurück."""
+        return self.categories.get(category, [])
+    
+    def get_all_categories(self) -> List[str]:
+        """Gibt alle Kategorien zurück."""
+        return list(self.categories.keys())
+    
+    def get_soil_types_by_type(self, soil_type: str) -> List[SoilType]:
+        """Gibt alle Bodentypen eines bestimmten Typs zurück."""
+        return [s for s in self.soil_types.values() if s.type == soil_type]
     
     @staticmethod
     def estimate_ground_temperature(
@@ -206,7 +217,7 @@ class SoilTypeDB:
 
 
 if __name__ == "__main__":
-    # Test
+    # Test der Bodentyp-Datenbank
     import sys
     # Erzwinge UTF-8 Encoding für Ausgabe (Windows-Kompatibilität)
     if sys.platform == 'win32':
@@ -214,20 +225,56 @@ if __name__ == "__main__":
     
     db = SoilTypeDB()
     
-    print("Verfügbare Bodentypen:")
-    print("=" * 80)
+    print("="*80)
+    print("BODENTYP-DATENBANK TEST")
+    print("="*80)
+    print(f"Bodentypen geladen: {len(db.soil_types)}")
+    print(f"Kategorien: {', '.join(db.get_all_categories())}")
+    print()
     
-    for name, soil in db.get_all_soil_types().items():
-        print(f"\n{name}:")
-        print(f"  lambda: {soil.thermal_conductivity_min}-{soil.thermal_conductivity_max} W/m·K (typ: {soil.thermal_conductivity_typical})")
-        print(f"  c: {soil.heat_capacity_min}-{soil.heat_capacity_max} MJ/m³·K (typ: {soil.heat_capacity_typical})")
-        print(f"  Wärmeentzug: {soil.heat_extraction_rate_min}-{soil.heat_extraction_rate_max} W/m")
-        print(f"  {soil.description}")
+    # Kategorien anzeigen
+    for category in db.get_all_categories():
+        soils = db.get_soil_types_by_category(category)
+        print(f"\n{category}: {len(soils)} Typen")
+        for soil in soils:
+            print(f"  - {soil.name}")
+            print(f"    λ: {soil.thermal_conductivity_typical} W/m·K "
+                  f"({soil.thermal_conductivity_min}-{soil.thermal_conductivity_max})")
+            print(f"    Entzug: {soil.heat_extraction_rate_min}-{soil.heat_extraction_rate_max} W/m")
+            if soil.permeability:
+                print(f"    Durchlässigkeit: {soil.permeability}")
+            if soil.notes:
+                print(f"    💡 {soil.notes[0]}")
     
     # Beispiel Temperaturschätzung
     print("\n" + "="*80)
-    print("Temperaturschätzung:")
-    ground_temp = db.estimate_ground_temperature(10.0, 2.0)
+    print("TEMPERATURSCHÄTZUNG")
+    print("="*80)
+    ground_temp = SoilTypeDB.estimate_ground_temperature(10.0, 2.0)
     print(f"Bei 10°C Jahresmittel und 2°C im kältesten Monat:")
     print(f"Geschätzte Bodentemperatur: {ground_temp:.1f}°C")
+    print()
+    
+    # Vergleich bester vs. schlechtester Boden
+    print("="*80)
+    print("VERGLEICH: Bester vs. Schlechtester Boden")
+    print("="*80)
+    kies = db.get_soil_type("Kies (wasserführend)")
+    ton_dry = db.get_soil_type("Ton (trocken)")
+    
+    if kies and ton_dry:
+        print(f"\n{kies.name} (OPTIMAL):")
+        print(f"  λ = {kies.thermal_conductivity_typical} W/m·K")
+        print(f"  Entzug: {kies.heat_extraction_rate_min}-{kies.heat_extraction_rate_max} W/m")
+        print(f"  → {kies.description}")
+        
+        print(f"\n{ton_dry.name} (UNGÜNSTIG):")
+        print(f"  λ = {ton_dry.thermal_conductivity_typical} W/m·K")
+        print(f"  Entzug: {ton_dry.heat_extraction_rate_min}-{ton_dry.heat_extraction_rate_max} W/m")
+        print(f"  → {ton_dry.description}")
+        
+        factor = (kies.heat_extraction_rate_max / ton_dry.heat_extraction_rate_max)
+        print(f"\n⚡ Faktor: Kies ist {factor:.1f}x besser als trockener Ton!")
+    
+    print("\n" + "="*80)
 

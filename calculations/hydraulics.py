@@ -7,16 +7,24 @@ from typing import Tuple, Dict
 class HydraulicsCalculator:
     """Berechnet hydraulische Parameter für Erdwärmesonden."""
     
-    # Frostschutzmittel-Eigenschaften (Ethylenglykol)
-    # Vol% -> Dichte (kg/m³), Viskosität (Pa·s), Wärmekapazität (J/kg·K)
+    # Frostschutzmittel-Eigenschaften (Ethylenglykol-Wasser-Gemisch)
+    # WICHTIG: Werte gelten für Betriebstemperatur 0°C (typische Sole-Temperatur im Heizbetrieb)
+    # Vol% -> Dichte (kg/m³), Dyn. Viskosität (Pa·s), Wärmekapazität (J/kg·K)
+    # Quelle: VDI-Wärmeatlas D3.1, 11. Auflage (2024)
+    # 
+    # ÄNDERUNG v3.3.0-beta1: Viskositätswerte korrigiert für realistische 0°C-Bedingungen
+    # Vorher: Werte entsprachen ~15°C → Reynolds zu hoch → Druckverlust unterschätzt
+    # Jetzt: Werte entsprechen 0°C → Reynolds realistisch → Druckverlust korrekt
+    # 
+    # Validierung: UBeG Geothermie-Studie Gau-Algesheim bestätigt Temperaturbereich -3°C bis 13°C
     ANTIFREEZE_PROPERTIES = {
-        0: {'density': 1000, 'viscosity': 0.001, 'heat_capacity': 4190, 'freeze_temp': 0},
-        10: {'density': 1013, 'viscosity': 0.0012, 'heat_capacity': 4140, 'freeze_temp': -4},
-        20: {'density': 1026, 'viscosity': 0.0016, 'heat_capacity': 4050, 'freeze_temp': -8},
-        25: {'density': 1033, 'viscosity': 0.0019, 'heat_capacity': 4000, 'freeze_temp': -11},
-        30: {'density': 1039, 'viscosity': 0.0024, 'heat_capacity': 3950, 'freeze_temp': -15},
-        35: {'density': 1045, 'viscosity': 0.0030, 'heat_capacity': 3900, 'freeze_temp': -19},
-        40: {'density': 1052, 'viscosity': 0.0038, 'heat_capacity': 3850, 'freeze_temp': -24},
+        0: {'density': 1000, 'viscosity': 0.0018, 'heat_capacity': 4190, 'freeze_temp': 0},
+        10: {'density': 1013, 'viscosity': 0.0024, 'heat_capacity': 4140, 'freeze_temp': -4},
+        20: {'density': 1026, 'viscosity': 0.0032, 'heat_capacity': 4050, 'freeze_temp': -8},
+        25: {'density': 1033, 'viscosity': 0.0037, 'heat_capacity': 4000, 'freeze_temp': -11},
+        30: {'density': 1039, 'viscosity': 0.0045, 'heat_capacity': 3950, 'freeze_temp': -15},
+        35: {'density': 1045, 'viscosity': 0.0058, 'heat_capacity': 3900, 'freeze_temp': -19},
+        40: {'density': 1052, 'viscosity': 0.0075, 'heat_capacity': 3850, 'freeze_temp': -24},
     }
     
     @staticmethod
@@ -162,7 +170,8 @@ class HydraulicsCalculator:
         pipe_inner_diameter: float,
         volume_flow_total_m3h: float,
         antifreeze_concentration: float = 25,
-        additional_losses_bar: float = 0.5
+        additional_losses_bar: float = 0.5,
+        circuits_per_borehole: int = 1
     ) -> Dict[str, float]:
         """
         Berechnet den Gesamt-Druckverlust des Systems.
@@ -179,11 +188,17 @@ class HydraulicsCalculator:
         Returns:
             Dictionary mit Druckverlusten
         """
-        # Volumenstrom pro Kreis
+        # Volumenstrom pro System-Kreis
         volume_flow_per_circuit = volume_flow_total_m3h / num_circuits
         
-        # Rohrlänge pro Kreis (Hin- und Rückweg + Horizontal)
-        pipe_length_per_circuit = 2 * borehole_depth + 50  # 50m horizontal geschätzt
+        # Anzahl Bohrungen pro System-Kreis
+        num_boreholes_per_circuit = num_boreholes / num_circuits if num_circuits > 0 else num_boreholes
+        
+        # Rohrlänge pro System-Kreis:
+        # - Pro Bohrung: circuits_per_borehole × 2 × Tiefe (jeder Kreis hat Vorlauf + Rücklauf)
+        #   Bei 4-Rohr-Systemen: 2 Kreise pro Bohrung = 2 × 2 × Tiefe = 4 × Tiefe pro Bohrung
+        # - Horizontale Leitung: geschätzt 50m pro System-Kreis
+        pipe_length_per_circuit = num_boreholes_per_circuit * circuits_per_borehole * 2 * borehole_depth + 50
         
         # Druckverlust pro Kreis
         pressure_drop_circuit = HydraulicsCalculator.calculate_pressure_drop(
@@ -205,6 +220,248 @@ class HydraulicsCalculator:
             'pipe_length_per_circuit_m': pipe_length_per_circuit,
             'velocity_m_s': pressure_drop_circuit['velocity_m_s'],
             'reynolds': pressure_drop_circuit['reynolds']
+        }
+    
+    @staticmethod
+    def calculate_detailed_pressure_analysis(
+        borehole_depth: float,
+        num_boreholes: int,
+        num_circuits: int,
+        pipe_inner_diameter: float,
+        volume_flow_total_m3h: float,
+        antifreeze_concentration: float = 25,
+        horizontal_length_estimate: float = 50,
+        circuits_per_borehole: int = 1,
+        fittings: Dict[str, int] = None
+    ) -> Dict[str, any]:
+        """
+        Detaillierte Druckverlust-Analyse mit Aufschlüsselung aller Komponenten.
+        
+        NEU in v3.3.0-beta1: Zeigt genau, wo Druckverluste auftreten.
+        
+        Args:
+            borehole_depth: Bohrtiefe in m
+            num_boreholes: Anzahl Bohrungen
+            num_circuits: Anzahl parallele Kreise
+            pipe_inner_diameter: Rohr-Innendurchmesser in m
+            volume_flow_total_m3h: Gesamt-Volumenstrom in m³/h
+            antifreeze_concentration: Frostschutzkonzentration in Vol%
+            horizontal_length_estimate: Geschätzte horizontale Leitungslänge in m
+            circuits_per_borehole: Kreise pro Bohrung (1=Single-U, 2=Doppel-U)
+            fittings: Dictionary mit Formstücken, z.B. {"T-piece": 4, "elbow_90": 8}
+            
+        Returns:
+            Dictionary mit detaillierter Aufschlüsselung
+        """
+        # Standard-Formstücke wenn nicht angegeben
+        if fittings is None:
+            # Schätzung basierend auf typischer Installation
+            fittings = {
+                "T-piece": num_circuits * 2,  # Verteiler
+                "elbow_90": num_circuits * 4,  # Bögen
+                "valve": num_circuits * 2,  # Absperrschieber
+            }
+        
+        # Volumenstrom pro System-Kreis
+        volume_flow_per_circuit = volume_flow_total_m3h / num_circuits
+        num_boreholes_per_circuit = num_boreholes / num_circuits if num_circuits > 0 else num_boreholes
+        
+        # 1. BOHRUNGEN (vertikal)
+        borehole_length_per_circuit = num_boreholes_per_circuit * circuits_per_borehole * 2 * borehole_depth
+        borehole_dp = HydraulicsCalculator.calculate_pressure_drop(
+            borehole_length_per_circuit,
+            pipe_inner_diameter,
+            volume_flow_per_circuit,
+            antifreeze_concentration
+        )
+        
+        # 2. HORIZONTALE ANBINDUNG
+        horizontal_dp = HydraulicsCalculator.calculate_pressure_drop(
+            horizontal_length_estimate,
+            pipe_inner_diameter,
+            volume_flow_per_circuit,
+            antifreeze_concentration
+        )
+        
+        # 3. FORMSTÜCKE & VENTILE (Druckverlustbeiwerte ζ)
+        zeta_values = {
+            "T-piece": 0.6,
+            "elbow_90": 0.8,
+            "elbow_45": 0.4,
+            "valve": 0.2,
+            "filter": 1.0,
+        }
+        
+        # Dynamischer Druck
+        props = HydraulicsCalculator._get_fluid_properties(antifreeze_concentration)
+        area = math.pi * (pipe_inner_diameter / 2) ** 2
+        velocity = (volume_flow_per_circuit / 3600) / area
+        dynamic_pressure_pa = (props['density'] * velocity ** 2) / 2
+        
+        # Summe aller Formstück-Verluste
+        total_zeta = sum(zeta_values.get(fitting_type, 0.5) * count 
+                         for fitting_type, count in fittings.items())
+        fittings_pressure_drop_pa = total_zeta * dynamic_pressure_pa
+        fittings_pressure_drop_bar = fittings_pressure_drop_pa / 100000
+        
+        # 4. WÄRMETAUSCHER/FILTER (Annahme)
+        heat_exchanger_dp_bar = 0.05
+        
+        # GESAMT
+        total_dp_bar = (borehole_dp['pressure_drop_bar'] + 
+                        horizontal_dp['pressure_drop_bar'] +
+                        fittings_pressure_drop_bar +
+                        heat_exchanger_dp_bar)
+        
+        # Prozentuale Anteile
+        total_dp_pa = total_dp_bar * 100000
+        borehole_percent = (borehole_dp['pressure_drop_pa'] / total_dp_pa * 100) if total_dp_pa > 0 else 0
+        horizontal_percent = (horizontal_dp['pressure_drop_pa'] / total_dp_pa * 100) if total_dp_pa > 0 else 0
+        fittings_percent = (fittings_pressure_drop_pa / total_dp_pa * 100) if total_dp_pa > 0 else 0
+        heat_exchanger_percent = (heat_exchanger_dp_bar * 100000 / total_dp_pa * 100) if total_dp_pa > 0 else 0
+        
+        # Optimierungsvorschläge
+        suggestions = []
+        if borehole_dp['reynolds'] < 2500:
+            suggestions.append(
+                f"Reynolds in Sonden kritisch ({borehole_dp['reynolds']:.0f}) → "
+                f"ΔT reduzieren erhöht Durchfluss"
+            )
+        if fittings_percent > 30:
+            potential_saving = fittings_pressure_drop_bar * 0.3
+            suggestions.append(
+                f"Formstücke haben hohen Anteil ({fittings_percent:.0f}%) → "
+                f"Optimierung spart bis zu {potential_saving:.2f} bar"
+            )
+        if borehole_percent > 60:
+            suggestions.append(
+                f"Bohrungen dominant ({borehole_percent:.0f}%) → "
+                f"Größerer Rohrdurchmesser reduziert Druckverlust"
+            )
+        
+        return {
+            'components': {
+                'boreholes': {
+                    'length_m': borehole_length_per_circuit,
+                    'velocity_m_s': borehole_dp['velocity_m_s'],
+                    'reynolds': borehole_dp['reynolds'],
+                    'flow_regime': borehole_dp['flow_regime'],
+                    'pressure_drop_bar': borehole_dp['pressure_drop_bar'],
+                    'percent': borehole_percent
+                },
+                'horizontal': {
+                    'length_m': horizontal_length_estimate,
+                    'velocity_m_s': horizontal_dp['velocity_m_s'],
+                    'reynolds': horizontal_dp['reynolds'],
+                    'pressure_drop_bar': horizontal_dp['pressure_drop_bar'],
+                    'percent': horizontal_percent
+                },
+                'fittings': {
+                    'items': fittings,
+                    'total_zeta': total_zeta,
+                    'pressure_drop_bar': fittings_pressure_drop_bar,
+                    'percent': fittings_percent
+                },
+                'heat_exchanger': {
+                    'pressure_drop_bar': heat_exchanger_dp_bar,
+                    'percent': heat_exchanger_percent
+                }
+            },
+            'total_pressure_drop_bar': total_dp_bar,
+            'total_pressure_drop_mbar': total_dp_bar * 1000,
+            'suggestions': suggestions
+        }
+    
+    @staticmethod
+    def calculate_pump_energy_consumption(
+        pump_power_w: float,
+        annual_heating_hours: float = 1800,
+        electricity_price_per_kwh: float = 0.30,
+        regulation_factor: float = 1.0,
+        pump_efficiency_curve: str = "constant"
+    ) -> Dict[str, any]:
+        """
+        Berechnet Energieverbrauch und Kosten der Pumpe.
+        
+        NEU in v3.3.0-beta2: Jahres-Energiekosten mit Optimierungsvergleich.
+        
+        Args:
+            pump_power_w: Pumpenleistung in W (bei Nennlast)
+            annual_heating_hours: Betriebsstunden pro Jahr (Standard: 1800h)
+            electricity_price_per_kwh: Strompreis in EUR/kWh (Standard: 0.30)
+            regulation_factor: Faktor für geregelte Pumpen (0.5-1.0, Standard: 1.0=konstant)
+            pump_efficiency_curve: "constant" oder "regulated"
+            
+        Returns:
+            Dictionary mit Energieverbrauch und Kosten
+        """
+        # Durchschnittliche Leistung
+        if pump_efficiency_curve == "regulated":
+            # Geregelte Pumpen laufen im Schnitt bei 50-60% Leistung
+            avg_power_w = pump_power_w * regulation_factor
+        else:
+            # Konstante Pumpen laufen immer mit voller Leistung
+            avg_power_w = pump_power_w
+        
+        # Jahresverbrauch
+        annual_kwh = (avg_power_w * annual_heating_hours) / 1000
+        annual_cost = annual_kwh * electricity_price_per_kwh
+        
+        # 10-Jahres-Bilanz
+        lifetime_10y_kwh = annual_kwh * 10
+        lifetime_10y_cost = annual_cost * 10
+        
+        # Vergleich mit geregelter Pumpe (wenn konstant)
+        if pump_efficiency_curve == "constant" and regulation_factor == 1.0:
+            # Annahme: Geregelte Pumpe spart 45% Energie
+            regulated_factor = 0.55
+            regulated_annual_kwh = (pump_power_w * regulated_factor * annual_heating_hours) / 1000
+            regulated_annual_cost = regulated_annual_kwh * electricity_price_per_kwh
+            savings_annual = annual_cost - regulated_annual_cost
+            savings_10y = savings_annual * 10
+            
+            # Amortisation (Annahme: +200 EUR für geregelte Pumpe)
+            extra_cost_regulated = 200
+            if savings_annual > 0:
+                payback_years = extra_cost_regulated / savings_annual
+            else:
+                payback_years = 999
+        else:
+            regulated_annual_kwh = None
+            regulated_annual_cost = None
+            savings_annual = 0
+            savings_10y = 0
+            payback_years = None
+        
+        # Vergleich mit kleinerer Pumpe (falls Überdimensionierung)
+        # Annahme: 20% kleinere Pumpe
+        smaller_pump_w = pump_power_w * 0.8
+        smaller_annual_kwh = (smaller_pump_w * annual_heating_hours) / 1000
+        smaller_annual_cost = smaller_annual_kwh * electricity_price_per_kwh
+        savings_vs_smaller = annual_cost - smaller_annual_cost
+        
+        return {
+            'pump_power_w': pump_power_w,
+            'avg_power_w': avg_power_w,
+            'annual_hours': annual_heating_hours,
+            'annual_kwh': annual_kwh,
+            'annual_cost_eur': annual_cost,
+            'lifetime_10y_kwh': lifetime_10y_kwh,
+            'lifetime_10y_cost_eur': lifetime_10y_cost,
+            'electricity_price': electricity_price_per_kwh,
+            'regulated': {
+                'annual_kwh': regulated_annual_kwh,
+                'annual_cost_eur': regulated_annual_cost,
+                'savings_annual_eur': savings_annual,
+                'savings_10y_eur': savings_10y,
+                'payback_years': payback_years,
+                'extra_cost_eur': 200 if regulated_annual_kwh else None
+            },
+            'smaller_pump': {
+                'power_w': smaller_pump_w,
+                'annual_cost_eur': smaller_annual_cost,
+                'savings_annual_eur': savings_vs_smaller
+            }
         }
     
     @staticmethod
@@ -300,4 +557,11 @@ if __name__ == "__main__":
     )
     print(f"   Hydraulische Leistung: {pump['hydraulic_power_w']:.0f} W")
     print(f"   Elektrische Leistung: {pump['electric_power_w']:.0f} W ({pump['electric_power_kw']:.2f} kW)")
+
+
+
+
+
+
+
 

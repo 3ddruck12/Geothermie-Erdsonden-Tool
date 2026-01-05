@@ -1,21 +1,16 @@
 #!/bin/bash
-# Start-Script für das Geothermie Erdsonden-Berechnungstool
+# Startskript für Geothermie Erdsonden-Tool
 
-# Wechsle ins Projektverzeichnis
 cd "$(dirname "$0")"
 
-# Prüfe ob virtuelle Umgebung existiert
-if [ ! -d "venv" ]; then
-    echo "Erstelle virtuelle Umgebung..."
-    python3 -m venv venv
+# Aktiviere virtuelle Umgebung
+if [ -d "venv" ]; then
     source venv/bin/activate
-    echo "Installiere Abhängigkeiten..."
-    pip install -r requirements.txt
 else
-    source venv/bin/activate
+    echo "Fehler: Virtuelle Umgebung 'venv' nicht gefunden!"
+    echo "Bitte führen Sie zuerst 'python3 -m venv venv' aus."
+    exit 1
 fi
 
-# Starte die Anwendung
-echo "Starte Geothermietool..."
-python main.py
-
+# Starte Programm
+python3 main.py
