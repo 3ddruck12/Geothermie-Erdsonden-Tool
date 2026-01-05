@@ -1595,13 +1595,8 @@ class GeothermieGUIProfessional:
                     monthly_temperatures=[self.vdi4640_result.t_wp_aus_heating_min] * 12
                 )
                 
-                if adjusted_boreholes:
-                    self.status_var.set(
-                        f"✓ VDI 4640: {self.vdi4640_result.required_depth_final:.1f}m/Bohrung, "
-                        f"{num_boreholes} Bohrungen (angepasst von {original_num_boreholes} wegen max. {max_depth_per_borehole:.0f}m)"
-                    )
-                else:
-                    self.status_var.set(f"✓ VDI 4640 Berechnung: {self.vdi4640_result.required_depth_final:.1f}m (ausgelegt für {self.vdi4640_result.design_case.upper()})")
+                # Status anzeigen
+                self.status_var.set(f"✓ VDI 4640 Berechnung: {self.vdi4640_result.required_depth_final:.1f}m (ausgelegt für {self.vdi4640_result.design_case.upper()})")
                 
             else:
                 # === ITERATIVE BERECHNUNG (Original) ===
