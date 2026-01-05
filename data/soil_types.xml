@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soil_database>
+    <metadata>
+        <version>1.0</version>
+        <last_updated>2026-01-01</last_updated>
+        <description>Datenbank für Bodentypen und Gesteine nach VDI 4640</description>
+        <source>VDI 4640 Blatt 1, Geologische Fachliteratur</source>
+    </metadata>
+    
+    <!-- LOCKERGESTEINE (Sedimente) -->
+    <soil_category name="Lockergesteine" type="sediment">
+        
+        <soil_type>
+            <name>Sand</name>
+            <type>sediment</type>
+            <subtype>sand</subtype>
+            <thermal_properties>
+                <conductivity_min>0.3</conductivity_min>        <!-- W/m·K -->
+                <conductivity_max>2.4</conductivity_max>
+                <conductivity_typical>1.8</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.0</min>                                   <!-- MJ/m³·K -->
+                <max>2.8</max>
+                <typical>2.4</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>40</min>                                    <!-- W/m -->
+                <max>80</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Sand, trocken bis wassergesättigt</description>
+                <moisture_dependency>Stark abhängig von Wassergehalt</moisture_dependency>
+                <permeability>hoch</permeability>
+            </properties>
+            <notes>
+                <note>Bei Wassersättigung deutlich bessere Wärmeleitfähigkeit</note>
+                <note>Trockener Sand: λ ≈ 0.3-0.8 W/m·K</note>
+                <note>Wassergesättigter Sand: λ ≈ 1.8-2.4 W/m·K</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Kies (wasserführend)</name>
+            <type>sediment</type>
+            <subtype>gravel</subtype>
+            <thermal_properties>
+                <conductivity_min>1.6</conductivity_min>
+                <conductivity_max>2.5</conductivity_max>
+                <conductivity_typical>2.0</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.2</min>
+                <max>2.8</max>
+                <typical>2.5</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>80</min>
+                <max>100</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Kies mit Grundwasser, sehr günstig</description>
+                <moisture_dependency>Optimal bei Wassersättigung</moisture_dependency>
+                <permeability>sehr hoch</permeability>
+            </properties>
+            <notes>
+                <note>Beste Bedingungen für Erdwärmesonden</note>
+                <note>Grundwasserfluss verstärkt Wärmenachlieferung</note>
+                <note>Höchste Entzugsleistungen möglich</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Schluff</name>
+            <type>sediment</type>
+            <subtype>silt</subtype>
+            <thermal_properties>
+                <conductivity_min>1.0</conductivity_min>
+                <conductivity_max>1.9</conductivity_max>
+                <conductivity_typical>1.4</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.0</min>
+                <max>2.6</max>
+                <typical>2.3</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>30</min>
+                <max>60</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Schluff, feinkörnig</description>
+                <moisture_dependency>Stark abhängig von Wassergehalt</moisture_dependency>
+                <permeability>gering bis mittel</permeability>
+            </properties>
+            <notes>
+                <note>Feinkörniges Material (0.002-0.063 mm)</note>
+                <note>Wärmeleitfähigkeit stark vom Wassergehalt abhängig</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Lehm</name>
+            <type>sediment</type>
+            <subtype>loam</subtype>
+            <thermal_properties>
+                <conductivity_min>1.1</conductivity_min>
+                <conductivity_max>1.8</conductivity_max>
+                <conductivity_typical>1.5</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.0</min>
+                <max>2.8</max>
+                <typical>2.4</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>35</min>
+                <max>55</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Lehm, feuchter Zustand</description>
+                <moisture_dependency>Mittlere Abhängigkeit vom Wassergehalt</moisture_dependency>
+                <permeability>gering</permeability>
+            </properties>
+            <notes>
+                <note>Mischung aus Ton, Schluff und Sand</note>
+                <note>Gute Eigenschaften bei natürlicher Feuchte</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Ton (trocken)</name>
+            <type>sediment</type>
+            <subtype>clay</subtype>
+            <thermal_properties>
+                <conductivity_min>0.5</conductivity_min>
+                <conductivity_max>1.0</conductivity_max>
+                <conductivity_typical>0.8</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>1.8</min>
+                <max>2.3</max>
+                <typical>2.0</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>20</min>
+                <max>35</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Ton, trockener Zustand, ungünstig</description>
+                <moisture_dependency>Sehr stark abhängig</moisture_dependency>
+                <permeability>sehr gering</permeability>
+            </properties>
+            <notes>
+                <note>Schlechteste Bedingungen für Erdwärmesonden</note>
+                <note>Niedrige Wärmeleitfähigkeit im trockenen Zustand</note>
+                <note>Vorsicht bei Bohrarbeiten (Quellung möglich)</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Ton (feucht)</name>
+            <type>sediment</type>
+            <subtype>clay</subtype>
+            <thermal_properties>
+                <conductivity_min>1.1</conductivity_min>
+                <conductivity_max>1.7</conductivity_max>
+                <conductivity_typical>1.4</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.0</min>
+                <max>2.6</max>
+                <typical>2.3</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>35</min>
+                <max>50</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Ton, feuchter Zustand</description>
+                <moisture_dependency>Stark abhängig</moisture_dependency>
+                <permeability>sehr gering</permeability>
+            </properties>
+            <notes>
+                <note>Deutlich bessere Eigenschaften als trockener Ton</note>
+                <note>Natürliche Feuchte wichtig für Wärmeleitung</note>
+            </notes>
+        </soil_type>
+        
+    </soil_category>
+    
+    <!-- SEDIMENTGESTEINE -->
+    <soil_category name="Sedimentgesteine" type="sedimentary_rock">
+        
+        <soil_type>
+            <name>Sandstein</name>
+            <type>sedimentary_rock</type>
+            <subtype>sandstone</subtype>
+            <thermal_properties>
+                <conductivity_min>2.3</conductivity_min>
+                <conductivity_max>2.8</conductivity_max>
+                <conductivity_typical>2.5</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.2</min>
+                <max>2.6</max>
+                <typical>2.4</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>55</min>
+                <max>75</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Sedimentgestein</description>
+                <moisture_dependency>Geringe Abhängigkeit</moisture_dependency>
+                <permeability>gering bis mittel</permeability>
+            </properties>
+            <notes>
+                <note>Verfestigter Sand</note>
+                <note>Gute thermische Eigenschaften</note>
+                <note>Stabiles Bohren möglich</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Sandigerton und Kalkstein</name>
+            <type>sedimentary_rock</type>
+            <subtype>mixed</subtype>
+            <thermal_properties>
+                <conductivity_min>2.2</conductivity_min>
+                <conductivity_max>2.8</conductivity_max>
+                <conductivity_typical>2.5</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.2</min>
+                <max>2.8</max>
+                <typical>2.5</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>55</min>
+                <max>70</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Sandiger Ton mit Kalkstein, kompakt</description>
+                <moisture_dependency>Geringe Abhängigkeit vom Wassergehalt</moisture_dependency>
+                <permeability>gering</permeability>
+            </properties>
+            <notes>
+                <note>Häufig in Süddeutschland</note>
+                <note>Gute Bohrbedingungen</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Mergelstein/Kalkstein</name>
+            <type>sedimentary_rock</type>
+            <subtype>limestone</subtype>
+            <thermal_properties>
+                <conductivity_min>2.5</conductivity_min>
+                <conductivity_max>4.0</conductivity_max>
+                <conductivity_typical>3.2</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.4</min>
+                <max>2.8</max>
+                <typical>2.6</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>60</min>
+                <max>80</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Festgestein, hohe Wärmeleitfähigkeit</description>
+                <moisture_dependency>Sehr geringe Abhängigkeit</moisture_dependency>
+                <permeability>gering (je nach Klüftung)</permeability>
+            </properties>
+            <notes>
+                <note>Sehr gute thermische Eigenschaften</note>
+                <note>Karst möglich (Hohlräume)</note>
+                <note>Grundwasser in Klüften kann Leistung erhöhen</note>
+            </notes>
+        </soil_type>
+        
+    </soil_category>
+    
+    <!-- MAGMATISCHE GESTEINE -->
+    <soil_category name="Magmatische Gesteine" type="igneous_rock">
+        
+        <soil_type>
+            <name>Granit/Gneis</name>
+            <type>igneous_rock</type>
+            <subtype>granite_gneiss</subtype>
+            <thermal_properties>
+                <conductivity_min>2.9</conductivity_min>
+                <conductivity_max>4.1</conductivity_max>
+                <conductivity_typical>3.5</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.2</min>
+                <max>2.7</max>
+                <typical>2.4</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>65</min>
+                <max>85</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Kristallines Festgestein</description>
+                <moisture_dependency>Keine Abhängigkeit</moisture_dependency>
+                <permeability>sehr gering</permeability>
+            </properties>
+            <notes>
+                <note>Beste Wärmeleitfähigkeit</note>
+                <note>Typisch für Mittelgebirge (Schwarzwald, Odenwald, Fichtelgebirge)</note>
+                <note>Sehr stabil, aufwendiges Bohren</note>
+                <note>Gneis ist metamorph, Granit plutonisch (beide ähnliche Eigenschaften)</note>
+            </notes>
+        </soil_type>
+        
+        <soil_type>
+            <name>Basalt</name>
+            <type>igneous_rock</type>
+            <subtype>basalt</subtype>
+            <thermal_properties>
+                <conductivity_min>1.7</conductivity_min>
+                <conductivity_max>2.5</conductivity_max>
+                <conductivity_typical>2.1</conductivity_typical>
+            </thermal_properties>
+            <heat_capacity>
+                <min>2.1</min>
+                <max>2.6</max>
+                <typical>2.3</typical>
+            </heat_capacity>
+            <heat_extraction_rate>
+                <min>50</min>
+                <max>70</max>
+            </heat_extraction_rate>
+            <properties>
+                <description>Vulkanisches Gestein</description>
+                <moisture_dependency>Keine Abhängigkeit</moisture_dependency>
+                <permeability>gering (je nach Klüftung)</permeability>
+            </properties>
+            <notes>
+                <note>Vulkanisches Ergussgestein</note>
+                <note>Typisch für Vulkangebiete (Eifel, Vogelsberg)</note>
+                <note>Oft säulenförmig geklüftet</note>
+            </notes>
+        </soil_type>
+        
+    </soil_category>
+    
+</soil_database>
+
