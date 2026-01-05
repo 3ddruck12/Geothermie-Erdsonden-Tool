@@ -66,11 +66,17 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 - ✅ Auswahl und Vergleich verschiedener Fluide - 3.2
 - ✅ Automatische Eigenschaften basierend auf Temperatur - 3.2
 
-#### 🌊 Erweiterte Hydraulik-Berechnungen
-- [ ] Pumpenauswahl-Assistent
-- [ ] Detaillierte Druckverlust-Analyse
-- [ ] Energieverbrauch-Prognose für Pumpen
-- [ ] Durchfluss-Optimierung
+#### 🌊 Erweiterte Hydraulik-Berechnungen (beta1: ✅ | beta2/3: 🚧)
+- ✅ **Viskositätswerte korrigiert** (VDI-Wärmeatlas 0°C) - beta1
+- ✅ **Reynolds-Schwelle angepasst** (2.5 m³/h) - beta1
+- ✅ **Detaillierte Druckverlust-Analyse** - beta1
+  - Aufschlüsselung: Bohrungen, Horizontal, Formstücke, Wärmetauscher
+  - Prozentuale Anteile
+  - Optimierungsvorschläge
+- ✅ **Validierungs-Tool** (v3.2.1 vs v3.3.0) - beta1
+- [ ] Pumpenauswahl-Assistent - beta3
+- [ ] Energieverbrauch-Prognose für Pumpen - beta2
+- [ ] Durchfluss-Optimierung - beta2
 
 #### 🎨 GUI-Verbesserungen
 - [ ] Erweiterte Diagramm-Optionen

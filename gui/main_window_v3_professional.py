@@ -632,6 +632,18 @@ class GeothermieGUIProfessional:
         self.hydraulics_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         hydraulics_scrollbar.config(command=self.hydraulics_result_text.yview)
         self.hydraulics_result_text.insert("1.0", "Noch keine Berechnung durchgeführt.\n\nKlicken Sie auf 'Hydraulik berechnen'.")
+        
+        # Button für detaillierte Analyse (v3.3.0-beta1)
+        detail_button_frame = ttk.Frame(self.materials_frame)
+        detail_button_frame.pack(fill="x", padx=5, pady=5)
+        
+        self.detailed_analysis_button = ttk.Button(
+            detail_button_frame,
+            text="🔍 Detaillierte Druckverlust-Analyse",
+            command=self._show_detailed_pressure_analysis,
+            state="disabled"
+        )
+        self.detailed_analysis_button.pack(side="left", padx=5)
     
     def _create_visualization_tab(self):
         """Erstellt den Visualisierungs-Tab."""
@@ -1104,6 +1116,10 @@ class GeothermieGUIProfessional:
             self.hydraulics_result_text.delete("1.0", tk.END)
             self.hydraulics_result_text.insert("1.0", text)
             
+            # Aktiviere detaillierte Analyse-Button (v3.3.0-beta1)
+            if hasattr(self, 'detailed_analysis_button'):
+                self.detailed_analysis_button.config(state="normal")
+            
             self.status_var.set(f"✓ Hydraulik: {flow['volume_flow_m3_h']:.2f} m³/h, {system['total_pressure_drop_mbar']:.0f} mbar, {pump['electric_power_w']:.0f} W")
             
         except Exception as e:
@@ -1129,6 +1145,110 @@ class GeothermieGUIProfessional:
         except (ValueError, KeyError):
             pass  # Ignoriere Fehler bei leerem Feld oder fehlendem Eintrag
     
+    def _show_detailed_pressure_analysis(self):
+        """Zeigt detaillierte Druckverlust-Analyse (v3.3.0-beta1)."""
+        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            messagebox.showinfo("Hinweis", "Bitte erst Hydraulik berechnen!")
+            return
+        
+        try:
+            # Hole Parameter aus letzter Berechnung
+            depth = float(self.borehole_entries["depth"].get())
+            num_boreholes = int(self.borehole_entries["num_boreholes"].get())
+            num_circuits = int(self.entries.get("num_circuits", ttk.Entry()).get() or str(num_boreholes))
+            pipe_inner_d = float(self.entries.get("pipe_inner_d", ttk.Entry()).get() or "0.026")
+            antifreeze_conc = float(self.antifreeze_var.get())
+            volume_flow = self.hydraulics_result['flow']['volume_flow_m3_h']
+            
+            # Bestimme Kreise pro Bohrung
+            pipe_config = self.pipe_config_var.get()
+            if "4-rohr" in pipe_config.lower() or "double" in pipe_config.lower():
+                circuits_per_borehole = 2
+            else:
+                circuits_per_borehole = 1
+            
+            # Berechne detaillierte Analyse
+            analysis = self.hydraulics_calc.calculate_detailed_pressure_analysis(
+                depth, num_boreholes, num_circuits, pipe_inner_d,
+                volume_flow, antifreeze_conc,
+                circuits_per_borehole=circuits_per_borehole
+            )
+            
+            # Erstelle Dialog
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Detaillierte Druckverlust-Analyse")
+            dialog.geometry("700x600")
+            
+            # Text-Widget mit Scrollbar
+            frame = ttk.Frame(dialog)
+            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            
+            scrollbar = ttk.Scrollbar(frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            text = tk.Text(frame, wrap=tk.WORD, yscrollcommand=scrollbar.set,
+                          font=("Courier", 10))
+            text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.config(command=text.yview)
+            
+            # Formatiere Ausgabe
+            output = "=" * 70 + "\n"
+            output += "DETAILLIERTE DRUCKVERLUST-ANALYSE\n"
+            output += "=" * 70 + "\n\n"
+            
+            comp = analysis['components']
+            
+            output += "1. ERDWÄRMESONDEN (vertikal)\n"
+            output += f"   • Rohrlänge: {comp['boreholes']['length_m']:.1f} m\n"
+            output += f"   • Geschwindigkeit: {comp['boreholes']['velocity_m_s']:.2f} m/s\n"
+            output += f"   • Reynolds: {comp['boreholes']['reynolds']:.0f} ({comp['boreholes']['flow_regime']})\n"
+            output += f"   • ΔP: {comp['boreholes']['pressure_drop_bar']:.3f} bar\n"
+            output += f"   • Anteil: {comp['boreholes']['percent']:.1f}%\n\n"
+            
+            output += "2. HORIZONTALE ANBINDUNG\n"
+            output += f"   • Rohrlänge: {comp['horizontal']['length_m']:.1f} m (geschätzt)\n"
+            output += f"   • Geschwindigkeit: {comp['horizontal']['velocity_m_s']:.2f} m/s\n"
+            output += f"   • Reynolds: {comp['horizontal']['reynolds']:.0f}\n"
+            output += f"   • ΔP: {comp['horizontal']['pressure_drop_bar']:.3f} bar\n"
+            output += f"   • Anteil: {comp['horizontal']['percent']:.1f}%\n\n"
+            
+            output += "3. FORMSTÜCKE & VENTILE\n"
+            for fitting_type, count in comp['fittings']['items'].items():
+                output += f"   • {fitting_type}: {count}×\n"
+            output += f"   • Gesamt-ζ: {comp['fittings']['total_zeta']:.2f}\n"
+            output += f"   • ΔP: {comp['fittings']['pressure_drop_bar']:.3f} bar\n"
+            output += f"   • Anteil: {comp['fittings']['percent']:.1f}%\n\n"
+            
+            output += "4. WÄRMETAUSCHER/FILTER\n"
+            output += f"   • ΔP: {comp['heat_exchanger']['pressure_drop_bar']:.3f} bar (angenommen)\n"
+            output += f"   • Anteil: {comp['heat_exchanger']['percent']:.1f}%\n\n"
+            
+            output += "=" * 70 + "\n"
+            output += f"GESAMT: {analysis['total_pressure_drop_bar']:.3f} bar "
+            output += f"({analysis['total_pressure_drop_mbar']:.0f} mbar)\n"
+            output += "=" * 70 + "\n\n"
+            
+            if analysis['suggestions']:
+                output += "💡 OPTIMIERUNGSVORSCHLÄGE:\n"
+                for i, suggestion in enumerate(analysis['suggestions'], 1):
+                    output += f"   {i}. {suggestion}\n"
+                output += "\n"
+            
+            output += "HINWEIS:\n"
+            output += "• Horizontale Länge ist geschätzt (50m standard)\n"
+            output += "• Formstücke basieren auf typischer Installation\n"
+            output += "• Wärmetauscher-Verlust ist pauschalisiert (0.05 bar)\n"
+            output += "• Für präzise Werte: Anlagen-spezifische Daten eingeben\n"
+            
+            text.insert("1.0", output)
+            text.config(state="disabled")
+            
+            # Schließen-Button
+            ttk.Button(dialog, text="Schließen", command=dialog.destroy).pack(pady=10)
+            
+        except Exception as e:
+            messagebox.showerror("Fehler", f"Fehler bei detaillierter Analyse:\n{str(e)}")
+    
     def _check_flow_rate_warnings(self, heat_power_kw: float, flow_rate_m3s: float, num_boreholes: int,
                                    current_delta_t: float, antifreeze_conc: float, extraction_power: float):
         """Prüft Volumenstrom auf empfohlene Werte und gibt Warnungen als Text zurück."""
@@ -1140,8 +1260,10 @@ class GeothermieGUIProfessional:
         flow_rate_ls = flow_rate_m3s * 1000
         flow_rate_ls_per_kw = flow_rate_ls / heat_power_kw if heat_power_kw > 0 else 0
         
-        # Mindestwert pro Sonde: 2.1 m³/h (≈0.000583 m³/s)
-        min_per_borehole_m3h = 2.1
+        # Mindestwert pro Sonde für turbulente Strömung (Re > 2500)
+        # v3.3.0-beta1: Erhöht von 2.1 auf 2.5 m³/h aufgrund korrigierter Viskosität
+        # Mit realistischen VDI-Wärmeatlas Werten (0°C) ist höherer Volumenstrom nötig
+        min_per_borehole_m3h = 2.5  # Entspricht Re ≈ 2500 bei 0°C, 25% Glykol
         flow_rate_m3h = flow_rate_m3s * 3600
         flow_per_borehole_m3h = flow_rate_m3h / num_boreholes if num_boreholes > 0 else 0
         
