@@ -8,7 +8,7 @@
 
 ## 🎯 Überblick
 
-v3.3.0-beta2 bringt **Energieverbrauch-Prognose** und **interaktive Durchfluss-Optimierung**.
+v3.3.0-beta2 bringt **Energieverbrauch-Prognose**, **interaktive Durchfluss-Optimierung**, **Pumpenauswahl-Assistent** und umfangreiche **GUI-Verbesserungen**.
 
 **Basis:** Baut auf beta1 auf (VDI-Wärmeatlas Stoffwerte, Detaillierte Druckverlust-Analyse)
 
@@ -106,6 +106,56 @@ EMPFEHLUNG:
 
 ---
 
+### 3. Pumpenauswahl-Assistent 🔧
+
+**Neuer Button:** 🔧 Pumpenauswahl-Assistent
+
+**Funktionen:**
+- Intelligente Pumpen-Suche basierend auf Hydraulik-Berechnung
+- XML-basierte Pumpen-Datenbank mit 9 realen Pumpen (Grundfos, Wilo)
+- Scoring-System (0-100) für Pumpen-Eignung
+- Filterung nach Flow, Head und Leistungsbereich
+- Detaillierte Pumpen-Informationen:
+  - Hersteller, Modell, Serie
+  - Max. Flow (m³/h), Max. Head (m)
+  - Leistung (W), Effizienzklasse (A++, D-Klasse)
+  - Pumpentyp (Geregelt/Konstant)
+  - Preis (EUR)
+
+**Ausgabe:**
+```
+🥇 Grundfos Alpha2 25-60
+   Score: 87/100 ⭐⭐⭐
+   Flow: 3.5 m³/h | Head: 6.0 m
+   Typ: Geregelt | Effizienz: A++
+   Leistung: 45 W | Preis: 450 EUR
+
+🥈 Wilo Stratos PICO 25/1-6
+   Score: 82/100 ⭐⭐
+   Flow: 3.0 m³/h | Head: 6.0 m
+   ...
+```
+
+**Wenn keine Pumpen passen:**
+- Zeigt alle verfügbaren Pumpen mit Spezifikationen
+- Vergleich: Benötigt vs. Verfügbar
+- Optimierungsvorschläge:
+  - ΔT erhöhen → weniger Volumenstrom
+  - Anzahl Bohrungen erhöhen
+  - Rohrdurchmesser vergrößern
+
+**Technisch:**
+- Neue Datei: `data/pump_database.xml` (9 Pumpen)
+- Neue Klasse: `PumpDatabase` in `data/pump_db.py`
+- Neuer Dialog: `gui/pump_selection_dialog.py`
+- Scoring-Algorithmus berücksichtigt:
+  - Flow-Auslastung (ideal: 60-80%)
+  - Head-Auslastung (ideal: 60-80%)
+  - Leistungsbereich-Kompatibilität
+  - Effizienz-Bonus (A++ = +10 Punkte)
+
+---
+
 ## 📊 Technische Änderungen
 
 ### Geänderte Dateien
@@ -170,7 +220,9 @@ EMPFEHLUNG:
 ### Was ist neu:
 - 🆕 Energieverbrauch-Prognose
 - 🆕 Durchfluss-Optimierung
+- 🆕 Pumpenauswahl-Assistent (mit XML-Datenbank)
 - 🆕 3 statt 1 Analyse-Button
+- 🆕 Umfangreiche GUI-Layout-Verbesserungen
 
 ---
 
@@ -256,6 +308,36 @@ EMPFEHLUNG:
 ## 🐛 Bug Fixes
 
 - Fixed: `adjusted_boreholes` Variable nicht definiert (aus beta1)
+- Fixed: `antifreeze_var` Attribut-Fehler in Durchfluss-Optimierung
+- Fixed: Pumpenauswahl-Assistent zeigt jetzt alle verfügbaren Pumpen auch wenn keine passen
+- Fixed: "depth" Fehler in Durchfluss-Optimierung durch korrekte Entry-Referenzen
+- Fixed: Pumpen-Datenbank wird korrekt geladen und angezeigt
+
+## 🎨 GUI-Verbesserungen (neu in beta2)
+
+### Layout-Optimierungen
+- ✅ Alle Tabs nutzen jetzt **volle Breite** für bessere Übersicht
+- ✅ Ergebnisse-Tab mit LabelFrame und voller Breite
+- ✅ Detailanalysen-Tabs (Energie, Druckverlust, Pumpen) mit voller Breite
+- ✅ Verfüllmaterial-Berechnung ohne Breiten-Beschränkung
+
+### Popup-Dialoge vergrößert
+- ✅ Alle Popup-Dialoge auf **1200x800 Pixel** vergrößert:
+  - 🔧 Pumpenauswahl-Assistent
+  - ⚡ Durchfluss-Optimierung
+  - 💰 Energieverbrauch-Prognose
+  - 🔍 Detaillierte Druckverlust-Analyse
+
+### Pumpenauswahl-Assistent verbessert
+- ✅ Zeigt alle 9 verfügbaren Pumpen aus der Datenbank
+- ✅ Detaillierte Fehlermeldungen mit Optimierungsvorschlägen
+- ✅ Anzeige von max. Flow/Head der verfügbaren Pumpen
+- ✅ Bessere Übersicht über Pumpen-Spezifikationen
+
+### Hydraulik-Tab Layout
+- ✅ Vertikales Layout: Ergebnisse → Buttons → Detailanalysen
+- ✅ Buttons nebeneinander für besseren Zugriff
+- ✅ Detailanalysen-Tabs nutzen gesamte verfügbare Breite
 
 ---
 
