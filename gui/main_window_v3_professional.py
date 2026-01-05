@@ -621,57 +621,80 @@ class GeothermieGUIProfessional:
         ttk.Label(scrollable_frame, text="💨 Hydraulik-Berechnung", 
                  font=("Arial", 14, "bold"), foreground="#1f4788").pack(pady=10)
         
-        # Scrollbares Text-Widget für Hydraulik
-        hydraulics_frame = ttk.Frame(scrollable_frame)
-        hydraulics_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        # Zweispaltiges Layout: Ergebnisse links, Analysen rechts
+        hydraulics_container = ttk.Frame(scrollable_frame)
+        hydraulics_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        
+        # Linke Spalte: Hauptergebnisse
+        left_column = ttk.Frame(hydraulics_container)
+        left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
+        
+        ttk.Label(left_column, text="Ergebnisse", font=("Arial", 10, "bold")).pack(anchor="w")
+        
+        hydraulics_frame = ttk.Frame(left_column)
+        hydraulics_frame.pack(fill=tk.BOTH, expand=True)
         
         hydraulics_scrollbar = ttk.Scrollbar(hydraulics_frame)
         hydraulics_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         
-        self.hydraulics_result_text = tk.Text(hydraulics_frame, height=20, width=90, font=("Courier", 10),
+        self.hydraulics_result_text = tk.Text(hydraulics_frame, height=20, width=50, font=("Courier", 9),
                                              wrap=tk.WORD, yscrollcommand=hydraulics_scrollbar.set)
         self.hydraulics_result_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         hydraulics_scrollbar.config(command=self.hydraulics_result_text.yview)
         self.hydraulics_result_text.insert("1.0", "Noch keine Berechnung durchgeführt.\n\nKlicken Sie auf 'Hydraulik berechnen'.")
         
-        # Button für detaillierte Analyse (v3.3.0-beta1)
-        detail_button_frame = ttk.Frame(self.materials_frame)
-        detail_button_frame.pack(fill="x", padx=5, pady=5)
+        # Rechte Spalte: Analyse-Panel
+        right_column = ttk.LabelFrame(hydraulics_container, text="📊 Detailanalysen", padding=5)
+        right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
         
-        self.detailed_analysis_button = ttk.Button(
-            detail_button_frame,
-            text="🔍 Detaillierte Druckverlust-Analyse",
-            command=self._show_detailed_pressure_analysis,
-            state="disabled"
-        )
-        self.detailed_analysis_button.pack(side="left", padx=5)
+        # Notebook für verschiedene Analysen
+        self.analysis_notebook = ttk.Notebook(right_column)
+        self.analysis_notebook.pack(fill=tk.BOTH, expand=True)
         
-        # Button für Energieverbrauch-Prognose (v3.3.0-beta2)
-        self.energy_prognosis_button = ttk.Button(
-            detail_button_frame,
-            text="💰 Energieverbrauch-Prognose",
-            command=self._show_energy_prognosis,
-            state="disabled"
-        )
-        self.energy_prognosis_button.pack(side="left", padx=5)
+        # Tab 1: Energieprognose
+        energy_tab = ttk.Frame(self.analysis_notebook)
+        self.analysis_notebook.add(energy_tab, text="💰 Energie")
         
-        # Button für Durchfluss-Optimierung (v3.3.0-beta2)
+        self.energy_analysis_text = tk.Text(energy_tab, height=18, font=("Courier", 9), wrap=tk.WORD)
+        energy_scrollbar = ttk.Scrollbar(energy_tab, command=self.energy_analysis_text.yview)
+        self.energy_analysis_text.config(yscrollcommand=energy_scrollbar.set)
+        self.energy_analysis_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        energy_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.energy_analysis_text.insert("1.0", "Energieprognose wird nach\nHydraulik-Berechnung angezeigt.")
+        
+        # Tab 2: Druckverlust-Details
+        pressure_tab = ttk.Frame(self.analysis_notebook)
+        self.analysis_notebook.add(pressure_tab, text="🔍 Druckverlust")
+        
+        self.pressure_analysis_text = tk.Text(pressure_tab, height=18, font=("Courier", 9), wrap=tk.WORD)
+        pressure_scrollbar = ttk.Scrollbar(pressure_tab, command=self.pressure_analysis_text.yview)
+        self.pressure_analysis_text.config(yscrollcommand=pressure_scrollbar.set)
+        self.pressure_analysis_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        pressure_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.pressure_analysis_text.insert("1.0", "Druckverlust-Details werden nach\nHydraulik-Berechnung angezeigt.")
+        
+        # Tab 3: Pumpenauswahl
+        pump_tab = ttk.Frame(self.analysis_notebook)
+        self.analysis_notebook.add(pump_tab, text="🔧 Pumpen")
+        
+        self.pump_analysis_text = tk.Text(pump_tab, height=18, font=("Courier", 9), wrap=tk.WORD)
+        pump_scrollbar = ttk.Scrollbar(pump_tab, command=self.pump_analysis_text.yview)
+        self.pump_analysis_text.config(yscrollcommand=pump_scrollbar.set)
+        self.pump_analysis_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        pump_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.pump_analysis_text.insert("1.0", "Pumpen-Empfehlungen werden nach\nHydraulik-Berechnung angezeigt.")
+        
+        # Button für Durchfluss-Optimierung (bleibt als Popup für interaktiven Slider)
+        optimizer_button_frame = ttk.Frame(self.materials_frame)
+        optimizer_button_frame.pack(fill="x", padx=5, pady=5)
+        
         self.flow_optimizer_button = ttk.Button(
-            detail_button_frame,
-            text="🎯 Durchfluss optimieren",
+            optimizer_button_frame,
+            text="🎯 Durchfluss-Optimierung (interaktiv)",
             command=self._show_flow_optimizer,
             state="disabled"
         )
         self.flow_optimizer_button.pack(side="left", padx=5)
-        
-        # Button für Pumpenauswahl-Assistent (v3.3.0-beta3)
-        self.pump_selection_button = ttk.Button(
-            detail_button_frame,
-            text="🔧 Pumpenauswahl-Assistent",
-            command=self._show_pump_selection,
-            state="disabled"
-        )
-        self.pump_selection_button.pack(side="left", padx=5)
     
     def _create_visualization_tab(self):
         """Erstellt den Visualisierungs-Tab."""
@@ -1144,20 +1167,166 @@ class GeothermieGUIProfessional:
             self.hydraulics_result_text.delete("1.0", tk.END)
             self.hydraulics_result_text.insert("1.0", text)
             
-            # Aktiviere Analyse-Buttons (v3.3.0)
-            if hasattr(self, 'detailed_analysis_button'):
-                self.detailed_analysis_button.config(state="normal")
-            if hasattr(self, 'energy_prognosis_button'):
-                self.energy_prognosis_button.config(state="normal")
+            # Aktiviere Durchfluss-Optimierung Button (v3.3.0)
             if hasattr(self, 'flow_optimizer_button'):
                 self.flow_optimizer_button.config(state="normal")
-            if hasattr(self, 'pump_selection_button'):
-                self.pump_selection_button.config(state="normal")
+            
+            # Fülle Analyse-Tabs automatisch (v3.3.0-beta3)
+            self._update_energy_analysis()
+            self._update_pressure_analysis()
+            self._update_pump_analysis()
             
             self.status_var.set(f"✓ Hydraulik: {flow['volume_flow_m3_h']:.2f} m³/h, {system['total_pressure_drop_mbar']:.0f} mbar, {pump['electric_power_w']:.0f} W")
             
         except Exception as e:
             messagebox.showerror("Fehler", f"Fehler bei Hydraulik-Berechnung: {str(e)}")
+    
+    def _update_energy_analysis(self):
+        """Aktualisiert die Energieprognose im Analyse-Tab."""
+        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            return
+        
+        try:
+            pump_power = self.hydraulics_result['pump']['electric_power_w']
+            hours = 1800  # Standard-Betriebsstunden
+            price = 0.30  # EUR/kWh
+            
+            energy = self.hydraulics_calc.calculate_pump_energy_consumption(
+                pump_power, hours, price
+            )
+            
+            text = "═══ ENERGIEVERBRAUCH-PROGNOSE ═══\n\n"
+            text += f"Pumpenleistung: {pump_power:.0f} W\n"
+            text += f"Betriebsstunden/Jahr: {hours} h\n"
+            text += f"Strompreis: {price:.2f} EUR/kWh\n\n"
+            text += "KONSTANTE PUMPE:\n"
+            text += f"  Verbrauch: {energy['annual_kwh']:.1f} kWh/Jahr\n"
+            text += f"  Kosten: {energy['annual_cost_eur']:.2f} EUR/Jahr\n\n"
+            text += "GEREGELTE PUMPE (30% Einsparung):\n"
+            regulated_kwh = energy['annual_kwh'] * 0.7
+            regulated_cost = energy['annual_cost_eur'] * 0.7
+            text += f"  Verbrauch: {regulated_kwh:.1f} kWh/Jahr\n"
+            text += f"  Kosten: {regulated_cost:.2f} EUR/Jahr\n\n"
+            text += "EINSPARUNG:\n"
+            savings_kwh = energy['annual_kwh'] - regulated_kwh
+            savings_eur = energy['annual_cost_eur'] - regulated_cost
+            text += f"  {savings_kwh:.1f} kWh/Jahr\n"
+            text += f"  {savings_eur:.2f} EUR/Jahr\n\n"
+            text += "─────────────────────────────\n\n"
+            text += "💡 Empfehlung: Geregelte Hocheffizienz-\n"
+            text += "   Pumpe (Klasse A) verwenden!\n"
+            
+            self.energy_analysis_text.delete("1.0", tk.END)
+            self.energy_analysis_text.insert("1.0", text)
+        except Exception as e:
+            self.energy_analysis_text.delete("1.0", tk.END)
+            self.energy_analysis_text.insert("1.0", f"Fehler: {str(e)}")
+    
+    def _update_pressure_analysis(self):
+        """Aktualisiert die Druckverlust-Analyse im Analyse-Tab."""
+        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            return
+        
+        try:
+            system = self.hydraulics_result.get('system', {})
+            flow = self.hydraulics_result.get('flow', {})
+            
+            text = "═══ DRUCKVERLUST-ANALYSE ═══\n\n"
+            text += f"Volumenstrom: {flow.get('volume_flow_m3_h', 0):.2f} m³/h\n"
+            text += f"Geschwindigkeit: {system.get('velocity', 0):.2f} m/s\n"
+            text += f"Reynolds: {system.get('reynolds', 0):.0f}\n\n"
+            
+            # Strömungsregime
+            reynolds = system.get('reynolds', 0)
+            if reynolds < 2300:
+                text += "⚠️  LAMINAR (Re < 2300)\n"
+                text += "    Risiko schlechter Wärmeübergang!\n"
+            elif reynolds < 2500:
+                text += "⚡ ÜBERGANGSBEREICH (Re 2300-2500)\n"
+                text += "   Grenzbereich, knapp turbulent\n"
+            else:
+                text += "✅ TURBULENT (Re > 2500)\n"
+                text += "   Guter Wärmeübergang\n"
+            
+            text += "\n─────────────────────────────\n\n"
+            text += "DRUCKVERLUSTE:\n"
+            text += f"  Total: {system.get('total_pressure_drop_bar', 0):.3f} bar\n"
+            text += f"        ({system.get('total_pressure_drop_mbar', 0):.0f} mbar)\n"
+            text += f"  Förderhöhe: {system.get('total_pressure_drop_bar', 0)*10.2:.1f} m\n\n"
+            
+            text += f"Rohrlänge/Kreis: {system.get('pipe_length_per_circuit_m', 0):.1f} m\n"
+            text += f"Reibungsverlust: {system.get('friction_factor', 0):.4f}\n\n"
+            
+            text += "─────────────────────────────\n\n"
+            text += "💡 Tipp: Für niedrigere Druckverluste\n"
+            text += "   größeren Rohrdurchmesser wählen!\n"
+            
+            self.pressure_analysis_text.delete("1.0", tk.END)
+            self.pressure_analysis_text.insert("1.0", text)
+        except Exception as e:
+            self.pressure_analysis_text.delete("1.0", tk.END)
+            self.pressure_analysis_text.insert("1.0", f"Fehler: {str(e)}")
+    
+    def _update_pump_analysis(self):
+        """Aktualisiert die Pumpen-Empfehlungen im Analyse-Tab."""
+        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
+            return
+        
+        try:
+            from data.pump_db import PumpDatabase
+            
+            # Hole Hydraulik-Daten
+            flow_m3h = self.hydraulics_result['flow']['volume_flow_m3_h']
+            total_dp = self.hydraulics_result['system']['total_pressure_drop_bar']
+            head_m = total_dp * 10.2
+            power_kw = float(self.heat_pump_entries["heat_pump_power"].get() or "11")
+            
+            # Lade Pumpen-Datenbank
+            pump_db = PumpDatabase()
+            suitable_pumps = pump_db.find_suitable_pumps(
+                flow_m3h=flow_m3h,
+                head_m=head_m,
+                power_kw=power_kw,
+                max_results=5
+            )
+            
+            text = "═══ PUMPEN-EMPFEHLUNGEN ═══\n\n"
+            text += f"Volumenstrom: {flow_m3h:.2f} m³/h\n"
+            text += f"Förderhöhe: {head_m:.1f} m\n"
+            text += f"Leistung WP: {power_kw:.0f} kW\n\n"
+            text += "─────────────────────────────\n\n"
+            
+            if suitable_pumps:
+                for i, (score, pump) in enumerate(suitable_pumps, 1):
+                    if i == 1:
+                        text += "🥇 "
+                    elif i == 2:
+                        text += "🥈 "
+                    elif i == 3:
+                        text += "🥉 "
+                    else:
+                        text += f"#{i} "
+                    
+                    text += f"{pump.get_full_name()}\n"
+                    text += f"   Score: {score:.0f}/100\n"
+                    text += f"   Typ: {'Geregelt' if pump.pump_type == 'regulated' else 'Konstant'}\n"
+                    text += f"   Max: {pump.specs.max_flow_m3h} m³/h, {pump.specs.max_head_m} m\n"
+                    text += f"   Leistung: {pump.specs.power_avg_w} W\n"
+                    text += f"   Effizienz: {pump.efficiency_class}\n"
+                    text += f"   Preis: {pump.price_eur:.0f} EUR\n\n"
+            else:
+                text += "⚠️ Keine passenden Pumpen gefunden.\n"
+                text += "   Bitte Hydraulik prüfen!\n"
+            
+            text += "\n─────────────────────────────\n\n"
+            text += "💡 Empfehlung: Geregelte Hocheffizienz-\n"
+            text += "   Pumpe für beste Energieeffizienz!\n"
+            
+            self.pump_analysis_text.delete("1.0", tk.END)
+            self.pump_analysis_text.insert("1.0", text)
+        except Exception as e:
+            self.pump_analysis_text.delete("1.0", tk.END)
+            self.pump_analysis_text.insert("1.0", f"Fehler: {str(e)}\n\nPumpen-Datenbank konnte nicht\ngeladen werden.")
     
     def _on_borehole_count_changed(self, event=None):
         """Wird aufgerufen, wenn sich die Anzahl der Bohrungen ändert."""
