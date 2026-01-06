@@ -333,7 +333,7 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) f�
 ## ⭐ Support
 
 Wenn dir dieses Projekt gefällt, gib ihm einen **Star** ⭐ auf GitHub!
-
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E61RRPU8)
 ---
 
 **Made with ❤️ for the geothermal community**
