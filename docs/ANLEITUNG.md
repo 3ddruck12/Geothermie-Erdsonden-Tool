@@ -27,7 +27,7 @@
 
 **EED .dat laden:**
 - Menü: `Datei → EED .dat laden`
-- Wählen Sie eine `.dat` Datei aus dem Ordner `EED_4_example_files`
+- Wählen Sie eine `.dat` Datei aus dem Ordner `import/eed_4_example`
 - Alle Parameter werden automatisch übernommen
 
 ### 2. Parameter eingeben
@@ -99,7 +99,7 @@ Im **Eingabe-Tab** finden Sie folgende Bereiche:
 
 ### Beispiel 1: Einfamilienhaus Deutschland
 
-Laden Sie: `EED_4_example_files/EED_4_SFH-DE.dat`
+Laden Sie: `import/eed_4_example/EED_4_SFH-DE.dat`
 
 Typische Werte:
 - Bohrtiefe: ~100 m
@@ -108,7 +108,7 @@ Typische Werte:
 
 ### Beispiel 2: Bürogebäude mit Kühlung
 
-Laden Sie: `EED_4_example_files/EED_4_OFFICE-S.dat`
+Laden Sie: `import/eed_4_example/EED_4_OFFICE-S.dat`
 
 Besonderheiten:
 - Höhere Kühllast im Sommer

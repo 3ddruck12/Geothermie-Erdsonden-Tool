@@ -33,8 +33,9 @@ Geothermietool/
 │   ├── __init__.py
 │   └── main_window.py        # Hauptfenster mit tkinter
 │
-├── pipe.txt                   # Rohrtypen-Datenbank (61 Typen)
-└── EED_4_example_files/      # Beispiel-EED-Dateien
+└── import/                    # Import-Dateien
+    ├── pipe.txt               # Rohrtypen-Datenbank (61 Typen)
+    └── eed_4_example/         # Beispiel-EED-Dateien
     ├── EED_4_SFH-SE.dat
     ├── EED_4_SFH-DE.dat
     └── ... (weitere Beispiele)
@@ -239,7 +240,7 @@ Das Projekt ist Open Source und freut sich über Beiträge:
 Bei Fragen oder Problemen:
 1. Siehe **ANLEITUNG.md** für Bedienungshilfe
 2. Siehe **INSTALL.md** bei Installationsproblemen
-3. Prüfen Sie die Beispieldateien in `EED_4_example_files/`
+3. Prüfen Sie die Beispieldateien in `import/eed_4_example/`
 
 ---
 

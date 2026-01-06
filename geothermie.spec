@@ -12,8 +12,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[
-        ('Material', 'Material'),
-        ('EED_4_example_files', 'EED_4_example_files'),
+        ('import', 'import'),
         ('Icons', 'Icons'),
         ('data', 'data'),
         ('gui', 'gui'),

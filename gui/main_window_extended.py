@@ -494,7 +494,7 @@ class GeothermieGUIExtended:
     
     def _load_default_pipes(self):
         """Lädt Standard-Rohrtypen."""
-        default_pipe_file = os.path.join(os.path.dirname(__file__), "..", "Material", "pipe.txt")
+        default_pipe_file = os.path.join(os.path.dirname(__file__), "..", "import", "pipe.txt")
         if os.path.exists(default_pipe_file):
             try:
                 self.pipes = self.pipe_parser.parse_file(default_pipe_file)
