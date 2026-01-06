@@ -305,7 +305,7 @@ class EEDParser:
 if __name__ == "__main__":
     # Test
     parser = EEDParser()
-    config = parser.parse_file("../EED_4_example_files/EED_4_SFH-SE.dat")
+    config = parser.parse_file("../import/eed_4_example/EED_4_SFH-SE.dat")
     
     print(f"EED Version: {config.version}")
     print(f"Wärmeleitfähigkeit Boden: {config.thermal_conductivity_ground} W/m·K")

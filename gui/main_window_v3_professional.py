@@ -3043,7 +3043,7 @@ In diesem Tool verfügbar über:
     
     def _load_default_pipes(self):
         """Lädt Standard-Rohre."""
-        pipe_file = os.path.join(os.path.dirname(__file__), "..", "Material", "pipe.txt")
+        pipe_file = os.path.join(os.path.dirname(__file__), "..", "import", "pipe.txt")
         if os.path.exists(pipe_file):
             try:
                 self.pipes = self.pipe_parser.parse_file(pipe_file)

@@ -51,7 +51,7 @@
 ### Mindestanforderungen
 - **Python**: 3.12 oder höher (bei Python-Installation)
 - **RAM**: 4 GB (empfohlen: 8 GB)
-- **Festplatte**: 500 MB freier Speicherplatz
+- **Festplatte**: 250 MB freier Speicherplatz
 - **Display**: 1280x720 oder höher
 
 ---
@@ -264,7 +264,7 @@ Vollständige Dokumentation im [`docs/`](docs/) Ordner:
 <div align="center">
   <img src="docs/images/screenshot-main.png" alt="GET Hauptfenster" width="100%">
   
-  *Moderne Benutzeroberfläche mit 2-Spalten-Layout: Eingaben links, Live-Visualisierung rechts*
+  *Moderne Benutzeroberfläche mit 2-Spalten-Layout: Eingaben links, Visualisierung rechts*
 </div>
 
 ### Features im Screenshot
@@ -332,8 +332,8 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) f�
 
 ## ⭐ Support
 
-Wenn dir dieses Projekt gefällt, gib ihm einen **Star** ⭐ auf GitHub!
+Wenn dir dieses Projekt gefällt, gib ihm einen **Star** ⭐ auf GitHub oder unterstützt meine arbeit mit einer kleinen Spende!
 
----
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/E1E61RRPU8)
 
 **Made with ❤️ for the geothermal community**
