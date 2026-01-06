@@ -1,0 +1,66 @@
+{
+  "file_format": "GET",
+  "format_version": "3.2",
+  "created_with": "Geothermie Erdsonden-Tool v3.2.1",
+  "created_date": "2026-01-06T12:16:18.378913Z",
+  "encoding": "UTF-8",
+  "metadata": {
+    "project_name": "MFH 6 Wohneinheiten - Beispielanlage 2",
+    "location": "Deutschland",
+    "designer": "GET Beispiel-Anlagen",
+    "date": "2026-01-06",
+    "notes": "Beispielanlage 2: MFH 6 Wohneinheiten\nHeizsystem: Radiatoren + Teil-FBH"
+  },
+  "ground_properties": {
+    "thermal_conductivity": 2.0,
+    "heat_capacity": 2400000.0,
+    "undisturbed_temp": 10.0,
+    "geothermal_gradient": 0.03,
+    "soil_type": "Sand - feucht"
+  },
+  "borehole_config": {
+    "diameter_mm": 152.0,
+    "depth_m": 150.0,
+    "pipe_configuration": "2-rohr-u (Serie)",
+    "shank_spacing_mm": 80.0,
+    "num_boreholes": 4
+  },
+  "pipe_properties": {
+    "material": "Doppel-U",
+    "outer_diameter_mm": 40.0,
+    "wall_thickness_mm": 3.7,
+    "thermal_conductivity": 0.42,
+    "inner_diameter_mm": 32.6
+  },
+  "grout_material": {
+    "name": "Verfüllmaterial λ=2.3 W/mK",
+    "thermal_conductivity": 2.3,
+    "density": 1800.0,
+    "volume_per_borehole_liters": 2750.0
+  },
+  "heat_carrier_fluid": {
+    "type": "Wasser/Glykol 30%",
+    "thermal_conductivity": 0.48,
+    "heat_capacity": 3795.0,
+    "density": 1042.0,
+    "viscosity": 0.00345,
+    "flow_rate_m3h": 4.2,
+    "freeze_temperature": -15.0
+  },
+  "loads": {
+    "annual_heating_kwh": 58000.0,
+    "peak_heating_kw": 32.0,
+    "annual_cooling_kwh": 0,
+    "peak_cooling_kw": 0,
+    "cop": 4.0,
+    "annual_operating_hours": 2000
+  },
+  "temperature_limits": {
+    "min_fluid_temp": -2.8,
+    "max_fluid_temp": 18.0
+  },
+  "simulation_settings": {
+    "years": 25,
+    "initial_depth": 150.0
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "file_format": "GET",
+  "format_version": "3.2",
+  "created_with": "Geothermie Erdsonden-Tool v3.2.1",
+  "created_date": "2026-01-06T12:16:18.384971Z",
+  "encoding": "UTF-8",
+  "metadata": {
+    "project_name": "Büro Verwaltung - Beispielanlage 3",
+    "location": "Deutschland",
+    "designer": "GET Beispiel-Anlagen",
+    "date": "2026-01-06",
+    "notes": "Beispielanlage 3: Büro Verwaltung\nHeizsystem: WP + passive Kühlung"
+  },
+  "ground_properties": {
+    "thermal_conductivity": 2.0,
+    "heat_capacity": 2400000.0,
+    "undisturbed_temp": 10.0,
+    "geothermal_gradient": 0.03,
+    "soil_type": "Sand - feucht"
+  },
+  "borehole_config": {
+    "diameter_mm": 152.0,
+    "depth_m": 180.0,
+    "pipe_configuration": "2-rohr-u (Serie)",
+    "shank_spacing_mm": 80.0,
+    "num_boreholes": 10
+  },
+  "pipe_properties": {
+    "material": "Doppel-U",
+    "outer_diameter_mm": 40.0,
+    "wall_thickness_mm": 2.9,
+    "thermal_conductivity": 0.42,
+    "inner_diameter_mm": 34.2
+  },
+  "grout_material": {
+    "name": "Verfüllmaterial λ=2.5 W/mK",
+    "thermal_conductivity": 2.5,
+    "density": 1800.0,
+    "volume_per_borehole_liters": 2750.0
+  },
+  "heat_carrier_fluid": {
+    "type": "Wasser/Glykol 25%",
+    "thermal_conductivity": 0.48,
+    "heat_capacity": 3795.0,
+    "density": 1042.0,
+    "viscosity": 0.00345,
+    "flow_rate_m3h": 9.5,
+    "freeze_temperature": -12.0
+  },
+  "loads": {
+    "annual_heating_kwh": 120000.0,
+    "peak_heating_kw": 0.0,
+    "annual_cooling_kwh": 65000.0,
+    "peak_cooling_kw": 0,
+    "cop": 4.8,
+    "annual_operating_hours": 2400
+  },
+  "temperature_limits": {
+    "min_fluid_temp": -1.0,
+    "max_fluid_temp": 18.0
+  },
+  "simulation_settings": {
+    "years": 25,
+    "initial_depth": 180.0
+  }
+}

@@ -6,6 +6,10 @@ Dieser Ordner enthält typische Beispielanlagen für Erdwärmesonden-Systeme, di
 
 - `beispielanlagen.csv` - CSV-Datei mit 3 typischen Beispielanlagen
 - `load_examples.py` - Python-Skript zum Laden der Beispielanlagen
+- `create_get_files.py` - Python-Skript zum Erstellen von .get Dateien
+- `beispielanlage_1_efh_kfw40.get` - .get Datei für Beispielanlage 1
+- `beispielanlage_2_mfh_6_wohneinheiten.get` - .get Datei für Beispielanlage 2
+- `beispielanlage_3_büro_verwaltung.get` - .get Datei für Beispielanlage 3
 
 ## Beispielanlage 1 – Einfamilienhaus (Neubau, Niedertemperatur)
 
@@ -124,4 +128,30 @@ print(f"Sondentiefe: {anlage1['Sondentiefe_m']} m")
 ```
 
 Oder verwenden Sie das bereitgestellte `load_examples.py` Skript.
+
+## .get Dateien
+
+Die Beispielanlagen sind auch als `.get` Dateien verfügbar, die direkt im Geothermie Erdsonden-Tool importiert werden können:
+
+1. **beispielanlage_1_efh_kfw40.get** - Einfamilienhaus KfW40
+2. **beispielanlage_2_mfh_6_wohneinheiten.get** - Mehrfamilienhaus 6 WE
+3. **beispielanlage_3_büro_verwaltung.get** - Bürogebäude mit Kühlung
+
+### Import im Tool
+
+1. Öffnen Sie das Geothermie Erdsonden-Tool
+2. Menü: `Datei → .get Projekt laden` (Strg+O)
+3. Wählen Sie eine der `.get` Dateien aus diesem Ordner
+4. Alle Parameter werden automatisch geladen
+
+### Neue .get Dateien erstellen
+
+Falls Sie die .get Dateien neu erstellen möchten (z.B. nach Änderungen an der CSV):
+
+```bash
+cd Beispiel-Anlagen
+python3 create_get_files.py
+```
+
+Dies erstellt alle 3 .get Dateien neu basierend auf der CSV-Datei.
 
