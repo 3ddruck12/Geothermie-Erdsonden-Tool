@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<example_installations_database>
+    <metadata>
+        <version>1.0</version>
+        <last_updated>2026-01-15</last_updated>
+        <description>Beispielanlagen für Erdwärmesonden-Systeme</description>
+        <source>Typische Anwendungsfälle, VDI 4640</source>
+    </metadata>
+    
+    <!-- WOHNGEBÄUDE -->
+    <installation_category name="Wohngebäude" type="residential">
+        
+        <example_installation>
+            <id>1</id>
+            <name>EFH KfW40</name>
+            <building_type>EFH KfW40</building_type>
+            <heating_system>Sole/Wasser-WP Fußbodenheizung</heating_system>
+            
+            <borefield>
+                <num_boreholes>1</num_boreholes>
+                <depth_m>120</depth_m>
+                <diameter_mm>152</diameter_mm>
+                <spacing_m></spacing_m>
+                <total_length_m>120</total_length_m>
+            </borefield>
+            
+            <pipes>
+                <type>PE100 RC Doppel-U</type>
+                <outer_diameter_mm>32</outer_diameter_mm>
+                <wall_thickness_mm>2.9</wall_thickness_mm>
+            </pipes>
+            
+            <grout>
+                <thermal_conductivity>2.0</thermal_conductivity>
+            </grout>
+            
+            <thermal_properties>
+                <specific_extraction_power>45</specific_extraction_power>
+                <max_extraction_power>5.4</max_extraction_power>
+                <annual_energy>9500</annual_energy>
+                <operating_hours>2100</operating_hours>
+                <building_heat_load>0</building_heat_load>
+            </thermal_properties>
+            
+            <fluid>
+                <type>Ethylenglykol</type>
+                <concentration_percent>25</concentration_percent>
+                <flow_rate_m3h>0.9</flow_rate_m3h>
+            </fluid>
+            
+            <temperatures>
+                <inlet_min>-1.5</inlet_min>
+                <outlet_max>-4.5</outlet_max>
+                <delta_t>3.0</delta_t>
+            </temperatures>
+            
+            <heat_pump>
+                <heating_power_b0_w35>6.5</heating_power_b0_w35>
+                <cop_b0_w35>4.6</cop_b0_w35>
+                <annual_cop>4.4</annual_cop>
+            </heat_pump>
+            
+            <cooling>
+                <specific_injection_power>0</specific_injection_power>
+                <annual_cooling_energy>0</annual_cooling_energy>
+                <operating_hours_cooling>0</operating_hours_cooling>
+                <winter_min_temp></winter_min_temp>
+                <summer_max_temp></summer_max_temp>
+                <delta_t_cooling>0</delta_t_cooling>
+                <eer_passive></eer_passive>
+            </cooling>
+            
+            <notes>
+                <note>Typische Einfamilienhaus-Anlage</note>
+                <note>Niedertemperatur-Heizsystem</note>
+                <note>KfW40 Standard</note>
+            </notes>
+        </example_installation>
+        
+        <example_installation>
+            <id>2</id>
+            <name>MFH 6 Wohneinheiten</name>
+            <building_type>MFH 6 Wohneinheiten</building_type>
+            <heating_system>Radiatoren + Teil-FBH</heating_system>
+            
+            <borefield>
+                <num_boreholes>4</num_boreholes>
+                <depth_m>150</depth_m>
+                <diameter_mm>152</diameter_mm>
+                <spacing_m>6</spacing_m>
+                <total_length_m>600</total_length_m>
+            </borefield>
+            
+            <pipes>
+                <type>Doppel-U</type>
+                <outer_diameter_mm>40</outer_diameter_mm>
+                <wall_thickness_mm>3.7</wall_thickness_mm>
+            </pipes>
+            
+            <grout>
+                <thermal_conductivity>2.3</thermal_conductivity>
+            </grout>
+            
+            <thermal_properties>
+                <specific_extraction_power>50</specific_extraction_power>
+                <max_extraction_power>30.0</max_extraction_power>
+                <annual_energy>58000</annual_energy>
+                <operating_hours>0</operating_hours>
+                <building_heat_load>32</building_heat_load>
+            </thermal_properties>
+            
+            <fluid>
+                <type>Propylenglykol</type>
+                <concentration_percent>30</concentration_percent>
+                <flow_rate_m3h>4.2</flow_rate_m3h>
+            </fluid>
+            
+            <temperatures>
+                <inlet_min>-2.8</inlet_min>
+                <outlet_max>-6.0</outlet_max>
+                <delta_t>3.2</delta_t>
+            </temperatures>
+            
+            <heat_pump>
+                <heating_power_b0_w35>0</heating_power_b0_w35>
+                <cop_b0_w35>0</cop_b0_w35>
+                <annual_cop>0</annual_cop>
+                <heating_power_b0_w45>28</heating_power_b0_w45>
+                <cop_b0_w45>3.9</cop_b0_w45>
+            </heat_pump>
+            
+            <cooling>
+                <specific_injection_power>0</specific_injection_power>
+                <annual_cooling_energy>0</annual_cooling_energy>
+                <operating_hours_cooling>0</operating_hours_cooling>
+                <winter_min_temp></winter_min_temp>
+                <summer_max_temp></summer_max_temp>
+                <delta_t_cooling>0</delta_t_cooling>
+                <eer_passive></eer_passive>
+            </cooling>
+            
+            <notes>
+                <note>Mehrfamilienhaus mit 6 Wohneinheiten</note>
+                <note>Mischsystem: Radiatoren + Fußbodenheizung</note>
+                <note>Höhere Vorlauftemperatur (B0/W45)</note>
+            </notes>
+        </example_installation>
+        
+    </installation_category>
+    
+    <!-- GEWERBE -->
+    <installation_category name="Gewerbe" type="commercial">
+        
+        <example_installation>
+            <id>3</id>
+            <name>Büro Verwaltung</name>
+            <building_type>Büro Verwaltung</building_type>
+            <heating_system>WP + passive Kühlung</heating_system>
+            
+            <borefield>
+                <num_boreholes>10</num_boreholes>
+                <depth_m>180</depth_m>
+                <diameter_mm>152</diameter_mm>
+                <spacing_m>7</spacing_m>
+                <total_length_m>1800</total_length_m>
+            </borefield>
+            
+            <pipes>
+                <type>Doppel-U</type>
+                <outer_diameter_mm>40</outer_diameter_mm>
+                <wall_thickness_mm>0</wall_thickness_mm>
+            </pipes>
+            
+            <grout>
+                <thermal_conductivity>2.5</thermal_conductivity>
+            </grout>
+            
+            <thermal_properties>
+                <specific_extraction_power>55</specific_extraction_power>
+                <max_extraction_power>0</max_extraction_power>
+                <annual_energy>120000</annual_energy>
+                <operating_hours>2400</operating_hours>
+                <building_heat_load>0</building_heat_load>
+            </thermal_properties>
+            
+            <fluid>
+                <type></type>
+                <concentration_percent>0</concentration_percent>
+                <flow_rate_m3h>9.5</flow_rate_m3h>
+            </fluid>
+            
+            <temperatures>
+                <inlet_min>-1.0</inlet_min>
+                <outlet_max>0</outlet_max>
+                <delta_t>3.0</delta_t>
+            </temperatures>
+            
+            <heat_pump>
+                <heating_power_b0_w35>65</heating_power_b0_w35>
+                <cop_b0_w35>4.8</cop_b0_w35>
+                <annual_cop>0</annual_cop>
+            </heat_pump>
+            
+            <cooling>
+                <specific_injection_power>40</specific_injection_power>
+                <annual_cooling_energy>65000</annual_cooling_energy>
+                <operating_hours_cooling>1100</operating_hours_cooling>
+                <winter_min_temp>-1.0</winter_min_temp>
+                <summer_max_temp>18</summer_max_temp>
+                <delta_t_cooling>4.0</delta_t_cooling>
+                <eer_passive>&gt;20</eer_passive>
+            </cooling>
+            
+            <notes>
+                <note>Bürogebäude mit Heizung und Kühlung</note>
+                <note>Passive Kühlung über Erdwärmesonden</note>
+                <note>Sehr hoher EER bei passiver Kühlung</note>
+            </notes>
+        </example_installation>
+        
+    </installation_category>
+    
+</example_installations_database>

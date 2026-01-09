@@ -53,9 +53,9 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 ### Version 3.3
 
 #### 🔧 Erweiterte Rohr-Konfigurationen
-- [ ] Zusätzliche Rohrtypen (DN40, DN50)
-- [ ] Coaxial-Rohr-Konfigurationen
-- [ ] Erweiterte Datenbank für Rohrmaterialien
+- ✅ Zusätzliche Rohrtypen (DN40, DN50) - beta3
+- ✅ Coaxial-Rohr-Konfigurationen - beta3
+- ✅ Erweiterte Datenbank für Rohrmaterialien - beta3
 
 #### 💧 Fluid-Datenbank (bereits in 3.2 implementiert)
 - ✅ **Wärmeträgerfluid-Datenbank** (Text/XML) - 3.2
@@ -66,7 +66,7 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 - ✅ Auswahl und Vergleich verschiedener Fluide - 3.2
 - ✅ Automatische Eigenschaften basierend auf Temperatur - 3.2
 
-#### 🌊 Erweiterte Hydraulik-Berechnungen (beta1: ✅ | beta2/3: 🚧)
+#### 🌊 Erweiterte Hydraulik-Berechnungen (beta1: ✅ | beta2: ✅ | beta3: ✅)
 - ✅ **Viskositätswerte korrigiert** (VDI-Wärmeatlas 0°C) - beta1
 - ✅ **Reynolds-Schwelle angepasst** (2.5 m³/h) - beta1
 - ✅ **Detaillierte Druckverlust-Analyse** - beta1
@@ -74,12 +74,16 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
   - Prozentuale Anteile
   - Optimierungsvorschläge
 - ✅ **Validierungs-Tool** (v3.2.1 vs v3.3.0) - beta1
-- [ ] Pumpenauswahl-Assistent - beta3
-- [ ] Energieverbrauch-Prognose für Pumpen - beta2
-- [ ] Durchfluss-Optimierung - beta2
+- ✅ Pumpenauswahl-Assistent - beta2
+- ✅ Energieverbrauch-Prognose für Pumpen - beta2
+- ✅ Durchfluss-Optimierung - beta2
 
 #### 🎨 GUI-Verbesserungen
-- [ ] Erweiterte Diagramm-Optionen
+- ✅ Erweiterte Diagramm-Optionen - beta3
+  - ✅ 12 Diagramme (Hydraulik, Wärmepumpe, Energie)
+  - ✅ Scrollbarer Diagramm-Tab
+  - ✅ Automatische PDF-Integration
+  - ✅ GET-Format-Erweiterung (Version 3.3)
 
 ---
 

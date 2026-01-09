@@ -1,50 +1,89 @@
 """
-Lädt Beispielanlagen aus CSV-Datei für Tests und Validierungen.
+Lädt Beispielanlagen aus XML-Datei für Tests und Validierungen.
 """
 import os
-import csv
+import sys
 from typing import Dict, Any, Optional, List
 
-# Versuche pandas zu importieren (optional)
+# Import example_installations_db - funktioniert sowohl als Modul als auch direkt
 try:
-    import pandas as pd
-    HAS_PANDAS = True
+    from .example_installations_db import ExampleInstallationsDatabase, ExampleInstallation
 except ImportError:
-    HAS_PANDAS = False
-    pd = None
+    # Fallback für direkten Aufruf
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    sys.path.insert(0, script_dir)
+    from example_installations_db import ExampleInstallationsDatabase, ExampleInstallation
 
 
 class BeispielanlagenLoader:
-    """Lädt und verwaltet Beispielanlagen aus CSV."""
+    """Lädt und verwaltet Beispielanlagen aus XML."""
     
-    def __init__(self, csv_path: Optional[str] = None):
+    def __init__(self, xml_path: Optional[str] = None):
         """
         Initialisiert den Loader.
         
         Args:
-            csv_path: Pfad zur CSV-Datei. Wenn None, wird der Standardpfad verwendet.
+            xml_path: Pfad zur XML-Datei. Wenn None, wird der Standardpfad verwendet.
         """
-        if csv_path is None:
+        if xml_path is None:
             # Standardpfad: relativ zum Skript
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            csv_path = os.path.join(script_dir, "beispielanlagen.csv")
+            xml_path = os.path.join(script_dir, "beispielanlagen.xml")
         
-        self.csv_path = csv_path
-        self.df = None
-        self._load()
+        self.xml_path = xml_path
+        self.db = ExampleInstallationsDatabase(xml_path)
+        self._mapping_cache = {}  # Cache für CSV-kompatible Dictionaries
     
-    def _load(self):
-        """Lädt die CSV-Datei."""
-        if not os.path.exists(self.csv_path):
-            raise FileNotFoundError(f"CSV-Datei nicht gefunden: {self.csv_path}")
+    def _installation_to_dict(self, inst: ExampleInstallation) -> Dict[str, Any]:
+        """
+        Konvertiert eine Installation in ein CSV-kompatibles Dictionary.
+        Dies ermöglicht Rückwärtskompatibilität mit dem alten CSV-Format.
+        """
+        if inst.id in self._mapping_cache:
+            return self._mapping_cache[inst.id]
         
-        if HAS_PANDAS:
-            self.df = pd.read_csv(self.csv_path)
-        else:
-            # Fallback: CSV mit Standard-Modul laden
-            with open(self.csv_path, 'r', encoding='utf-8') as f:
-                reader = csv.DictReader(f)
-                self.df = list(reader)
+        # Mapping von XML-Feldern zu CSV-Spaltennamen
+        d = {
+            'Beispielanlage': inst.id,
+            'Gebaeudetyp': inst.building_type,
+            'Heizsystem': inst.heating_system,
+            'Anzahl_Sonden': inst.num_boreholes,
+            'Sondentiefe_m': inst.depth_m,
+            'Bohrdurchmesser_mm': inst.diameter_mm,
+            'Sondenabstand_m': inst.spacing_m if inst.spacing_m is not None else '-',
+            'Gesamtsondenlaenge_m': inst.total_length_m,
+            'Rohrtyp': inst.pipe_type,
+            'Rohr_aussen_mm': inst.pipe_outer_diameter_mm,
+            'Rohr_wand_mm': inst.pipe_wall_thickness_mm if inst.pipe_wall_thickness_mm > 0 else '-',
+            'Verpressmaterial_lambda_W_mK': inst.grout_thermal_conductivity,
+            'Entzugsleistung_spezifisch_W_m': inst.specific_extraction_power,
+            'Maximale_Entzugsleistung_kW': inst.max_extraction_power,
+            'Jahresenergie_Erdreich_kWh_a': inst.annual_energy,
+            'Betriebsstunden_WP_h_a': inst.operating_hours if inst.operating_hours > 0 else '-',
+            'Heizlast_Gebaeude_kW': inst.building_heat_load if inst.building_heat_load > 0 else '-',
+            'Solemedium': inst.fluid_type if inst.fluid_type else '-',
+            'Glykol_Prozent': inst.fluid_concentration_percent if inst.fluid_concentration_percent > 0 else '-',
+            'Volumenstrom_m3_h': inst.flow_rate_m3h,
+            'Eintritt_Sole_WP_min_C': inst.inlet_min_temp,
+            'Austritt_Sole_WP_max_C': inst.outlet_max_temp if inst.outlet_max_temp != 0 else '-',
+            'DeltaT_Sole_K': inst.delta_t,
+            'Heizleistung_B0_W35_kW': inst.heating_power_b0_w35 if inst.heating_power_b0_w35 > 0 else '-',
+            'COP_B0_W35': inst.cop_b0_w35 if inst.cop_b0_w35 > 0 else '-',
+            'JAZ': inst.annual_cop if inst.annual_cop > 0 else '-',
+            'Kuehl_Eintragsleistung_W_m': inst.specific_injection_power if inst.specific_injection_power > 0 else '-',
+            'Jahreskuehlarbeit_kWh_a': inst.annual_cooling_energy if inst.annual_cooling_energy > 0 else '-',
+            'Betriebsstunden_Heizen_h': inst.operating_hours if inst.operating_hours > 0 else '-',
+            'Betriebsstunden_Kuehlen_h': inst.operating_hours_cooling if inst.operating_hours_cooling > 0 else '-',
+            'Soletemperatur_Winter_min_C': inst.winter_min_temp if inst.winter_min_temp is not None else '-',
+            'Soletemperatur_Sommer_max_C': inst.summer_max_temp if inst.summer_max_temp is not None else '-',
+            'DeltaT_Kuehlen_K': inst.delta_t_cooling if inst.delta_t_cooling > 0 else '-',
+            'Heizleistung_B0_W45_kW': inst.heating_power_b0_w45 if inst.heating_power_b0_w45 is not None else '-',
+            'COP_B0_W45': inst.cop_b0_w45 if inst.cop_b0_w45 is not None else '-',
+            'EER_passive_Kuehlung': inst.eer_passive if inst.eer_passive else '-'
+        }
+        
+        self._mapping_cache[inst.id] = d
+        return d
     
     def get_anlage(self, nummer: int) -> Dict[str, Any]:
         """
@@ -54,32 +93,23 @@ class BeispielanlagenLoader:
             nummer: Nummer der Beispielanlage (1, 2 oder 3)
         
         Returns:
-            Dictionary mit allen Parametern der Anlage
+            Dictionary mit allen Parametern der Anlage (CSV-kompatibles Format)
         """
-        if nummer not in [1, 2, 3]:
-            raise ValueError(f"Ungültige Anlagennummer: {nummer}. Muss 1, 2 oder 3 sein.")
-        
-        if HAS_PANDAS:
-            row = self.df[self.df['Beispielanlage'] == nummer].iloc[0]
-            return row.to_dict()
-        else:
-            # Fallback: Suche in Liste
-            for row in self.df:
-                if int(row['Beispielanlage']) == nummer:
-                    return row
+        installation = self.db.get_installation(nummer)
+        if installation is None:
             raise ValueError(f"Anlage {nummer} nicht gefunden.")
+        
+        return self._installation_to_dict(installation)
     
-    def get_all_anlagen(self):
+    def get_all_anlagen(self) -> List[Dict[str, Any]]:
         """
         Gibt alle Beispielanlagen zurück.
         
         Returns:
-            DataFrame (mit pandas) oder Liste von Dictionaries (ohne pandas)
+            Liste von Dictionaries (CSV-kompatibles Format)
         """
-        if HAS_PANDAS:
-            return self.df.copy()
-        else:
-            return self.df.copy()
+        installations = self.db.get_all_installations()
+        return [self._installation_to_dict(inst) for inst in installations]
     
     def get_parameter(self, anlage_nummer: int, parameter: str) -> Any:
         """
@@ -87,7 +117,7 @@ class BeispielanlagenLoader:
         
         Args:
             anlage_nummer: Nummer der Anlage (1, 2 oder 3)
-            parameter: Name des Parameters (Spaltenname)
+            parameter: Name des Parameters (CSV-Spaltenname)
         
         Returns:
             Wert des Parameters
@@ -206,11 +236,8 @@ def main():
     # Zeige alle Anlagen
     print("Verfügbare Beispielanlagen:")
     all_anlagen = loader.get_all_anlagen()
-    if HAS_PANDAS:
-        print(all_anlagen[['Beispielanlage', 'Gebaeudetyp', 'Anzahl_Sonden', 'Sondentiefe_m']])
-    else:
-        for anlage in all_anlagen:
-            print(f"  {anlage['Beispielanlage']}: {anlage['Gebaeudetyp']} - {anlage['Anzahl_Sonden']} Sonden, {anlage['Sondentiefe_m']} m")
+    for anlage in all_anlagen:
+        print(f"  {anlage['Beispielanlage']}: {anlage['Gebaeudetyp']} - {anlage['Anzahl_Sonden']} Sonden, {anlage['Sondentiefe_m']} m")
     
     # Zeige Details für Anlage 1
     loader.print_anlage(1)
@@ -224,4 +251,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

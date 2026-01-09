@@ -67,7 +67,8 @@ class PDFReportGenerator:
         hydraulics_result: dict = None,
         borefield_result: dict = None,
         vdi4640_result = None,
-        fluid_info: dict = None
+        fluid_info: dict = None,
+        diagram_data: dict = None
     ):
         """
         Generiert einen kompletten PDF-Bericht.
@@ -472,10 +473,21 @@ class PDFReportGenerator:
         story.append(PageBreak())
         story.append(Paragraph("Visualisierungen", self.styles['CustomHeading']))
         
+        # Initialisiere temp_files Liste frühzeitig
+        temp_files = []
+        
         # Erstelle Diagramme
         temp_plot_path = self._create_temperature_plot(result)
         borehole_plot_path = self._create_detailed_borehole_plot(params, result)
         static_borehole_path = self._create_static_borehole_graphic(params)
+        
+        # Füge Standard-Diagramme zur Liste hinzu
+        if temp_plot_path:
+            temp_files.append(temp_plot_path)
+        if borehole_plot_path:
+            temp_files.append(borehole_plot_path)
+        if static_borehole_path:
+            temp_files.append(static_borehole_path)
         
         if temp_plot_path and os.path.exists(temp_plot_path):
             story.append(Paragraph("Monatliche Fluidtemperaturen", self.styles['CustomBody']))
@@ -495,11 +507,78 @@ class PDFReportGenerator:
             img = Image(borehole_plot_path, width=16*cm, height=12*cm)
             story.append(img)
         
+        # === DIAGRAMME ===
+        if diagram_data:
+            story.append(PageBreak())
+            story.append(Paragraph("Visualisierungen & Diagramme", self.styles['CustomHeading']))
+            story.append(Spacer(1, 0.5*cm))
+            
+            # Diagramm-Beschreibungen
+            descriptions = {
+                'monthly_temperatures': 'Monatliche Temperaturen: Fluidtemperaturen über das Jahr',
+                'borehole_schema': 'Bohrloch-Schema: Querschnitt der Erdsonde',
+                'pump_characteristics': 'Pumpen-Kennlinien: H-Q-Kurve mit Betriebspunkt',
+                'reynolds_curve': 'Reynolds-Zahl vs. Volumenstrom für verschiedene Glykol-Konzentrationen',
+                'pressure_components': 'Druckverlust-Komponenten: Aufschlüsselung nach Systemteilen',
+                'flow_vs_pressure': 'Volumenstrom vs. Druckverlust: Solekreis-Kennlinie',
+                'pump_power_time': 'Pumpenleistung über Betriebszeit: Monatliche/jährliche Verteilung',
+                'temperature_spread': 'Temperaturspreizung Sole: ΔT vs. Volumenstrom',
+                'cop_inlet_temp': 'COP vs. Sole-Eintrittstemperatur: Effizienz-Kurve',
+                'cop_flow_temp': 'COP vs. Vorlauftemperatur: Effizienz-Kurve',
+                'jaz_estimation': 'JAZ-Abschätzung: Jahresarbeitszahl-Visualisierung',
+                'energy_consumption': 'Energieverbrauch-Vergleich: Konstante vs. Geregelte Pumpe'
+            }
+            
+            # Füge jedes Diagramm hinzu
+            temp_diagram_files = []
+            for diagram_type, figure in diagram_data.items():
+                try:
+                    # Speichere matplotlib Figure als temporäres PNG
+                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.png')
+                    figure.savefig(temp_file.name, dpi=300, bbox_inches='tight')
+                    temp_diagram_files.append(temp_file.name)
+                    
+                    # Diagramm-Titel
+                    title_map = {
+                        'monthly_temperatures': 'Monatliche Temperaturen',
+                        'borehole_schema': 'Bohrloch-Schema',
+                        'pump_characteristics': 'Pumpen-Kennlinien',
+                        'reynolds_curve': 'Reynolds-Kurve',
+                        'pressure_components': 'Druckverlust-Komponenten',
+                        'flow_vs_pressure': 'Volumenstrom vs. Druckverlust',
+                        'pump_power_time': 'Pumpenleistung über Betriebszeit',
+                        'temperature_spread': 'Temperaturspreizung Sole',
+                        'cop_inlet_temp': 'COP vs. Sole-Eintrittstemperatur',
+                        'cop_flow_temp': 'COP vs. Vorlauftemperatur',
+                        'jaz_estimation': 'JAZ-Abschätzung',
+                        'energy_consumption': 'Energieverbrauch-Vergleich'
+                    }
+                    
+                    story.append(Paragraph(title_map.get(diagram_type, diagram_type), 
+                                         self.styles['CustomBody']))
+                    
+                    # Füge Bild zum PDF hinzu
+                    img = Image(temp_file.name, width=16*cm, height=12*cm)
+                    story.append(img)
+                    story.append(Spacer(1, 0.3*cm))
+                    
+                    # Beschreibung
+                    desc = descriptions.get(diagram_type, '')
+                    if desc:
+                        story.append(Paragraph(desc, self.styles['CustomBody']))
+                    story.append(Spacer(1, 0.5*cm))
+                except Exception as e:
+                    print(f"Fehler beim Einbinden des Diagramms {diagram_type}: {e}")
+                    continue
+            
+            # Temporäre Diagramm-Dateien zur Löschliste hinzufügen
+            temp_files.extend(temp_diagram_files)
+        
         # === FUSSNOTE ===
         story.append(Spacer(1, 2*cm))
         footer = Paragraph(
             "<para align='center'><font size=8>"
-            "Dieser Bericht wurde automatisch mit dem Geothermie Erdsonden-Berechnungstool V3.2.1 erstellt.<br/>"
+            "Dieser Bericht wurde automatisch mit dem Geothermie Erdsonden-Berechnungstool V3.3.0-beta3 erstellt.<br/>"
             "Open Source Software - MIT Lizenz<br/>"
             "Berechnungen nach VDI 4640, Eskilson (1987), Hellström (1991) und pygfunction (2024)"
             "</font></para>",
@@ -511,11 +590,14 @@ class PDFReportGenerator:
         doc.build(story)
         
         # Temporäre Dateien löschen
-        temp_files = [temp_plot_path, borehole_plot_path, static_borehole_path]
+        # temp_files wurde bereits oben initialisiert und erweitert
         if borefield_result:
             borefield_layout_path = self._create_borefield_layout_plot(borefield_result)
             gfunction_path = self._create_gfunction_plot(borefield_result)
-            temp_files.extend([borefield_layout_path, gfunction_path])
+            if borefield_layout_path:
+                temp_files.append(borefield_layout_path)
+            if gfunction_path:
+                temp_files.append(gfunction_path)
         
         for temp_file in temp_files:
             if temp_file and os.path.exists(temp_file):

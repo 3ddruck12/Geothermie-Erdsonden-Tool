@@ -1,5 +1,5 @@
 """
-Erstellt .get Dateien aus den Beispielanlagen CSV-Datei.
+Erstellt .get Dateien aus den Beispielanlagen XML-Datei.
 """
 import os
 import sys

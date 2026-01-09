@@ -4,8 +4,9 @@ Dieser Ordner enthält typische Beispielanlagen für Erdwärmesonden-Systeme, di
 
 ## Dateien
 
-- `beispielanlagen.csv` - CSV-Datei mit 3 typischen Beispielanlagen
-- `load_examples.py` - Python-Skript zum Laden der Beispielanlagen
+- `beispielanlagen.xml` - XML-Datei mit 3 typischen Beispielanlagen
+- `example_installations_db.py` - Datenbank-Modul zum Laden der Beispielanlagen
+- `load_examples.py` - Python-Skript zum Laden der Beispielanlagen (kompatible API)
 - `create_get_files.py` - Python-Skript zum Erstellen von .get Dateien
 - `beispielanlage_1_efh_kfw40.get` - .get Datei für Beispielanlage 1
 - `beispielanlage_2_mfh_6_wohneinheiten.get` - .get Datei für Beispielanlage 2
@@ -113,18 +114,37 @@ Dieser Ordner enthält typische Beispielanlagen für Erdwärmesonden-Systeme, di
 
 ## Verwendung
 
-Die CSV-Datei kann mit Python geladen werden:
+Die XML-Datei kann mit Python geladen werden:
+
+### Mit dem BeispielanlagenLoader (empfohlen)
 
 ```python
-import pandas as pd
+from Beispiel-Anlagen.load_examples import BeispielanlagenLoader
 
 # Lade Beispielanlagen
-df = pd.read_csv('Beispiel-Anlagen/beispielanlagen.csv')
+loader = BeispielanlagenLoader()
 
 # Beispielanlage 1
-anlage1 = df[df['Beispielanlage'] == 1].iloc[0]
+anlage1 = loader.get_anlage(1)
 print(f"Anzahl Sonden: {anlage1['Anzahl_Sonden']}")
 print(f"Sondentiefe: {anlage1['Sondentiefe_m']} m")
+
+# Parameter abrufen
+anzahl_sonden = loader.get_parameter(1, 'Anzahl_Sonden')
+```
+
+### Direkt mit der Datenbank-Klasse
+
+```python
+from Beispiel-Anlagen.example_installations_db import ExampleInstallationsDatabase
+
+# Lade Datenbank
+db = ExampleInstallationsDatabase()
+
+# Installation abrufen
+inst = db.get_installation(1)
+print(f"Name: {inst.name}")
+print(f"Sonden: {inst.num_boreholes} × {inst.depth_m}m")
 ```
 
 Oder verwenden Sie das bereitgestellte `load_examples.py` Skript.
@@ -146,12 +166,12 @@ Die Beispielanlagen sind auch als `.get` Dateien verfügbar, die direkt im Geoth
 
 ### Neue .get Dateien erstellen
 
-Falls Sie die .get Dateien neu erstellen möchten (z.B. nach Änderungen an der CSV):
+Falls Sie die .get Dateien neu erstellen möchten (z.B. nach Änderungen an der XML):
 
 ```bash
 cd Beispiel-Anlagen
 python3 create_get_files.py
 ```
 
-Dies erstellt alle 3 .get Dateien neu basierend auf der CSV-Datei.
+Dies erstellt alle 3 .get Dateien neu basierend auf der XML-Datei.
 

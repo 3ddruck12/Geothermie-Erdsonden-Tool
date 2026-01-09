@@ -28,6 +28,7 @@ from calculations.vdi4640 import VDI4640Calculator
 from utils import PDFReportGenerator
 from utils.pvgis_api import PVGISClient, FALLBACK_CLIMATE_DATA
 from data import GroutMaterialDB, SoilTypeDB, FluidDatabase, FluidDatabase
+from data.pipes import PipeDatabase
 from gui.tooltips import InfoButton
 from gui.pump_selection_dialog import PumpSelectionDialog
 from utils.get_file_handler import GETFileHandler
@@ -39,7 +40,7 @@ class GeothermieGUIProfessional:
     def __init__(self, root):
         """Initialisiert die Professional GUI."""
         self.root = root
-        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.2.1")
+        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.3.0-beta3")
         self.root.geometry("1800x1100")
         
         # Module
@@ -55,6 +56,7 @@ class GeothermieGUIProfessional:
         self.grout_db = GroutMaterialDB()
         self.soil_db = SoilTypeDB()
         self.fluid_db = FluidDatabase()
+        self.pipe_db = PipeDatabase()  # NEU: XML-basierte Rohr-Datenbank
         self.get_handler = GETFileHandler()
         
         # Daten
@@ -599,10 +601,22 @@ class GeothermieGUIProfessional:
         scrollable_frame = ttk.Frame(canvas)
         
         scrollable_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        
+        # Erstelle Window im Canvas - nutze volle Breite
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
         
-        canvas.pack(side="left", fill="both", expand=True)
+        # Funktion zum Anpassen der Canvas-Breite, damit Inhalte nicht abgeschnitten werden
+        def configure_canvas_width(event):
+            # Stelle sicher, dass scrollable_frame die volle Canvas-Breite nutzt
+            canvas_width = event.width
+            canvas.itemconfig(canvas_window, width=canvas_width)
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        canvas.bind('<Configure>', configure_canvas_width)
+        scrollable_frame.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        
+        canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         scrollbar.pack(side="right", fill="y")
         
         # Materialmengen-Anzeige
@@ -698,10 +712,901 @@ class GeothermieGUIProfessional:
         self.pump_analysis_text.insert("1.0", "Pumpen-Empfehlungen werden nach\nHydraulik-Berechnung angezeigt.")
     
     def _create_visualization_tab(self):
-        """Erstellt den Visualisierungs-Tab."""
-        self.fig = Figure(figsize=(18, 6))  # Breiter für 3 Subplots
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.viz_frame)
-        self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        """Erstellt den Visualisierungs-Tab mit scrollbarem Bereich für alle Diagramme."""
+        # Obere Steuerleiste mit Button links oben
+        control_frame = ttk.Frame(self.viz_frame)
+        control_frame.pack(fill=tk.X, padx=10, pady=(10, 5))
+        
+        ttk.Button(control_frame, text="🔄 Alle Diagramme aktualisieren",
+                   command=self._update_all_diagrams).pack(side=tk.LEFT, padx=5)
+        
+        ttk.Label(control_frame,
+                  text="ℹ️ Diagramme werden automatisch in PDF-Bericht eingefügt (Strg+P oder Datei → PDF-Bericht)",
+                  font=("Arial", 9), foreground="gray").pack(side=tk.LEFT, padx=10)
+        
+        # Scrollbarer Container
+        canvas_container = tk.Canvas(self.viz_frame)
+        scrollbar = ttk.Scrollbar(self.viz_frame, orient="vertical", command=canvas_container.yview)
+        scrollable_frame = ttk.Frame(canvas_container)
+        
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas_container.configure(scrollregion=canvas_container.bbox("all"))
+        )
+        
+        # Erstelle Window im Canvas - nutze volle Breite
+        canvas_window = canvas_container.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas_container.configure(yscrollcommand=scrollbar.set)
+        
+        # Funktion zum Anpassen der Canvas-Breite, damit Diagramme nicht abgeschnitten werden
+        def configure_canvas_width(event):
+            # Stelle sicher, dass scrollable_frame die volle Canvas-Breite nutzt
+            canvas_width = event.width
+            canvas_container.itemconfig(canvas_window, width=canvas_width)
+            canvas_container.configure(scrollregion=canvas_container.bbox("all"))
+        
+        canvas_container.bind('<Configure>', configure_canvas_width)
+        scrollable_frame.bind('<Configure>', lambda e: canvas_container.configure(scrollregion=canvas_container.bbox("all")))
+        
+        # Pack scrollbar und canvas
+        canvas_container.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Liste aller Diagramme (alte + neue)
+        self.diagram_frames = []
+        self.diagram_figures = []
+        
+        # 1. Monatliche Temperaturen (alt, falls vorhanden)
+        self._add_diagram_frame(scrollable_frame, "Monatliche Temperaturen", 
+                               self._plot_monthly_temperatures)
+        
+        # 2. Bohrloch-Schema (alt, falls vorhanden)
+        self._add_diagram_frame(scrollable_frame, "Bohrloch-Schema",
+                               self._plot_borehole_schema)
+        
+        # 3. Pumpen-Kennlinien (neu)
+        self._add_diagram_frame(scrollable_frame, "Pumpen-Kennlinien",
+                               self._plot_pump_characteristics)
+        
+        # 4. Reynolds-Kurve (neu)
+        self._add_diagram_frame(scrollable_frame, "Reynolds-Kurve",
+                               self._plot_reynolds_curve)
+        
+        # 5. Druckverlust-Komponenten (neu)
+        self._add_diagram_frame(scrollable_frame, "Druckverlust-Komponenten",
+                               self._plot_pressure_components)
+        
+        # 6. Volumenstrom vs. Druckverlust (neu)
+        self._add_diagram_frame(scrollable_frame, "Volumenstrom vs. Druckverlust",
+                               self._plot_flow_vs_pressure)
+        
+        # 7. Pumpenleistung über Betriebszeit (neu)
+        self._add_diagram_frame(scrollable_frame, "Pumpenleistung über Betriebszeit",
+                               self._plot_pump_power_over_time)
+        
+        # 8. Temperaturspreizung Sole (neu)
+        self._add_diagram_frame(scrollable_frame, "Temperaturspreizung Sole",
+                               self._plot_temperature_spread)
+        
+        # 9. COP vs. Sole-Eintrittstemperatur (neu)
+        self._add_diagram_frame(scrollable_frame, "COP vs. Sole-Eintrittstemperatur",
+                               self._plot_cop_vs_inlet_temp)
+        
+        # 10. COP vs. Vorlauftemperatur (neu)
+        self._add_diagram_frame(scrollable_frame, "COP vs. Vorlauftemperatur",
+                               self._plot_cop_vs_flow_temp)
+        
+        # 11. JAZ-Abschätzung (neu)
+        self._add_diagram_frame(scrollable_frame, "JAZ-Abschätzung",
+                               self._plot_jaz_estimation)
+        
+        # 12. Energieverbrauch-Vergleich (neu)
+        self._add_diagram_frame(scrollable_frame, "Energieverbrauch-Vergleich",
+                               self._plot_energy_consumption)
+        
+        # Mousewheel-Scrolling
+        def _on_mousewheel(event):
+            canvas_container.yview_scroll(int(-1*(event.delta/120)), "units")
+        canvas_container.bind_all("<MouseWheel>", _on_mousewheel)
+        
+        # Store references for scrolling
+        self.canvas_container = canvas_container
+        self.scrollable_frame = scrollable_frame
+    
+    def _add_diagram_frame(self, parent, title, plot_function):
+        """Fügt ein Diagramm-Frame hinzu."""
+        # Frame für dieses Diagramm
+        diagram_frame = ttk.LabelFrame(parent, text=f"📊 {title}", padding=10)
+        diagram_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=10)
+        
+        # Matplotlib Figure - größere Breite für vollständige Anzeige
+        fig = Figure(figsize=(16, 6), dpi=100)
+        canvas = FigureCanvasTkAgg(fig, master=diagram_frame)
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        
+        # Speichere Referenzen
+        self.diagram_frames.append(diagram_frame)
+        self.diagram_figures.append({
+            'frame': diagram_frame,
+            'figure': fig,
+            'canvas': canvas,
+            'title': title,
+            'plot_function': plot_function
+        })
+        
+        # Initial: Platzhalter oder leeres Diagramm
+        ax = fig.add_subplot(111)
+        ax.text(0.5, 0.5, f"{title}\n\nDiagramm wird nach Berechnung angezeigt",
+                ha='center', va='center', fontsize=12, color='gray')
+        ax.axis('off')
+        canvas.draw()
+    
+    def _update_all_diagrams(self):
+        """Aktualisiert alle Diagramme."""
+        for diagram_info in self.diagram_figures:
+            try:
+                diagram_info['plot_function'](diagram_info['figure'], diagram_info['canvas'])
+            except Exception as e:
+                # Fehlerbehandlung: Zeige Fehlermeldung im Diagramm
+                ax = diagram_info['figure'].gca()
+                ax.clear()
+                ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                        ha='center', va='center', fontsize=10, color='red')
+                diagram_info['canvas'].draw()
+    
+    # ========== DIAGRAMM-FUNKTIONEN ==========
+    
+    def _plot_monthly_temperatures(self, fig, canvas):
+        """Plottet monatliche Temperaturen."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        if not self.result:
+            ax.text(0.5, 0.5, "Keine Berechnung durchgeführt.\n\nBitte Parameter eingeben und Berechnung starten.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
+        x = np.arange(len(months))
+        
+        ax.plot(x, self.result.monthly_temperatures, 'o-', linewidth=2.5, markersize=8, color='#1f4788')
+        ax.axhline(y=self.result.fluid_temperature_min, color='b', linestyle='--', linewidth=2,
+                    label=f'Min: {self.result.fluid_temperature_min:.1f}°C')
+        ax.axhline(y=self.result.fluid_temperature_max, color='r', linestyle='--', linewidth=2,
+                    label=f'Max: {self.result.fluid_temperature_max:.1f}°C')
+        ax.set_xlabel('Monat', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Temperatur [°C]', fontsize=11, fontweight='bold')
+        ax.set_title('Monatliche Temperaturen', fontsize=12, fontweight='bold')
+        ax.set_xticks(x)
+        ax.set_xticklabels(months)
+        ax.grid(True, alpha=0.3)
+        ax.legend(fontsize=9)
+        fig.tight_layout()
+        canvas.draw()
+    
+    def _plot_borehole_schema(self, fig, canvas):
+        """Plottet Bohrloch-Querschnitt."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        try:
+            bh_d_mm = float(self.entries["borehole_diameter"].get())
+            pipe_d = float(self.entries["pipe_outer_diameter"].get()) / 1000.0  # mm → m
+            bh_d = bh_d_mm / 1000.0  # mm → m für Skalierung
+            
+            scale = 100
+            bh_r = (bh_d / 2) * scale
+            pipe_r = (pipe_d / 2) * scale
+            
+            borehole = Circle((0, 0), bh_r, facecolor='#d9d9d9', edgecolor='black', linewidth=2)
+            ax.add_patch(borehole)
+            
+            positions = [(-bh_r*0.5, bh_r*0.5), (bh_r*0.5, bh_r*0.5),
+                        (-bh_r*0.5, -bh_r*0.5), (bh_r*0.5, -bh_r*0.5)]
+            colors = ['#ff6b6b', '#4ecdc4', '#ff6b6b', '#4ecdc4']
+            
+            for i, ((x, y), color) in enumerate(zip(positions, colors)):
+                pipe = Circle((x, y), pipe_r*1.5, facecolor=color, edgecolor='black', linewidth=1, alpha=0.8)
+                ax.add_patch(pipe)
+                ax.text(x, y, str(i+1), ha='center', va='center', fontsize=9, fontweight='bold', color='white')
+            
+            # Durchmesser-Annotation
+            ax.plot([-bh_r, bh_r], [0, 0], 'k--', linewidth=1, alpha=0.5)
+            ax.text(0, -bh_r*1.7, f'Ø {bh_d_mm:.0f}mm', ha='center', fontsize=11, fontweight='bold',
+                    bbox=dict(boxstyle='round,pad=0.4', facecolor='#ffeb3b', edgecolor='black'))
+            
+            ax.set_xlim(-bh_r*1.8, bh_r*1.8)
+            ax.set_ylim(-bh_r*1.9, bh_r*1.5)
+            ax.set_aspect('equal')
+            ax.set_title('Bohrloch-Querschnitt', fontsize=12, fontweight='bold')
+            ax.axis('off')
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Bohrloch-Schema konnte nicht erstellt werden:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+        
+        fig.tight_layout()
+        canvas.draw()
+    
+    def _plot_pump_characteristics(self, fig, canvas):
+        """Plottet Pumpen-Kennlinien (H-Q-Kurve) mit Betriebspunkt."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        if not self.hydraulics_result:
+            ax.text(0.5, 0.5, "Keine Hydraulik-Berechnung durchgeführt.\n\nBitte zuerst Hydraulik berechnen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        try:
+            from data.pump_db import PumpDatabase
+            
+            # Lade Pumpen-Datenbank
+            pump_db = PumpDatabase()
+            
+            # Hole aktuelle Betriebsdaten
+            flow = self.hydraulics_result.get('flow', {})
+            system = self.hydraulics_result.get('system', {})
+            current_flow = flow.get('volume_flow_m3_h', 0)
+            current_head = system.get('total_pressure_drop_bar', 0) * 10.2  # bar → m
+            
+            # Finde passende Pumpen (2-3 Beispiele)
+            suitable_pumps = []
+            for pump in pump_db.pumps:
+                if (pump.specs.max_flow_m3h >= current_flow * 1.2 and 
+                    pump.specs.max_head_m >= current_head * 1.2):
+                    suitable_pumps.append(pump)
+                    if len(suitable_pumps) >= 3:
+                        break
+            
+            # Wenn keine passenden Pumpen, zeige alle verfügbaren
+            if not suitable_pumps:
+                suitable_pumps = pump_db.pumps[:3] if len(pump_db.pumps) > 0 else []
+            
+            # Plot H-Q-Kurven für jede Pumpe (quadratische Approximation)
+            colors = ['#2196F3', '#4CAF50', '#FF9800']
+            for i, pump in enumerate(suitable_pumps):
+                q_max = pump.specs.max_flow_m3h
+                h_max = pump.specs.max_head_m
+                
+                # Quadratische Approximation: H = H_max * (1 - (Q/Q_max)^2)
+                q_range = np.linspace(0, q_max, 50)
+                h_range = h_max * (1 - (q_range / q_max) ** 2)
+                
+                ax.plot(q_range, h_range, linewidth=2, color=colors[i % len(colors)],
+                       label=f'{pump.manufacturer} {pump.model}\n(H_max={h_max:.1f}m, Q_max={q_max:.1f}m³/h)')
+            
+            # Betriebspunkt
+            if current_flow > 0 and current_head > 0:
+                ax.plot(current_flow, current_head, 'ro', markersize=12,
+                       label=f'Betriebspunkt\n({current_flow:.2f} m³/h, {current_head:.1f} m)', zorder=5)
+            
+            # System-Kennlinie (optional, als Referenz)
+            if current_flow > 0 and current_head > 0:
+                # Annahme: System-Kennlinie ist quadratisch
+                q_sys = np.linspace(0, current_flow * 1.5, 30)
+                # p ~ Q^2, also H ~ Q^2
+                h_sys = current_head * (q_sys / current_flow) ** 2
+                ax.plot(q_sys, h_sys, 'k--', linewidth=1.5, alpha=0.5, label='System-Kennlinie')
+            
+            ax.set_xlabel('Volumenstrom [m³/h]', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Förderhöhe [m]', fontsize=11, fontweight='bold')
+            ax.set_title('Pumpen-Kennlinien (H-Q-Kurven)', fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=8, loc='best')
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_reynolds_curve(self, fig, canvas):
+        """Plottet Reynolds-Zahl vs. Volumenstrom für verschiedene Glykol-Konzentrationen."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        if not self.hydraulics_result:
+            ax.text(0.5, 0.5, "Keine Hydraulik-Berechnung durchgeführt.\n\nBitte zuerst Hydraulik berechnen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        try:
+            # Hole aktuelle Parameter
+            flow = self.hydraulics_result.get('flow', {})
+            current_flow = flow.get('volume_flow_m3_h', 2.5)
+            
+            # Hole Rohrdurchmesser
+            pipe_d = float(self.entries.get("pipe_outer_diameter", ttk.Entry()).get() or "32") / 1000.0  # mm → m
+            # Schätzung Innendurchmesser (ca. 2mm Wandstärke)
+            pipe_d_inner = pipe_d - 0.004  # ca. 26mm für DN32
+            
+            # Volumenstrom-Bereich
+            flow_range = np.linspace(0.5, 5.0, 50)
+            
+            # Verschiedene Glykol-Konzentrationen
+            concentrations = [0, 25, 30, 40]
+            colors = ['#2196F3', '#4CAF50', '#FF9800', '#F44336']
+            
+            for conc, color in zip(concentrations, colors):
+                reynolds_list = []
+                props = self.hydraulics_calc._get_fluid_properties(conc)
+                density = props['density']
+                viscosity = props['viscosity']
+                
+                area = math.pi * (pipe_d_inner / 2) ** 2
+                
+                for flow_m3h in flow_range:
+                    velocity = (flow_m3h / 3600) / area
+                    reynolds = (density * velocity * pipe_d_inner) / viscosity
+                    reynolds_list.append(reynolds)
+                
+                ax.plot(flow_range, reynolds_list, linewidth=2, color=color, 
+                       label=f'{conc}% Glykol')
+            
+            # Turbulenz-Grenze
+            ax.axhline(y=2300, color='red', linestyle='--', linewidth=2, 
+                      label='Turbulenz-Grenze (Re=2300)')
+            
+            # Aktueller Betriebspunkt
+            if current_flow > 0:
+                # Berechne Reynolds für aktuelle Konzentration
+                antifreeze_conc = float(self.entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
+                props = self.hydraulics_calc._get_fluid_properties(antifreeze_conc)
+                density = props['density']
+                viscosity = props['viscosity']
+                area = math.pi * (pipe_d_inner / 2) ** 2
+                velocity = (current_flow / 3600) / area
+                current_reynolds = (density * velocity * pipe_d_inner) / viscosity
+                
+                ax.plot(current_flow, current_reynolds, 'ro', markersize=12, 
+                       label=f'Betriebspunkt (Re={current_reynolds:.0f})', zorder=5)
+            
+            ax.set_xlabel('Volumenstrom [m³/h]', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Reynolds-Zahl [-]', fontsize=11, fontweight='bold')
+            ax.set_title('Reynolds-Zahl vs. Volumenstrom', fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=9, loc='best')
+            ax.set_xlim(0.5, 5.0)
+            
+            # Warnung bei laminarer Strömung
+            if current_flow > 0 and current_reynolds < 2300:
+                ax.text(0.05, 0.95, '⚠️ LAMINARE STRÖMUNG\nRe < 2300', 
+                       transform=ax.transAxes, fontsize=10, color='red',
+                       verticalalignment='top', bbox=dict(boxstyle='round', facecolor='yellow', alpha=0.7))
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen der Reynolds-Kurve:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_pressure_components(self, fig, canvas):
+        """Plottet Druckverlust-Komponenten als Tortendiagramm und Balkendiagramm."""
+        fig.clear()
+        
+        if not self.hydraulics_result:
+            ax = fig.add_subplot(111)
+            ax.text(0.5, 0.5, "Keine Hydraulik-Berechnung durchgeführt.\n\nBitte zuerst Hydraulik berechnen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        try:
+            # Berechne detaillierte Druckverlust-Analyse
+            system = self.hydraulics_result.get('system', {})
+            flow = self.hydraulics_result.get('flow', {})
+            
+            # Hole Parameter
+            depth = float(self.entries.get("borehole_depth", ttk.Entry()).get() or "100")
+            num_boreholes = int(self.borehole_entries.get("num_boreholes", ttk.Entry()).get() or "1")
+            num_circuits = int(self.borehole_entries.get("num_circuits", ttk.Entry()).get() or "1")
+            pipe_d = float(self.entries.get("pipe_outer_diameter", ttk.Entry()).get() or "32") / 1000.0
+            pipe_d_inner = pipe_d - 0.004  # Schätzung
+            volume_flow = flow.get('volume_flow_m3_h', 2.5)
+            antifreeze_conc = float(self.entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
+            pipe_config = self.pipe_config_var.get()
+            circuits_per_borehole = 2 if 'double' in pipe_config.lower() or '4' in pipe_config else 1
+            
+            # Detaillierte Analyse
+            analysis = self.hydraulics_calc.calculate_detailed_pressure_analysis(
+                depth, num_boreholes, num_circuits, pipe_d_inner, volume_flow,
+                antifreeze_conc, circuits_per_borehole=circuits_per_borehole
+            )
+            
+            components = analysis['components']
+            
+            # Zwei Subplots: Tortendiagramm und Balkendiagramm
+            ax1 = fig.add_subplot(1, 2, 1)
+            ax2 = fig.add_subplot(1, 2, 2)
+            
+            # Tortendiagramm
+            labels = ['Bohrungen', 'Horizontal', 'Formstücke', 'Wärmetauscher']
+            sizes = [
+                components['boreholes']['percent'],
+                components['horizontal']['percent'],
+                components['fittings']['percent'],
+                components['heat_exchanger']['percent']
+            ]
+            colors_pie = ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3']
+            
+            ax1.pie(sizes, labels=labels, colors=colors_pie, autopct='%1.1f%%',
+                   startangle=90, textprops={'fontsize': 10, 'fontweight': 'bold'})
+            ax1.set_title('Druckverlust-Anteile', fontsize=12, fontweight='bold')
+            
+            # Balkendiagramm
+            values = [
+                components['boreholes']['pressure_drop_bar'],
+                components['horizontal']['pressure_drop_bar'],
+                components['fittings']['pressure_drop_bar'],
+                components['heat_exchanger']['pressure_drop_bar']
+            ]
+            
+            bars = ax2.barh(labels, values, color=colors_pie)
+            ax2.set_xlabel('Druckverlust [bar]', fontsize=11, fontweight='bold')
+            ax2.set_title('Druckverlust nach Komponenten', fontsize=12, fontweight='bold')
+            ax2.grid(True, alpha=0.3, axis='x')
+            
+            # Werte auf Balken
+            for i, (bar, val) in enumerate(zip(bars, values)):
+                ax2.text(val + 0.01, i, f'{val:.3f} bar\n({sizes[i]:.1f}%)',
+                        va='center', fontsize=9, fontweight='bold')
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax = fig.add_subplot(111)
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_flow_vs_pressure(self, fig, canvas):
+        """Plottet Volumenstrom vs. Druckverlust (Solekreis-Kennlinie)."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        if not self.hydraulics_result:
+            ax.text(0.5, 0.5, "Keine Hydraulik-Berechnung durchgeführt.\n\nBitte zuerst Hydraulik berechnen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        try:
+            # Hole Parameter
+            depth = float(self.entries.get("borehole_depth", ttk.Entry()).get() or "100")
+            num_boreholes = int(self.borehole_entries.get("num_boreholes", ttk.Entry()).get() or "1")
+            num_circuits = int(self.borehole_entries.get("num_circuits", ttk.Entry()).get() or "1")
+            pipe_d = float(self.entries.get("pipe_outer_diameter", ttk.Entry()).get() or "32") / 1000.0
+            pipe_d_inner = pipe_d - 0.004
+            antifreeze_conc = float(self.entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
+            pipe_config = self.pipe_config_var.get()
+            circuits_per_borehole = 2 if 'double' in pipe_config.lower() or '4' in pipe_config else 1
+            
+            # Volumenstrom-Bereich
+            flow_range = np.linspace(0.5, 5.0, 30)
+            pressure_range = []
+            
+            # Berechne Druckverlust für verschiedene Volumenströme
+            for flow_m3h in flow_range:
+                system_dp = self.hydraulics_calc.calculate_total_system_pressure_drop(
+                    depth, num_boreholes, num_circuits, pipe_d_inner, flow_m3h,
+                    antifreeze_conc, circuits_per_borehole=circuits_per_borehole
+                )
+                pressure_range.append(system_dp['total_pressure_drop_bar'])
+            
+            # Plot Kennlinie
+            ax.plot(flow_range, pressure_range, 'b-', linewidth=2.5, label='Solekreis-Kennlinie')
+            
+            # Aktueller Betriebspunkt
+            flow = self.hydraulics_result.get('flow', {})
+            system = self.hydraulics_result.get('system', {})
+            current_flow = flow.get('volume_flow_m3_h', 0)
+            current_pressure = system.get('total_pressure_drop_bar', 0)
+            
+            if current_flow > 0 and current_pressure > 0:
+                ax.plot(current_flow, current_pressure, 'ro', markersize=12,
+                       label=f'Betriebspunkt ({current_flow:.2f} m³/h, {current_pressure:.2f} bar)', zorder=5)
+            
+            ax.set_xlabel('Volumenstrom [m³/h]', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Druckverlust [bar]', fontsize=11, fontweight='bold')
+            ax.set_title('Volumenstrom vs. Druckverlust (Solekreis-Kennlinie)', fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=9, loc='best')
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_pump_power_over_time(self, fig, canvas):
+        """Plottet Pumpenleistung über Betriebszeit (monatlich/jährlich)."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        if not self.hydraulics_result:
+            ax.text(0.5, 0.5, "Keine Hydraulik-Berechnung durchgeführt.\n\nBitte zuerst Hydraulik berechnen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        try:
+            pump_power = self.hydraulics_result['pump']['electric_power_w']
+            
+            # Monatliche Betriebsstunden (Heizperiode)
+            months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
+            # Schätzung: Mehr Betrieb im Winter
+            monthly_hours = [200, 180, 150, 100, 50, 20, 20, 30, 60, 120, 160, 190]
+            total_hours = sum(monthly_hours)
+            
+            # Monatliche Energieverbrauch
+            monthly_energy = [hours * pump_power / 1000 for hours in monthly_hours]  # kWh
+            
+            # Balkendiagramm
+            x = np.arange(len(months))
+            bars = ax.bar(x, monthly_energy, color='#2196F3', alpha=0.7, edgecolor='black', linewidth=1)
+            
+            # Werte auf Balken
+            for i, (bar, energy) in enumerate(zip(bars, monthly_energy)):
+                if energy > 5:  # Nur wenn Wert groß genug
+                    ax.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.5,
+                           f'{energy:.0f} kWh',
+                           ha='center', va='bottom', fontsize=8)
+            
+            ax.set_xlabel('Monat', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Energieverbrauch [kWh]', fontsize=11, fontweight='bold')
+            ax.set_title(f'Pumpenleistung über Betriebszeit\n({pump_power:.0f} W, {total_hours} h/Jahr)', 
+                        fontsize=12, fontweight='bold')
+            ax.set_xticks(x)
+            ax.set_xticklabels(months)
+            ax.grid(True, alpha=0.3, axis='y')
+            
+            # Gesamtverbrauch als Text
+            total_energy = sum(monthly_energy)
+            ax.text(0.02, 0.98, f'Gesamtverbrauch:\n{total_energy:.0f} kWh/Jahr\n({total_energy * 0.30:.0f} EUR/Jahr)',
+                   transform=ax.transAxes, fontsize=9, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_temperature_spread(self, fig, canvas):
+        """Plottet Temperaturspreizung Sole (ΔT vs. Volumenstrom)."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        if not self.hydraulics_result:
+            ax.text(0.5, 0.5, "Keine Hydraulik-Berechnung durchgeführt.\n\nBitte zuerst Hydraulik berechnen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        try:
+            # Hole aktuelle Parameter
+            flow = self.hydraulics_result.get('flow', {})
+            current_flow = flow.get('volume_flow_m3_h', 2.5)
+            
+            # Hole Entzugsleistung (Kälteleistung) - ist direkt ein Float in kW
+            cold_power = self.hydraulics_result.get('cold_power', 6.0)
+            # Prüfe ob cold_power ein Dict oder direkt ein Wert ist
+            if isinstance(cold_power, dict):
+                extraction_power_kw = cold_power.get('extraction_power_kw', 6.0)
+            elif isinstance(cold_power, (int, float)):
+                # cold_power ist bereits in kW
+                extraction_power_kw = float(cold_power)
+            else:
+                # Fallback: Berechne aus Wärmeleistung und COP
+                try:
+                    heat_power_entry = self.entries.get("heat_power")
+                    if heat_power_entry:
+                        heat_power = float(heat_power_entry.get() if isinstance(heat_power_entry, ttk.Entry) else heat_power_entry or "6.0")
+                    else:
+                        heat_power = 6.0
+                    cop_entry = self.entries.get("heat_pump_cop_heating")
+                    if cop_entry:
+                        cop = float(cop_entry.get() if isinstance(cop_entry, ttk.Entry) else cop_entry or "4.0")
+                    else:
+                        cop = 4.0
+                    extraction_power_kw = heat_power * (cop - 1) / cop
+                except (ValueError, AttributeError, TypeError):
+                    extraction_power_kw = 6.0
+            
+            # Volumenstrom-Bereich
+            flow_range = np.linspace(1.0, 5.0, 30)
+            
+            # Berechne ΔT für verschiedene Volumenströme
+            # ΔT = Q / (m_dot * cp) = Q / (ρ * V * cp)
+            # Vereinfacht: ΔT = Q / (V * c) mit c ≈ 4 kJ/kgK für Sole
+            # Hole Frostschutz-Konzentration sicher
+            try:
+                antifreeze_entry = self.entries.get("antifreeze_concentration")
+                if antifreeze_entry:
+                    if isinstance(antifreeze_entry, ttk.Entry):
+                        antifreeze_conc = float(antifreeze_entry.get() or "25")
+                    else:
+                        antifreeze_conc = float(antifreeze_entry or "25")
+                else:
+                    antifreeze_conc = 25.0
+            except (ValueError, AttributeError, TypeError):
+                antifreeze_conc = 25.0
+            
+            props = self.hydraulics_calc._get_fluid_properties(antifreeze_conc)
+            density = props['density']  # kg/m³
+            cp = props['heat_capacity']  # J/kgK
+            
+            delta_t_range = []
+            for flow_m3h in flow_range:
+                # Massenstrom in kg/s
+                mass_flow = (flow_m3h / 3600) * density  # kg/s
+                # ΔT = Q / (m_dot * cp)
+                if mass_flow > 0:
+                    delta_t = (extraction_power_kw * 1000) / (mass_flow * cp)  # K
+                else:
+                    delta_t = 0
+                delta_t_range.append(delta_t)
+            
+            # Plot
+            ax.plot(flow_range, delta_t_range, 'b-', linewidth=2.5, label='Temperaturspreizung')
+            
+            # Aktueller Betriebspunkt
+            if current_flow > 0:
+                mass_flow = (current_flow / 3600) * density
+                current_delta_t = (extraction_power_kw * 1000) / (mass_flow * cp) if mass_flow > 0 else 0
+                ax.plot(current_flow, current_delta_t, 'ro', markersize=12,
+                       label=f'Betriebspunkt\n(ΔT={current_delta_t:.2f} K)', zorder=5)
+            
+            # Optimaler Bereich (2-4 K)
+            ax.axhspan(2, 4, alpha=0.2, color='green', label='Optimaler Bereich (2-4 K)')
+            
+            ax.set_xlabel('Volumenstrom [m³/h]', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Temperaturspreizung ΔT [K]', fontsize=11, fontweight='bold')
+            ax.set_title('Temperaturspreizung Sole (ΔT vs. Volumenstrom)', fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=9, loc='best')
+            ax.set_ylim(0, max(delta_t_range) * 1.1 if delta_t_range else 5)
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_cop_vs_inlet_temp(self, fig, canvas):
+        """Plottet COP vs. Sole-Eintrittstemperatur."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        try:
+            # Hole Wärmepumpen-Parameter
+            cop_heating = float(self.entries.get("heat_pump_cop_heating", ttk.Entry()).get() or "4.0")
+            flow_temp = float(self.entries.get("flow_temperature", ttk.Entry()).get() or "35.0")
+            
+            # Sole-Eintrittstemperatur-Bereich
+            inlet_temp_range = np.linspace(-5, 15, 50)
+            
+            # Vereinfachte COP-Berechnung: COP steigt mit höherer Eintrittstemperatur
+            # COP ≈ COP_nenn * (1 + 0.05 * (T_inlet - T_nenn))
+            # T_nenn typischerweise 0°C für Sole/Wasser-WP
+            cop_range = []
+            for t_inlet in inlet_temp_range:
+                # Vereinfachte Formel: COP steigt linear mit Temperatur
+                cop = cop_heating * (1 + 0.04 * (t_inlet - 0))
+                cop_range.append(max(2.0, min(6.0, cop)))  # Begrenzung auf realistische Werte
+            
+            # Plot
+            ax.plot(inlet_temp_range, cop_range, 'b-', linewidth=2.5, label='COP-Kurve')
+            
+            # Aktueller Betriebspunkt (falls verfügbar)
+            if hasattr(self, 'vdi4640_result') and self.vdi4640_result:
+                t_inlet = self.vdi4640_result.t_wp_aus_heating_min
+                cop_actual = cop_heating * (1 + 0.04 * (t_inlet - 0))
+                cop_actual = max(2.0, min(6.0, cop_actual))
+                ax.plot(t_inlet, cop_actual, 'ro', markersize=12,
+                       label=f'Betriebspunkt\n(T={t_inlet:.1f}°C, COP={cop_actual:.2f})', zorder=5)
+            
+            ax.set_xlabel('Sole-Eintrittstemperatur [°C]', fontsize=11, fontweight='bold')
+            ax.set_ylabel('COP [-]', fontsize=11, fontweight='bold')
+            ax.set_title('COP vs. Sole-Eintrittstemperatur', fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=9, loc='best')
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_cop_vs_flow_temp(self, fig, canvas):
+        """Plottet COP vs. Vorlauftemperatur."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        try:
+            # Hole Wärmepumpen-Parameter
+            cop_heating = float(self.entries.get("heat_pump_cop_heating", ttk.Entry()).get() or "4.0")
+            flow_temp = float(self.entries.get("flow_temperature", ttk.Entry()).get() or "35.0")
+            
+            # Vorlauftemperatur-Bereich
+            flow_temp_range = np.linspace(25, 55, 50)
+            
+            # Vereinfachte COP-Berechnung: COP sinkt mit höherer Vorlauftemperatur
+            # COP ≈ COP_nenn * (1 - 0.03 * (T_flow - T_nenn))
+            # T_nenn typischerweise 35°C für Fußbodenheizung
+            cop_range = []
+            for t_flow in flow_temp_range:
+                # Vereinfachte Formel: COP sinkt linear mit Temperatur
+                cop = cop_heating * (1 - 0.025 * (t_flow - 35))
+                cop_range.append(max(2.0, min(6.0, cop)))  # Begrenzung auf realistische Werte
+            
+            # Plot
+            ax.plot(flow_temp_range, cop_range, 'r-', linewidth=2.5, label='COP-Kurve')
+            
+            # Aktueller Betriebspunkt
+            cop_actual = cop_heating * (1 - 0.025 * (flow_temp - 35))
+            cop_actual = max(2.0, min(6.0, cop_actual))
+            ax.plot(flow_temp, cop_actual, 'ro', markersize=12,
+                   label=f'Betriebspunkt\n(T={flow_temp:.1f}°C, COP={cop_actual:.2f})', zorder=5)
+            
+            ax.set_xlabel('Vorlauftemperatur [°C]', fontsize=11, fontweight='bold')
+            ax.set_ylabel('COP [-]', fontsize=11, fontweight='bold')
+            ax.set_title('COP vs. Vorlauftemperatur', fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=9, loc='best')
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_jaz_estimation(self, fig, canvas):
+        """Plottet JAZ-Abschätzung (Jahresarbeitszahl)."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        try:
+            # Hole Parameter
+            cop_heating = float(self.entries.get("heat_pump_cop_heating", ttk.Entry()).get() or "4.0")
+            annual_heating = float(self.entries.get("annual_heating", ttk.Entry()).get() or "10000")
+            
+            # Vereinfachte JAZ-Abschätzung basierend auf COP
+            # JAZ ist typischerweise 10-20% niedriger als COP_nenn
+            # wegen Teillastbetrieb und verschiedenen Betriebsbedingungen
+            jaz_estimated = cop_heating * 0.85  # 15% Abschlag
+            
+            # Vergleich mit verschiedenen Szenarien
+            scenarios = ['Optimistisch\n(COP_nenn)', 'Realistisch\n(JAZ geschätzt)', 'Pessimistisch\n(-20%)']
+            values = [cop_heating, jaz_estimated, cop_heating * 0.80]
+            colors = ['#4CAF50', '#2196F3', '#FF9800']
+            
+            # Balkendiagramm
+            bars = ax.barh(scenarios, values, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
+            
+            # Werte auf Balken
+            for bar, val in zip(bars, values):
+                width = bar.get_width()
+                ax.text(width + 0.05, bar.get_y() + bar.get_height()/2,
+                       f'{val:.2f}',
+                       va='center', fontsize=10, fontweight='bold')
+            
+            # Energieverbrauch-Annotation
+            energy_consumption = annual_heating / jaz_estimated  # kWh
+            ax.text(0.02, 0.98, f'JAZ-Abschätzung: {jaz_estimated:.2f}\n\nJahresenergieverbrauch:\n{energy_consumption:.0f} kWh/Jahr\n({energy_consumption * 0.30:.0f} EUR/Jahr)',
+                   transform=ax.transAxes, fontsize=9, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
+            
+            ax.set_xlabel('COP / JAZ [-]', fontsize=11, fontweight='bold')
+            ax.set_title('JAZ-Abschätzung (Jahresarbeitszahl)', fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3, axis='x')
+            ax.set_xlim(0, max(values) * 1.3)
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+    
+    def _plot_energy_consumption(self, fig, canvas):
+        """Plottet Energieverbrauch-Vergleich (konstant vs. geregelt)."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+        
+        if not self.hydraulics_result:
+            ax.text(0.5, 0.5, "Keine Hydraulik-Berechnung durchgeführt.\n\nBitte zuerst Hydraulik berechnen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+        
+        try:
+            pump_power = self.hydraulics_result['pump']['electric_power_w']
+            hours = 1800  # Standard-Betriebsstunden
+            price = 0.30  # EUR/kWh
+            
+            # Berechne Energieverbrauch
+            energy = self.hydraulics_calc.calculate_pump_energy_consumption(
+                pump_power, hours, price
+            )
+            
+            # Geregelte Pumpe (30% Einsparung)
+            regulated_kwh = energy['annual_kwh'] * 0.7
+            regulated_cost = energy['annual_cost_eur'] * 0.7
+            
+            # 10-Jahres-Kosten
+            constant_10y = energy['annual_cost_eur'] * 10
+            regulated_10y = regulated_cost * 10
+            savings_10y = constant_10y - regulated_10y
+            
+            # Balkendiagramm
+            categories = ['Konstante\nPumpe', 'Geregelte\nPumpe']
+            annual_costs = [energy['annual_cost_eur'], regulated_cost]
+            colors = ['#F44336', '#4CAF50']
+            
+            bars = ax.bar(categories, annual_costs, color=colors, alpha=0.7, edgecolor='black', linewidth=2)
+            
+            # Werte auf Balken
+            for bar, cost in zip(bars, annual_costs):
+                height = bar.get_height()
+                ax.text(bar.get_x() + bar.get_width()/2., height + 5,
+                       f'{cost:.0f} EUR/Jahr\n({cost/price:.0f} kWh)',
+                       ha='center', va='bottom', fontsize=10, fontweight='bold')
+            
+            # Einsparung annotieren
+            savings = energy['annual_cost_eur'] - regulated_cost
+            ax.annotate('', xy=(1, regulated_cost), xytext=(0, energy['annual_cost_eur']),
+                       arrowprops=dict(arrowstyle='<->', color='blue', lw=2))
+            ax.text(0.5, (energy['annual_cost_eur'] + regulated_cost)/2,
+                   f'Einsparung:\n{savings:.0f} EUR/Jahr\n({savings_10y:.0f} EUR/10a)',
+                   ha='center', va='center', fontsize=10, fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.5', facecolor='yellow', alpha=0.7))
+            
+            ax.set_ylabel('Kosten [EUR/Jahr]', fontsize=11, fontweight='bold')
+            ax.set_title('Energieverbrauch-Vergleich: Konstante vs. Geregelte Pumpe', 
+                        fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3, axis='y')
+            
+            # 10-Jahres-Kosten als Text
+            ax.text(0.02, 0.98, f'10-Jahres-Kosten:\nKonstant: {constant_10y:.0f} EUR\nGeregelt: {regulated_10y:.0f} EUR\n\nEinsparung: {savings_10y:.0f} EUR',
+                   transform=ax.transAxes, fontsize=9, verticalalignment='top',
+                   bbox=dict(boxstyle='round', facecolor='lightblue', alpha=0.5))
+            
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5, f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
     
     def _create_static_borehole_graphic(self, parent):
         """Erstellt eine statische Erklärungsgrafik einer Erdsonde mit 4 Leitungen."""
@@ -833,7 +1738,7 @@ class GeothermieGUIProfessional:
     
     def _create_status_bar(self):
         """Erstellt die Statusleiste."""
-        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.0")
+        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.3.0-beta3")
         status_bar = ttk.Label(self.root, textvariable=self.status_var,
                               relief=tk.SUNKEN, anchor=tk.W)
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -2516,149 +3421,10 @@ class GeothermieGUIProfessional:
         self.results_text.config(state=tk.DISABLED)
     
     def _plot_results(self):
-        """Erstellt Visualisierungen: Temperaturen, Bohrloch-Querschnitt, Bohrfeld-Layout."""
-        if not self.result:
-            return
-        
-        self.fig.clear()
-        
-        # 3 Subplots: Temperaturen links, Bohrfeld-Layout Mitte, Bohrloch-Querschnitt rechts
-        ax1 = self.fig.add_subplot(1, 3, 1)
-        ax2 = self.fig.add_subplot(1, 3, 2)
-        ax3 = self.fig.add_subplot(1, 3, 3)
-        
-        # Temperaturen
-        months = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"]
-        x = np.arange(len(months))
-        
-        ax1.plot(x, self.result.monthly_temperatures, 'o-', linewidth=2.5, markersize=8, color='#1f4788')
-        ax1.axhline(y=self.result.fluid_temperature_min, color='b', linestyle='--', linewidth=2,
-                    label=f'Min: {self.result.fluid_temperature_min:.1f}°C')
-        ax1.axhline(y=self.result.fluid_temperature_max, color='r', linestyle='--', linewidth=2,
-                    label=f'Max: {self.result.fluid_temperature_max:.1f}°C')
-        ax1.set_xlabel('Monat', fontsize=11, fontweight='bold')
-        ax1.set_ylabel('Temperatur [°C]', fontsize=11, fontweight='bold')
-        ax1.set_title('Monatliche Temperaturen', fontsize=12, fontweight='bold')
-        ax1.set_xticks(x)
-        ax1.set_xticklabels(months)
-        ax1.grid(True, alpha=0.3)
-        ax1.legend(fontsize=9)
-        
-        # === 2. BOHRFELD-LAYOUT (Draufsicht) ===
-        try:
-            from matplotlib.patches import Rectangle
-            
-            # Sichere Werte mit Fallback
-            num_boreholes = int(self.borehole_entries.get("num_boreholes", ttk.Entry()).get() or "1")
-            spacing = float(self.borehole_entries.get("borehole_spacing", ttk.Entry()).get() or "6.0")
-            boundary_dist = float(self.borehole_entries.get("boundary_distance", ttk.Entry()).get() or "3.0")
-            house_dist = float(self.borehole_entries.get("house_distance", ttk.Entry()).get() or "3.0")
-            
-            # Grundstück zeichnen (Rechteck)
-            total_width = max(20, spacing * max(1, num_boreholes - 1) + 2 * boundary_dist + 10)
-            total_height = max(20, spacing + 2 * boundary_dist + house_dist + 10)
-            
-            # Grundstück (hellgrün)
-            property_rect = Rectangle((-total_width/2, -total_height/2), total_width, total_height,
-                                     facecolor='#e8f5e9', edgecolor='#4caf50', linewidth=2, 
-                                     label='Grundstück')
-            ax2.add_patch(property_rect)
-            
-            # Haus (grau, oben)
-            house_width = total_width * 0.4
-            house_height = min(house_dist * 0.8, total_height * 0.3)
-            house_y = total_height/2 - house_height - 2
-            house_rect = Rectangle((-house_width/2, house_y), house_width, house_height,
-                                  facecolor='#bdbdbd', edgecolor='#424242', linewidth=2,
-                                  label='Gebäude')
-            ax2.add_patch(house_rect)
-            
-            # Bohrungen anordnen (unten im Grundstück)
-            bh_y = -total_height/2 + boundary_dist + 3
-            if num_boreholes == 1:
-                bh_positions = [(0, bh_y)]
-            else:
-                start_x = -(num_boreholes - 1) * spacing / 2
-                bh_positions = [(start_x + i * spacing, bh_y) for i in range(num_boreholes)]
-            
-            # Bohrungen zeichnen
-            for i, (bh_x, bh_y_pos) in enumerate(bh_positions):
-                bh_circle = Circle((bh_x, bh_y_pos), 1.2, facecolor='#ff9800', 
-                                  edgecolor='#e65100', linewidth=2)
-                ax2.add_patch(bh_circle)
-                ax2.text(bh_x, bh_y_pos, str(i+1), ha='center', va='center', 
-                        fontsize=10, fontweight='bold', color='white')
-            
-            # Abstände als Pfeile mit Text
-            if num_boreholes > 1:
-                # Abstand zwischen Bohrungen
-                ax2.annotate('', xy=(bh_positions[1][0], bh_y-2), xytext=(bh_positions[0][0], bh_y-2),
-                           arrowprops=dict(arrowstyle='<->', color='#2196f3', lw=2))
-                ax2.text((bh_positions[0][0] + bh_positions[1][0])/2, bh_y-3, 
-                        f'{spacing}m', ha='center', fontsize=9, color='#1976d2', fontweight='bold',
-                        bbox=dict(boxstyle='round,pad=0.3', facecolor='white', edgecolor='#2196f3'))
-            
-            # Abstand zum Grundstücksrand
-            ax2.annotate('', xy=(bh_positions[0][0], -total_height/2), xytext=(bh_positions[0][0], bh_y-1.5),
-                       arrowprops=dict(arrowstyle='<->', color='#4caf50', lw=1.5))
-            ax2.text(bh_positions[0][0]+2, (-total_height/2 + bh_y-1.5)/2, 
-                    f'{boundary_dist}m', ha='left', fontsize=8, color='#2e7d32',
-                    bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#4caf50'))
-            
-            # Abstand zum Haus
-            ax2.annotate('', xy=(0, house_y), xytext=(0, bh_y+1.5),
-                       arrowprops=dict(arrowstyle='<->', color='#f44336', lw=1.5))
-            ax2.text(2.5, (house_y + bh_y+1.5)/2, 
-                    f'{house_dist}m', ha='left', fontsize=8, color='#c62828',
-                    bbox=dict(boxstyle='round,pad=0.2', facecolor='white', edgecolor='#f44336'))
-            
-            ax2.set_xlim(-total_width/2-2, total_width/2+2)
-            ax2.set_ylim(-total_height/2-2, total_height/2+2)
-            ax2.set_aspect('equal')
-            ax2.set_title(f'Bohrfeld ({num_boreholes} Bohrung{"en" if num_boreholes > 1 else ""})', 
-                         fontsize=12, fontweight='bold')
-            ax2.axis('off')
-            ax2.legend(fontsize=8, loc='upper right')
-            
-        except Exception as e:
-            ax2.text(0.5, 0.5, f'Bohrfeld-Visualisierung\nfehlgeschlagen', 
-                    ha='center', va='center', fontsize=10, transform=ax2.transAxes)
-            ax2.axis('off')
-        
-        # === 3. BOHRLOCH-QUERSCHNITT ===
-        bh_d_mm = float(self.entries["borehole_diameter"].get())
-        pipe_d = float(self.entries["pipe_outer_diameter"].get()) / 1000.0  # mm → m
-        bh_d = bh_d_mm / 1000.0  # mm → m für Skalierung
-        
-        scale = 100
-        bh_r = (bh_d / 2) * scale
-        pipe_r = (pipe_d / 2) * scale
-        
-        borehole = Circle((0, 0), bh_r, facecolor='#d9d9d9', edgecolor='black', linewidth=2)
-        ax3.add_patch(borehole)
-        
-        positions = [(-bh_r*0.5, bh_r*0.5), (bh_r*0.5, bh_r*0.5),
-                    (-bh_r*0.5, -bh_r*0.5), (bh_r*0.5, -bh_r*0.5)]
-        colors = ['#ff6b6b', '#4ecdc4', '#ff6b6b', '#4ecdc4']
-        
-        for i, ((x, y), color) in enumerate(zip(positions, colors)):
-            pipe = Circle((x, y), pipe_r*1.5, facecolor=color, edgecolor='black', linewidth=1, alpha=0.8)
-            ax3.add_patch(pipe)
-            ax3.text(x, y, str(i+1), ha='center', va='center', fontsize=9, fontweight='bold', color='white')
-        
-        # Durchmesser-Annotation
-        ax3.plot([-bh_r, bh_r], [0, 0], 'k--', linewidth=1, alpha=0.5)
-        ax3.text(0, -bh_r*1.7, f'Ø {bh_d_mm:.0f}mm', ha='center', fontsize=11, fontweight='bold',
-                bbox=dict(boxstyle='round,pad=0.4', facecolor='#ffeb3b', edgecolor='black'))
-        
-        ax3.set_xlim(-bh_r*1.8, bh_r*1.8)
-        ax3.set_ylim(-bh_r*1.9, bh_r*1.5)
-        ax3.set_aspect('equal')
-        ax3.set_title('Bohrloch-Querschnitt', fontsize=12, fontweight='bold')
-        ax3.axis('off')
-        
-        self.fig.tight_layout()
-        self.canvas.draw()
+        """Aktualisiert alle Diagramme im neuen Diagramm-Tab."""
+        # Aktualisiere alle Diagramme im neuen System
+        if hasattr(self, 'diagram_figures'):
+            self._update_all_diagrams()
     
     def _export_pdf(self):
         """Exportiert PDF mit allen Daten."""
@@ -2706,7 +3472,41 @@ class GeothermieGUIProfessional:
                             **props
                         }
                 
-                # PDF erstellen (mit optionalen Verfüllmaterial-, Hydraulik-, Bohrfeld-, VDI4640- und Fluid-Daten)
+                # Sammle Diagramme für PDF
+                diagram_data = {}
+                if hasattr(self, 'diagram_figures'):
+                    # Aktualisiere alle Diagramme zuerst
+                    self._update_all_diagrams()
+                    
+                    # Sammle Diagramme
+                    diagram_mapping = {
+                        'Monatliche Temperaturen': 'monthly_temperatures',
+                        'Bohrloch-Schema': 'borehole_schema',
+                        'Pumpen-Kennlinien': 'pump_characteristics',
+                        'Reynolds-Kurve': 'reynolds_curve',
+                        'Druckverlust-Komponenten': 'pressure_components',
+                        'Volumenstrom vs. Druckverlust': 'flow_vs_pressure',
+                        'Pumpenleistung über Betriebszeit': 'pump_power_time',
+                        'Temperaturspreizung Sole': 'temperature_spread',
+                        'COP vs. Sole-Eintrittstemperatur': 'cop_inlet_temp',
+                        'COP vs. Vorlauftemperatur': 'cop_flow_temp',
+                        'JAZ-Abschätzung': 'jaz_estimation',
+                        'Energieverbrauch-Vergleich': 'energy_consumption'
+                    }
+                    
+                    for diagram_info in self.diagram_figures:
+                        title = diagram_info['title']
+                        if title in diagram_mapping:
+                            key = diagram_mapping[title]
+                            # Prüfe ob Diagramm Daten hat (nicht nur Platzhalter)
+                            try:
+                                ax = diagram_info['figure'].gca()
+                                if ax.get_lines() or ax.patches or len(ax.texts) > 1:
+                                    diagram_data[key] = diagram_info['figure']
+                            except:
+                                pass
+                
+                # PDF erstellen (mit optionalen Verfüllmaterial-, Hydraulik-, Bohrfeld-, VDI4640-, Fluid- und Diagramm-Daten)
                 self.pdf_generator.generate_report(
                     filename, self.result, self.current_params,
                     project_info, borehole_config,
@@ -2714,7 +3514,8 @@ class GeothermieGUIProfessional:
                     hydraulics_result=getattr(self, 'hydraulics_result', None),
                     borefield_result=getattr(self, 'borefield_result', None),
                     vdi4640_result=getattr(self, 'vdi4640_result', None),
-                    fluid_info=fluid_info
+                    fluid_info=fluid_info,
+                    diagram_data=diagram_data
                 )
                 
                 self.status_var.set(f"✓ PDF erstellt: {os.path.basename(filename)}")
@@ -3009,15 +3810,12 @@ und wird rechts visualisiert.""")
     def _show_about(self):
         """Zeigt Über-Dialog."""
         about = """Geothermie Erdsonden-Tool
-Professional Edition V3.0
+Professional Edition V3.3.0-beta3
 
-Neue Features in V3:
-✓ 7 Verfüllmaterialien mit Mengenberechnung
-✓ 11 Bodentypen nach VDI 4640
-✓ PVGIS EU-Klimadaten Integration
-✓ Vollständige Hydraulik-Berechnungen
-✓ Erweiterte Wärmepumpendaten
-✓ Frostschutz-Konfiguration
+Für eine vollständige Liste aller Änderungen und neuen Features
+siehe bitte den Changelog:
+
+CHANGELOG_V3.3.0-beta3.md
 
 © 2026 - Open Source (MIT Lizenz)"""
         messagebox.showinfo("Über", about)
@@ -3042,21 +3840,56 @@ In diesem Tool verfügbar über:
         messagebox.showinfo("PVGIS Information", info)
     
     def _load_default_pipes(self):
-        """Lädt Standard-Rohre."""
-        pipe_file = os.path.join(os.path.dirname(__file__), "..", "import", "pipe.txt")
-        if os.path.exists(pipe_file):
-            try:
-                self.pipes = self.pipe_parser.parse_file(pipe_file)
+        """Lädt Standard-Rohre aus XML-Datenbank (inkl. DN40, DN50, Coaxial)."""
+        try:
+            # Lade aus XML-Datenbank (enthält DN20, DN25, DN32, DN40, DN50)
+            all_pipes = list(self.pipe_db.pipes.values())
+            
+            # Sortiere nach Durchmesser
+            all_pipes.sort(key=lambda p: p.dimensions.outer_diameter)
+            
+            # Konvertiere Pipe-Objekte zu kompatiblen Format für GUI
+            # Erstelle kompatible Pipe-Objekte (mit name, diameter_m, thickness_m, thermal_conductivity)
+            class CompatiblePipe:
+                def __init__(self, pipe):
+                    self.name = pipe.name
+                    self.diameter_m = pipe.dimensions.outer_diameter
+                    self.thickness_m = pipe.dimensions.wall_thickness
+                    self.thermal_conductivity = pipe.thermal_conductivity
+            
+            self.pipes = [CompatiblePipe(p) for p in all_pipes]
+            
+            # Setze Dropdown-Werte
+            if hasattr(self, 'pipe_type_combo'):
                 self.pipe_type_combo['values'] = [p.name for p in self.pipes]
-                # Setze PE 100 RC als Standard
+                
+                # Setze Standard (DN32 falls verfügbar, sonst erstes)
+                default_set = False
                 for i, pipe in enumerate(self.pipes):
-                    if "PE 100 RC DN32" in pipe.name and "Dual" in pipe.name:
+                    if "DN32" in pipe.name or "32" in pipe.name:
                         self.pipe_type_combo.current(i)
                         self._on_pipe_selected(None)
+                        default_set = True
                         break
-                self.status_var.set(f"✓ {len(self.pipes)} Rohrtypen geladen (inkl. PE 100 RC)")
-            except Exception as e:
-                print(f"Fehler beim Laden: {e}")
+                
+                if not default_set and self.pipes:
+                    self.pipe_type_combo.current(0)
+                    self._on_pipe_selected(None)
+            
+            self.status_var.set(f"✓ {len(self.pipes)} Rohrtypen geladen (inkl. DN40, DN50)")
+            
+        except Exception as e:
+            print(f"Fehler beim Laden der Rohr-Datenbank: {e}")
+            # Fallback: Lade aus pipe.txt falls vorhanden
+            pipe_file = os.path.join(os.path.dirname(__file__), "..", "import", "pipe.txt")
+            if os.path.exists(pipe_file):
+                try:
+                    self.pipes = self.pipe_parser.parse_file(pipe_file)
+                    if hasattr(self, 'pipe_type_combo'):
+                        self.pipe_type_combo['values'] = [p.name for p in self.pipes]
+                    self.status_var.set(f"✓ {len(self.pipes)} Rohrtypen geladen (Fallback)")
+                except Exception as e2:
+                    print(f"Fehler beim Fallback-Laden: {e2}")
     
     def _load_pipe_file(self):
         """Lädt Pipe-Datei."""
@@ -3202,7 +4035,20 @@ In diesem Tool verfügbar über:
                 # NEU: Separate Export-Felder für bessere Struktur
                 vdi4640_result=self.vdi4640_result.__dict__ if hasattr(self, 'vdi4640_result') and self.vdi4640_result else None,
                 hydraulics_result=self.hydraulics_result if hasattr(self, 'hydraulics_result') and self.hydraulics_result else None,
-                grout_calculation=self.grout_calculation if hasattr(self, 'grout_calculation') and self.grout_calculation else None
+                grout_calculation=self.grout_calculation if hasattr(self, 'grout_calculation') and self.grout_calculation else None,
+                # NEU in V3.3: Diagramm-Konfigurationen
+                diagrams={
+                    "pump_characteristics": {"enabled": True},
+                    "reynolds_curve": {"enabled": True, "glycol_concentrations": [0, 25, 30, 40]},
+                    "pressure_components": {"enabled": True, "chart_type": "pie"},
+                    "flow_vs_pressure": {"enabled": True},
+                    "pump_power_time": {"enabled": True},
+                    "temperature_spread": {"enabled": True},
+                    "cop_inlet_temp": {"enabled": True},
+                    "cop_flow_temp": {"enabled": True},
+                    "jaz_estimation": {"enabled": True},
+                    "energy_consumption": {"enabled": True, "show_10_year": True}
+                }
             )
             
             if success:

@@ -10,8 +10,8 @@ from datetime import datetime
 import os
 
 # Versionskonstanten
-CURRENT_FORMAT_VERSION = "3.2"
-SUPPORTED_VERSIONS = ["3.0", "3.1", "3.2"]
+CURRENT_FORMAT_VERSION = "3.3"
+SUPPORTED_VERSIONS = ["3.0", "3.1", "3.2", "3.3"]
 
 
 class GETFileHandler:
@@ -40,7 +40,8 @@ class GETFileHandler:
         hydraulics_result: Optional[Dict[str, Any]] = None,
         fluid_database_info: Optional[Dict[str, Any]] = None,
         grout_calculation: Optional[Dict[str, Any]] = None,
-        custom_pipes_txt: Optional[str] = None
+        custom_pipes_txt: Optional[str] = None,
+        diagrams: Optional[Dict[str, Any]] = None
     ) -> bool:
         """
         Exportiert alle Daten in eine .get Datei.
@@ -64,6 +65,7 @@ class GETFileHandler:
             fluid_database_info: Fluid-Datenbank-Informationen (optional, name, temperature)
             grout_calculation: Verfüllmaterial-Berechnung (optional)
             custom_pipes_txt: Inhalt einer benutzerdefinierten pipe.txt (optional)
+            diagrams: Diagramm-Konfigurationen (optional, Version 3.3)
         
         Returns:
             True bei Erfolg, False bei Fehler
@@ -80,7 +82,7 @@ class GETFileHandler:
             data = {
                 "file_format": "GET",
                 "format_version": CURRENT_FORMAT_VERSION,
-                "created_with": f"Geothermie Erdsonden-Tool v3.2.1",
+                "created_with": f"Geothermie Erdsonden-Tool v3.3.0-beta3",
                 "created_date": datetime.now().isoformat() + "Z",
                 "encoding": "UTF-8",
                 "metadata": metadata,
@@ -119,6 +121,10 @@ class GETFileHandler:
             
             if custom_pipes_txt:
                 data["custom_pipes_txt"] = custom_pipes_txt
+            
+            # NEU in V3.3: Diagramm-Konfigurationen
+            if diagrams:
+                data["diagrams"] = diagrams
             
             # Schreibe JSON mit Formatierung
             with open(filepath, 'w', encoding='utf-8') as f:
@@ -243,6 +249,28 @@ class GETFileHandler:
             # Update Version
             data["format_version"] = "3.2"
             print("  ✓ Migriert auf 3.2")
+            from_version = "3.2"
+        
+        # Migration 3.2 → 3.3
+        if from_version == "3.2":
+            # Füge Diagramm-Konfigurationen hinzu (Standard: alle aktiviert)
+            if "diagrams" not in data:
+                data["diagrams"] = {
+                    "pump_characteristics": {"enabled": True},
+                    "reynolds_curve": {"enabled": True, "glycol_concentrations": [0, 25, 30, 40]},
+                    "pressure_components": {"enabled": True, "chart_type": "pie"},
+                    "flow_vs_pressure": {"enabled": True},
+                    "pump_power_time": {"enabled": True},
+                    "temperature_spread": {"enabled": True},
+                    "cop_inlet_temp": {"enabled": True},
+                    "cop_flow_temp": {"enabled": True},
+                    "jaz_estimation": {"enabled": True},
+                    "energy_consumption": {"enabled": True, "show_10_year": True}
+                }
+            
+            # Update Version
+            data["format_version"] = "3.3"
+            print("  ✓ Migriert auf 3.3")
         
         return data
     
