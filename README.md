@@ -8,9 +8,9 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![Build Status](https://github.com/3ddruck12/GeothermieErdsondentool/workflows/Build%20and%20Release/badge.svg)](https://github.com/3ddruck12/GeothermieErdsondentool/actions)
-[![GitHub release](https://img.shields.io/github/release/3ddruck12/GeothermieErdsondentool.svg)](https://github.com/3ddruck12/GeothermieErdsondentool/releases)
-![Version](https://img.shields.io/badge/version-3.2.1-brightgreen.svg)
+[![Build Status](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/workflows/Tests/badge.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/actions)
+[![GitHub release](https://img.shields.io/github/release/3ddruck12/Geothermie-Erdsonden-Tool.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases)
+![Version](https://img.shields.io/badge/version-3.3.5-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -58,6 +58,14 @@
 
 ## ✨ Features
 
+### 🆕 Neu in V3.3.5 (Februar 2026)
+- 🔥 **Input-Validierung**: Zentrales Validierungsmodul mit Wertebereichen für ~30 physikalische Parameter
+- 🔥 **Erweiterte Pumpen-Datenbank**: Grundfos Alpha3, Wilo Stratos PICO, KSB EtaLine, Lowara ECOCIRC
+- 🔥 **Erweiterte Rohrkonfigurationen**: DN40, DN50, Coaxial-Rohre
+- 🔥 **12 Diagramme**: Hydraulik, Wärmepumpe, Energie – mit PDF-Integration
+- 🛡️ **Bugfixes**: Division-durch-Null in Hydraulik, Debug-Modus deaktiviert, robustere Fehlerbehandlung
+- 🏗️ **Code-Qualität**: Logging-Framework, benannte Konstanten, erweiterte Modul-Exports
+
 ### 🆕 Neu in V3.2.1 (Januar 2026)
 - 🔥 **Maximale Sondenlänge**: Automatische Anpassung der Bohrungsanzahl bei VDI 4640
 - 🔥 **Gesamtlänge der Leitungen**: Anzeige für beide Berechnungsmethoden
@@ -82,8 +90,9 @@
 - ✅ **PE 100 RC Rohre**: 32mm mit Dual- und 4-Verbinder
 - ✅ **Thermische Widerstände**: Multipole-Methode nach Hellström
 - ✅ **G-Funktionen**: Nach Eskilson & pygfunction
-- ✅ **Hydraulik-Berechnungen**: Druckverlust, Pumpenleistung
+- ✅ **Hydraulik-Berechnungen**: Druckverlust, Pumpenleistung, Pumpenauswahl
 - ✅ **Multi-Bohrfeld**: Mehrere Bohrungen mit Abstandsberechnung
+- ✅ **Input-Validierung**: Zentrale Prüfung aller Eingabeparameter mit Wertebereichen
 
 ### 🌍 Datenbanken
 - ✅ **Bodendatenbank**: 11 Bodentypen nach VDI 4640
@@ -119,7 +128,7 @@
 
 **Option 1: Standalone EXE** (empfohlen)
 
-1. [Neueste Release herunterladen](https://github.com/3ddruck12/GeothermieErdsondentool/releases)
+1. [Neueste Release herunterladen](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases)
 2. `GeothermieErdsondentool.exe` herunterladen
 3. Doppelklick zum Starten
 4. Falls Windows Defender warnt: "Weitere Informationen" → "Trotzdem ausführen"
@@ -127,8 +136,8 @@
 **Option 2: Python**
 
 ```powershell
-git clone https://github.com/3ddruck12/GeothermieErdsondentool.git
-cd GeothermieErdsondentool
+git clone https://github.com/3ddruck12/Geothermie-Erdsonden-Tool.git
+cd Geothermie-Erdsonden-Tool
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
@@ -141,10 +150,10 @@ python main.py
 
 ```bash
 # Neueste Version herunterladen
-wget https://github.com/3ddruck12/GeothermieErdsondentool/releases/download/v3.2.1/geothermie-erdsondentool_3.2.1_amd64.deb
+wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.3.5/geothermie-erdsondentool_3.3.5_amd64.deb
 
 # Installieren/Upgraden (keine Deinstallation nötig)
-sudo dpkg -i geothermie-erdsondentool_3.2.1_amd64.deb
+sudo dpkg -i geothermie-erdsondentool_3.3.5_amd64.deb
 sudo apt-get install -f  # Falls Abhängigkeiten fehlen
 
 # Starten
@@ -156,16 +165,16 @@ geothermie-erdsondentool
 **Option 2: Shell-Script**
 
 ```bash
-git clone https://github.com/3ddruck12/GeothermieErdsondentool.git
-cd GeothermieErdsondentool
+git clone https://github.com/3ddruck12/Geothermie-Erdsonden-Tool.git
+cd Geothermie-Erdsonden-Tool
 ./start.sh
 ```
 
 **Option 3: Python**
 
 ```bash
-git clone https://github.com/3ddruck12/GeothermieErdsondentool.git
-cd GeothermieErdsondentool
+git clone https://github.com/3ddruck12/Geothermie-Erdsonden-Tool.git
+cd Geothermie-Erdsonden-Tool
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -294,8 +303,8 @@ Beiträge sind willkommen!
 
 **Quick Start:**
 ```bash
-git clone https://github.com/3ddruck12/GeothermieErdsondentool.git
-cd GeothermieErdsondentool
+git clone https://github.com/3ddruck12/Geothermie-Erdsonden-Tool.git
+cd Geothermie-Erdsonden-Tool
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -326,7 +335,7 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) f�
 ## 📧 Kontakt
 
 - **GitHub**: [3ddruck12](https://github.com/3ddruck12)
-- **Issues**: [GitHub Issues](https://github.com/3ddruck12/GeothermieErdsondentool/issues)
+- **Issues**: [GitHub Issues](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/issues)
 
 ---
 
