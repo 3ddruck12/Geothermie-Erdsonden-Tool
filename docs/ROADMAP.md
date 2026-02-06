@@ -1,3 +1,4 @@
+ja
 # 📈 GET Roadmap
 
 Entwicklungsplan für zukünftige Versionen des Geothermie Erdsondentool (GET).
@@ -84,6 +85,53 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
   - ✅ Scrollbarer Diagramm-Tab
   - ✅ Automatische PDF-Integration
   - ✅ GET-Format-Erweiterung (Version 3.3)
+
+---
+
+### Version 3.3.6
+
+> **Schwerpunkt: Wasserrechtliche Bohranzeige als PDF für die Untere Wasserbehörde**
+> **Geplant: Q1 2026**
+
+#### 📄 Bohranzeige für Erdwärmesonden ≤ 100m (PDF-Export)
+
+Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige bei der Unteren Wasserbehörde** (§ 49 WHG / Landeswassergesetze). Das Bergamt (§127 BBergG) ist erst ab >100m zuständig und daher hier nicht relevant. GET generiert ein einreichfähiges PDF mit allen nötigen technischen Angaben.
+
+- [ ] **Neuer Tab „Bohranzeige"** in der GUI
+  - [ ] Antragsteller (Name, Anschrift, Telefon, E-Mail)
+  - [ ] Grundstück (Flurstück-Nr., Gemarkung, Gemeinde, Landkreis)
+  - [ ] Standort-Koordinaten (automatisch aus PVGIS-Tab, falls vorhanden)
+  - [ ] Bohrunternehmen (Firma, Ansprechpartner, optional: DVGW W 120-1 Zertifizierung)
+  - [ ] Geplanter Ausführungszeitraum (Start-/Enddatum)
+- [ ] **Technische Angaben** (automatisch aus Berechnung befüllt)
+  - [ ] Anzahl der Bohrungen
+  - [ ] Geplante Bohrtiefe (m) je Bohrung
+  - [ ] Gesamtbohrmeter
+  - [ ] Bohrdurchmesser (mm)
+  - [ ] Sondentyp (Single-U, Double-U, Koaxial)
+  - [ ] Rohrmaterial und -durchmesser
+  - [ ] Verfüllmaterial und thermische Leitfähigkeit
+  - [ ] Wärmeträgerfluid (Typ, Konzentration, Frostschutz)
+  - [ ] Heizleistung / Kühlleistung (kW)
+  - [ ] Jahresarbeitszahl (COP)
+- [ ] **Standort- und Gewässerschutz**
+  - [ ] Wasserschutzgebiet (Ja/Nein + Zone I/II/III)
+  - [ ] Grundwasserflurabstand (falls bekannt)
+  - [ ] Erwartete Bodenschichten (aus Bodendatenbank)
+  - [ ] Bodentemperatur und λ-Wert
+  - [ ] Hinweis: Altlastenkataster geprüft (Checkbox)
+- [ ] **PDF-Generierung** (reportlab)
+  - [ ] Behördengerechtes A4-Layout mit Kopf-/Fußzeile
+  - [ ] Formular-Stil: Felder klar beschriftet, gut lesbar
+  - [ ] Lageplan-Skizze (aus Bohrfeld-Visualisierung)
+  - [ ] Anlage: Technische Berechnungsergebnisse (aus bestehender PDF)
+  - [ ] Unterschriftenfeld (Ort, Datum, Unterschrift Antragsteller)
+  - [ ] Erstellungsdatum und GET-Versionsnummer
+- [ ] **Daten aus Projekt übernehmen**
+  - [ ] Button: „Aus Berechnung übernehmen" – füllt technische Felder automatisch
+  - [ ] Projektdaten (Kunde, Adresse) aus Kopfdaten übernehmen
+  - [ ] Koordinaten aus PVGIS-Modul übernehmen
+  - [ ] In `.get`-Datei mitspeichern (Bohranzeige-Daten als neuer Block)
 
 ---
 
@@ -331,4 +379,4 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 
 **Diese Roadmap ist ein lebendiges Dokument und wird regelmäßig aktualisiert basierend auf Community-Feedback und Entwicklungs-Fortschritt.**
 
-**Stand**: Februar 2026 (V3.3.0-beta3, Planung V3.4)
+**Stand**: Februar 2026 (V3.3.6, Planung V3.4)

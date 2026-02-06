@@ -41,7 +41,8 @@ class GETFileHandler:
         fluid_database_info: Optional[Dict[str, Any]] = None,
         grout_calculation: Optional[Dict[str, Any]] = None,
         custom_pipes_txt: Optional[str] = None,
-        diagrams: Optional[Dict[str, Any]] = None
+        diagrams: Optional[Dict[str, Any]] = None,
+        bohranzeige_data: Optional[Dict[str, Any]] = None
     ) -> bool:
         """
         Exportiert alle Daten in eine .get Datei.
@@ -125,6 +126,10 @@ class GETFileHandler:
             # NEU in V3.3: Diagramm-Konfigurationen
             if diagrams:
                 data["diagrams"] = diagrams
+            
+            # NEU in V3.3.6: Bohranzeige-Daten
+            if bohranzeige_data:
+                data["bohranzeige_data"] = bohranzeige_data
             
             # Schreibe JSON mit Formatierung
             with open(filepath, 'w', encoding='utf-8') as f:

@@ -13,6 +13,7 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 import os
 from typing import Optional, Dict, Any
+from datetime import datetime
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
@@ -31,7 +32,9 @@ from data import GroutMaterialDB, SoilTypeDB, FluidDatabase
 from data.pipes import PipeDatabase
 from gui.tooltips import InfoButton
 from gui.pump_selection_dialog import PumpSelectionDialog
+from gui.bohranzeige_tab import BohranzeigTab
 from utils.get_file_handler import GETFileHandler
+from utils.bohranzeige_pdf import BohranzeigePDFGenerator
 
 
 class GeothermieGUIProfessional:
@@ -57,6 +60,7 @@ class GeothermieGUIProfessional:
         self.fluid_db = FluidDatabase()
         self.pipe_db = PipeDatabase()  # NEU: XML-basierte Rohr-Datenbank
         self.get_handler = GETFileHandler()
+        self.bohranzeige_pdf = BohranzeigePDFGenerator()
         
         # Debounce-Timer für automatische Neuberechnung
         self._hydraulics_debounce_id = None
@@ -93,6 +97,7 @@ class GeothermieGUIProfessional:
         file_menu.add_command(label="EED .dat laden", command=self._load_eed_file)
         file_menu.add_separator()
         file_menu.add_command(label="PDF-Bericht erstellen", command=self._export_pdf, accelerator="Ctrl+P")
+        file_menu.add_command(label="📄 Bohranzeige als PDF", command=lambda: self._export_bohranzeige_pdf(self.bohranzeige_tab.collect_all_data()))
         file_menu.add_command(label="Text exportieren", command=self._export_results)
         file_menu.add_separator()
         file_menu.add_command(label="Beenden", command=self.root.quit)
@@ -137,6 +142,14 @@ class GeothermieGUIProfessional:
         self.viz_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.viz_frame, text="📈 Diagramme")
         self._create_visualization_tab()
+        
+        self.bohranzeige_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.bohranzeige_frame, text="📄 Bohranzeige")
+        self.bohranzeige_tab = BohranzeigTab(
+            self.bohranzeige_frame,
+            get_berechnung_callback=self._get_bohranzeige_data,
+            export_pdf_callback=self._export_bohranzeige_pdf
+        )
     
     def _create_input_tab(self):
         """Erstellt den Eingabe-Tab mit allen Professional Features."""
@@ -3925,6 +3938,143 @@ In diesem Tool verfügbar über:
             except Exception as e:
                 messagebox.showerror("Fehler", str(e))
     
+    # ─── Bohranzeige Callbacks ──────────────────────────────
+    
+    def _get_bohranzeige_data(self) -> Dict[str, Any]:
+        """Sammelt aktuelle Berechnungsdaten für die Bohranzeige."""
+        if not self.result and not self.vdi4640_result:
+            return {}
+        
+        # Technische Daten aus aktueller Berechnung
+        try:
+            num_bh = int(float(self.borehole_entries.get("num_boreholes", ttk.Entry()).get() or "1"))
+        except (ValueError, AttributeError):
+            num_bh = 1
+        
+        # Bohrtiefe ermitteln
+        tiefe = 0
+        if self.vdi4640_result and hasattr(self.vdi4640_result, 'required_depth'):
+            tiefe = self.vdi4640_result.required_depth
+        elif self.result and hasattr(self.result, 'required_depth'):
+            tiefe = self.result.required_depth
+        
+        # Sondentyp
+        sondentyp = self.pipe_config_var.get() if hasattr(self, 'pipe_config_var') else 'double-u'
+        
+        # Verfüllmaterial
+        verfuellmaterial = ''
+        if hasattr(self, 'grout_material_var'):
+            verfuellmaterial = self.grout_material_var.get()
+        
+        # Fluid-Infos
+        fluid_typ = ''
+        if hasattr(self, 'fluid_var'):
+            fluid_typ = self.fluid_var.get()
+        
+        # COP
+        try:
+            cop = float(self.entries.get("heat_pump_cop", ttk.Entry()).get() or "4.0")
+        except (ValueError, AttributeError):
+            cop = 4.0
+        
+        technik = {
+            'anzahl_bohrungen': f"{num_bh}",
+            'bohrtiefe_m': f"{tiefe:.1f} m",
+            'gesamtbohrmeter': f"{tiefe * num_bh:.1f} m",
+            'bohrdurchmesser_mm': f"{float(self.entries.get('borehole_diameter', ttk.Entry()).get() or '152'):.0f} mm",
+            'abstand_bohrungen_m': f"{float(self.borehole_entries.get('spacing_between', ttk.Entry()).get() or '6'):.1f} m",
+            'sondentyp': sondentyp,
+            'rohrmaterial': self.pipe_type_var.get() if hasattr(self, 'pipe_type_var') else 'PE 100 RC',
+            'rohrdurchmesser_mm': f"{float(self.entries.get('pipe_outer_diameter', ttk.Entry()).get() or '32'):.1f} mm",
+            'wandstaerke_mm': f"{float(self.entries.get('pipe_thickness', ttk.Entry()).get() or '3'):.1f} mm",
+            'verfuellmaterial': verfuellmaterial,
+            'verfuell_lambda': f"{float(self.entries.get('grout_thermal_cond', ttk.Entry()).get() or '2.0'):.2f} W/(m·K)",
+            'fluid_typ': fluid_typ,
+            'heizleistung_kw': f"{float(self.entries.get('peak_heating', ttk.Entry()).get() or '0'):.1f} kW",
+            'kuehlleistung_kw': f"{float(self.entries.get('peak_cooling', ttk.Entry()).get() or '0'):.1f} kW",
+            'jahres_heizenergie_kwh': f"{float(self.entries.get('annual_heating', ttk.Entry()).get() or '0'):,.0f} kWh",
+            'jahres_kuehlenergie_kwh': f"{float(self.entries.get('annual_cooling', ttk.Entry()).get() or '0'):,.0f} kWh",
+            'cop': f"{cop:.1f}",
+        }
+        
+        # Koordinaten aus Klimadaten
+        koordinaten = {}
+        if self.climate_data and isinstance(self.climate_data, dict):
+            koordinaten = {
+                'latitude': self.climate_data.get('latitude', ''),
+                'longitude': self.climate_data.get('longitude', ''),
+            }
+        
+        # Gewässerschutz
+        gewaesserschutz = {
+            'bodentyp': self.soil_type_var.get() if hasattr(self, 'soil_type_var') else '',
+            'lambda_boden': float(self.entries.get('ground_thermal_cond', ttk.Entry()).get() or '0'),
+            'bodentemperatur': float(self.entries.get('ground_temp', ttk.Entry()).get() or '0'),
+        }
+        
+        # Projektdaten
+        projekt = {
+            'kunde': self.project_entries.get('customer_name', ttk.Entry()).get() if 'customer_name' in self.project_entries else '',
+            'adresse': self.project_entries.get('address', ttk.Entry()).get() if 'address' in self.project_entries else '',
+            'plz': self.project_entries.get('postal_code', ttk.Entry()).get() if 'postal_code' in self.project_entries else '',
+            'ort': self.project_entries.get('city', ttk.Entry()).get() if 'city' in self.project_entries else '',
+        }
+        
+        return {
+            'technik': technik,
+            'koordinaten': koordinaten,
+            'gewaesserschutz': gewaesserschutz,
+            'projekt': projekt,
+        }
+    
+    def _export_bohranzeige_pdf(self, data: Dict[str, Any]):
+        """Exportiert die Bohranzeige als PDF."""
+        filepath = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF Dateien", "*.pdf"), ("Alle Dateien", "*.*")],
+            title="Bohranzeige als PDF speichern",
+            initialfile=f"Bohranzeige_{datetime.now().strftime('%Y%m%d')}.pdf"
+        )
+        
+        if not filepath:
+            return
+        
+        try:
+            # Technik-Daten für PDF aufbereiten (numerisch statt Strings)
+            technik_raw = data.get('technik', {})
+            technik_pdf = {}
+            for key, val in technik_raw.items():
+                if isinstance(val, str):
+                    # "152 mm" → 152.0, "6.0 kW" → 6.0
+                    try:
+                        num = float(val.split()[0].replace(",", ""))
+                        technik_pdf[key] = num
+                    except (ValueError, IndexError):
+                        technik_pdf[key] = val
+                else:
+                    technik_pdf[key] = val
+            
+            pdf_data = {
+                'antragsteller': data.get('antragsteller', {}),
+                'grundstueck': data.get('grundstueck', {}),
+                'koordinaten': data.get('koordinaten', {}),
+                'bohrunternehmen': data.get('bohrunternehmen', {}),
+                'ausfuehrung': data.get('ausfuehrung', {}),
+                'technik': technik_pdf,
+                'gewaesserschutz': data.get('gewaesserschutz', {}),
+            }
+            
+            success = self.bohranzeige_pdf.generate(filepath, pdf_data)
+            
+            if success:
+                messagebox.showinfo("Erfolg", f"✅ Bohranzeige gespeichert:\n{os.path.basename(filepath)}")
+                self.status_var.set(f"📄 Bohranzeige: {os.path.basename(filepath)}")
+            else:
+                messagebox.showerror("Fehler", "❌ PDF-Erstellung fehlgeschlagen")
+                
+        except Exception as e:
+            messagebox.showerror("Fehler", f"❌ Bohranzeige-Fehler:\n{str(e)}")
+    
     def _export_get_file(self):
         """Exportiert aktuelles Projekt als .get Datei."""
         filepath = filedialog.asksaveasfilename(
@@ -4058,7 +4208,9 @@ In diesem Tool verfügbar über:
                     "cop_flow_temp": {"enabled": True},
                     "jaz_estimation": {"enabled": True},
                     "energy_consumption": {"enabled": True, "show_10_year": True}
-                }
+                },
+                # NEU in V3.3.6: Bohranzeige-Daten
+                bohranzeige_data=self.bohranzeige_tab.collect_all_data() if hasattr(self, 'bohranzeige_tab') else None
             )
             
             if success:
@@ -4245,6 +4397,11 @@ In diesem Tool verfügbar über:
             
             # Bohrfeld-Daten V3.2
             self.borefield_config = data.get("borefield_v32")
+            
+            # NEU V3.3.6: Bohranzeige-Daten laden
+            bohranzeige = data.get("bohranzeige_data")
+            if bohranzeige and hasattr(self, 'bohranzeige_tab'):
+                self.bohranzeige_tab.set_data(bohranzeige)
             
             # Fülle Bohrfeld-Tab wenn Daten vorhanden
             if self.borefield_config and self.borefield_config.get("enabled"):
