@@ -97,41 +97,71 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 
 Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige bei der Unteren Wasserbehörde** (§ 49 WHG / Landeswassergesetze). Das Bergamt (§127 BBergG) ist erst ab >100m zuständig und daher hier nicht relevant. GET generiert ein einreichfähiges PDF mit allen nötigen technischen Angaben.
 
-- [ ] **Neuer Tab „Bohranzeige"** in der GUI
-  - [ ] Antragsteller (Name, Anschrift, Telefon, E-Mail)
-  - [ ] Grundstück (Flurstück-Nr., Gemarkung, Gemeinde, Landkreis)
-  - [ ] Standort-Koordinaten (automatisch aus PVGIS-Tab, falls vorhanden)
-  - [ ] Bohrunternehmen (Firma, Ansprechpartner, optional: DVGW W 120-1 Zertifizierung)
-  - [ ] Geplanter Ausführungszeitraum (Start-/Enddatum)
-- [ ] **Technische Angaben** (automatisch aus Berechnung befüllt)
-  - [ ] Anzahl der Bohrungen
-  - [ ] Geplante Bohrtiefe (m) je Bohrung
-  - [ ] Gesamtbohrmeter
-  - [ ] Bohrdurchmesser (mm)
-  - [ ] Sondentyp (Single-U, Double-U, Koaxial)
-  - [ ] Rohrmaterial und -durchmesser
-  - [ ] Verfüllmaterial und thermische Leitfähigkeit
-  - [ ] Wärmeträgerfluid (Typ, Konzentration, Frostschutz)
-  - [ ] Heizleistung / Kühlleistung (kW)
-  - [ ] Jahresarbeitszahl (COP)
-- [ ] **Standort- und Gewässerschutz**
-  - [ ] Wasserschutzgebiet (Ja/Nein + Zone I/II/III)
-  - [ ] Grundwasserflurabstand (falls bekannt)
-  - [ ] Erwartete Bodenschichten (aus Bodendatenbank)
-  - [ ] Bodentemperatur und λ-Wert
-  - [ ] Hinweis: Altlastenkataster geprüft (Checkbox)
-- [ ] **PDF-Generierung** (reportlab)
-  - [ ] Behördengerechtes A4-Layout mit Kopf-/Fußzeile
-  - [ ] Formular-Stil: Felder klar beschriftet, gut lesbar
-  - [ ] Lageplan-Skizze (aus Bohrfeld-Visualisierung)
+- [x] **Neuer Tab „Bohranzeige"** in der GUI
+  - [x] Antragsteller (Name, Anschrift, Telefon, E-Mail)
+  - [x] Grundstück (Flurstück-Nr., Gemarkung, Gemeinde, Landkreis)
+  - [x] Standort-Koordinaten (automatisch aus PVGIS-Tab, falls vorhanden)
+  - [x] Bohrunternehmen (Firma, Ansprechpartner, optional: DVGW W 120-1 Zertifizierung)
+  - [x] Geplanter Ausführungszeitraum (Start-/Enddatum)
+- [x] **Technische Angaben** (automatisch aus Berechnung befüllt)
+  - [x] Anzahl der Bohrungen
+  - [x] Geplante Bohrtiefe (m) je Bohrung
+  - [x] Gesamtbohrmeter
+  - [x] Bohrdurchmesser (mm)
+  - [x] Sondentyp (Single-U, Double-U, Koaxial)
+  - [x] Rohrmaterial und -durchmesser
+  - [x] Verfüllmaterial und thermische Leitfähigkeit
+  - [x] Wärmeträgerfluid (Typ, Konzentration, Frostschutz)
+  - [x] Heizleistung / Kühlleistung (kW)
+  - [x] Jahresarbeitszahl (COP)
+- [x] **Standort- und Gewässerschutz**
+  - [x] Wasserschutzgebiet (Ja/Nein + Zone I/II/III)
+  - [x] Grundwasserflurabstand (falls bekannt)
+  - [x] Erwartete Bodenschichten (aus Bodendatenbank)
+  - [x] Bodentemperatur und λ-Wert
+  - [x] Hinweis: Altlastenkataster geprüft (Checkbox)
+- [x] **PDF-Generierung** (reportlab)
+  - [x] Behördengerechtes A4-Layout mit Kopf-/Fußzeile
+  - [x] Formular-Stil: Felder klar beschriftet, gut lesbar
+  - [x] Lageplan-Skizze (OSM-Karte mit Standort-Marker) ← V3.3.6.1
   - [ ] Anlage: Technische Berechnungsergebnisse (aus bestehender PDF)
-  - [ ] Unterschriftenfeld (Ort, Datum, Unterschrift Antragsteller)
-  - [ ] Erstellungsdatum und GET-Versionsnummer
-- [ ] **Daten aus Projekt übernehmen**
-  - [ ] Button: „Aus Berechnung übernehmen" – füllt technische Felder automatisch
-  - [ ] Projektdaten (Kunde, Adresse) aus Kopfdaten übernehmen
-  - [ ] Koordinaten aus PVGIS-Modul übernehmen
-  - [ ] In `.get`-Datei mitspeichern (Bohranzeige-Daten als neuer Block)
+  - [x] Unterschriftenfeld (Ort, Datum, Unterschrift Antragsteller)
+  - [x] Erstellungsdatum und GET-Versionsnummer
+- [x] **Daten aus Projekt übernehmen**
+  - [x] Button: „Aus Berechnung übernehmen" – füllt technische Felder automatisch
+  - [x] Projektdaten (Kunde, Adresse) aus Kopfdaten übernehmen
+  - [x] Koordinaten aus PVGIS-Modul übernehmen
+  - [x] In `.get`-Datei mitspeichern (Bohranzeige-Daten als neuer Block)
+
+---
+
+### Version 3.3.6.1 ✓
+
+> **Schwerpunkt: Interaktive OSM-Karte & Lageplan in Bohranzeige-PDF**
+> **Fertiggestellt: Februar 2026**
+
+#### 🗺️ OSM-Kartenintegration
+
+- [x] **Interaktive OSM-Karte** im Eingabe-Tab (tkintermapview)
+  - [x] Karte oben, Bohrloch-Grafik darunter (scrollbar)
+  - [x] Marker per Rechtsklick setzen
+  - [x] Zoom +/− Buttons
+  - [x] Automatische Aktualisierung bei PVGIS-Geocoding
+  - [x] Fallback auf statisches Kartenbild wenn tkintermapview fehlt
+- [x] **Statische Karte für PDF-Lageplan** (`utils/osm_map.py`)
+  - [x] OSM Tile-Server Download
+  - [x] Standort-Marker mit Fadenkreuz
+  - [x] Koordinaten-Beschriftung
+  - [x] © OpenStreetMap Attribution
+- [x] **Lageplan in Bohranzeige-PDF** eingebettet
+  - [x] Automatische OSM-Karte als Lageplan (Zoom 16)
+  - [x] Eingebettet zwischen Grundstück und Bohrunternehmen
+  - [x] Temporäre PNG-Datei wird nach PDF-Erzeugung aufgeräumt
+- [x] **Automatische Datenübernahme** Eingabe-Tab → Bohranzeige
+  - [x] Projektdaten (Kunde, Adresse, PLZ, Ort) werden beim Tab-Wechsel übertragen
+  - [x] Gemeinde wird aus Ort vorbelegt
+  - [x] Koordinaten aus Karte/PVGIS automatisch synchronisiert
+  - [x] Felder bleiben editierbar (nur leere Felder werden befüllt)
 
 ---
 
@@ -379,4 +409,4 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 
 **Diese Roadmap ist ein lebendiges Dokument und wird regelmäßig aktualisiert basierend auf Community-Feedback und Entwicklungs-Fortschritt.**
 
-**Stand**: Februar 2026 (V3.3.6, Planung V3.4)
+**Stand**: Februar 2026 (V3.3.6.1, Planung V3.4)

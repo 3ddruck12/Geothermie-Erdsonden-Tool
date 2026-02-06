@@ -33,6 +33,7 @@ from data.pipes import PipeDatabase
 from gui.tooltips import InfoButton
 from gui.pump_selection_dialog import PumpSelectionDialog
 from gui.bohranzeige_tab import BohranzeigTab
+from gui.map_widget import OSMMapWidget
 from utils.get_file_handler import GETFileHandler
 from utils.bohranzeige_pdf import BohranzeigePDFGenerator
 
@@ -150,7 +151,65 @@ class GeothermieGUIProfessional:
             get_berechnung_callback=self._get_bohranzeige_data,
             export_pdf_callback=self._export_bohranzeige_pdf
         )
+
+        # Auto-Übernahme: Projektdaten → Bohranzeige beim Tab-Wechsel
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
     
+    def _on_tab_changed(self, event=None):
+        """Wird bei jedem Tab-Wechsel aufgerufen."""
+        try:
+            selected = self.notebook.select()
+            tab_text = self.notebook.tab(selected, "text")
+            if "Bohranzeige" in tab_text:
+                self._sync_projekt_to_bohranzeige()
+        except Exception:
+            pass
+
+    def _sync_projekt_to_bohranzeige(self):
+        """Überträgt Projektdaten aus dem Eingabe-Tab in die Bohranzeige (nur leere Felder)."""
+        if not hasattr(self, 'bohranzeige_tab') or not hasattr(self, 'project_entries'):
+            return
+
+        tab = self.bohranzeige_tab
+
+        # Projektdaten → Antragsteller (nur wenn leer)
+        mapping = {
+            'customer_name': 'name',
+            'address': 'strasse',
+            'postal_code': 'plz',
+            'city': 'ort',
+        }
+        for proj_key, ba_key in mapping.items():
+            proj_entry = self.project_entries.get(proj_key)
+            ba_entry = tab.antragsteller_entries.get(ba_key)
+            if proj_entry and ba_entry:
+                value = proj_entry.get().strip()
+                if value and not ba_entry.get().strip():
+                    ba_entry.insert(0, value)
+
+        # Ort → Grundstück Gemeinde (nur wenn leer)
+        city_entry = self.project_entries.get('city')
+        gemeinde_entry = tab.grundstueck_entries.get('gemeinde')
+        if city_entry and gemeinde_entry:
+            city_val = city_entry.get().strip()
+            if city_val and not gemeinde_entry.get().strip():
+                gemeinde_entry.insert(0, city_val)
+
+        # Koordinaten aus Karte / climate_data
+        if self.climate_data and isinstance(self.climate_data, dict):
+            lat = self.climate_data.get('latitude')
+            lon = self.climate_data.get('longitude')
+            if lat and lon:
+                koord_text = tab.koordinaten_label.cget("text")
+                if "werden aus" in koord_text or "PVGIS" in koord_text:
+                    try:
+                        tab.koordinaten_label.configure(
+                            text=f"Breite: {float(lat):.4f}°  |  Länge: {float(lon):.4f}°",
+                            foreground="#1f4788"
+                        )
+                    except (TypeError, ValueError):
+                        pass
+
     def _create_input_tab(self):
         """Erstellt den Eingabe-Tab mit allen Professional Features."""
         # 2-Spalten-Layout: Eingaben links, Grafik rechts
@@ -172,10 +231,36 @@ class GeothermieGUIProfessional:
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
         
-        # Rechte Seite: Statische Grafik
+        # Rechte Seite: Karte + Grafik (scrollbar)
         right_frame = ttk.Frame(main_container, relief=tk.RIDGE, borderwidth=2)
         right_frame.pack(side="right", fill="both", padx=10, pady=10)
-        self._create_static_borehole_graphic(right_frame)
+
+        right_canvas = tk.Canvas(right_frame)
+        right_scrollbar = ttk.Scrollbar(right_frame, orient="vertical", command=right_canvas.yview)
+        right_scrollable = ttk.Frame(right_canvas)
+        right_scrollable.bind("<Configure>", lambda e: right_canvas.configure(scrollregion=right_canvas.bbox("all")))
+        right_canvas.create_window((0, 0), window=right_scrollable, anchor="nw")
+        right_canvas.configure(yscrollcommand=right_scrollbar.set)
+        right_canvas.pack(side="left", fill="both", expand=True)
+        right_scrollbar.pack(side="right", fill="y")
+
+        # OSM-Karte (interaktiv) oben in der rechten Seite
+        try:
+            from gui.map_widget import OSMMapWidget
+            self.map_widget = OSMMapWidget(
+                right_scrollable,
+                width=500,
+                height=320,
+                default_lat=51.1657,
+                default_lon=10.4515,
+                default_zoom=6,
+                on_position_change=self._on_map_position_changed,
+            )
+        except Exception as e:
+            self.map_widget = None
+            logger.warning(f"Kartenwidget konnte nicht geladen werden: {e}")
+
+        self._create_static_borehole_graphic(right_scrollable)
         
         row = 0
         self.entries = {}
@@ -3036,11 +3121,17 @@ class GeothermieGUIProfessional:
         
         # Verarbeite Ergebnis
         try:
+            lat, lon = None, None
+
             if result['choice'] == 'address' and result['address']:
                 address = result['address']
                 if "z.B." not in address:
                     self.status_var.set("⏳ Lade Klimadaten von PVGIS...")
                     self.root.update()
+                    # Erst Geocoding, dann Klimadaten
+                    coords = self.pvgis_client.get_location_from_address(address)
+                    if coords:
+                        lat, lon = coords
                     data = self.pvgis_client.get_climate_data_for_address(address)
                 else:
                     return
@@ -3053,6 +3144,16 @@ class GeothermieGUIProfessional:
                 return
             
             if data:
+                # Koordinaten in climate_data speichern
+                if lat is not None and lon is not None:
+                    data['latitude'] = lat
+                    data['longitude'] = lon
+                self.climate_data = data
+
+                # Karte aktualisieren
+                if lat is not None and lon is not None:
+                    self._update_map_position(lat, lon)
+
                 # Übernehme Daten
                 self.climate_entries["avg_air_temp"].delete(0, tk.END)
                 self.climate_entries["avg_air_temp"].insert(0, f"{data['yearly_avg_temp']:.1f}")
@@ -3938,6 +4039,34 @@ In diesem Tool verfügbar über:
             except Exception as e:
                 messagebox.showerror("Fehler", str(e))
     
+    # ─── Karten-Callbacks ───────────────────────────────────
+
+    def _update_map_position(self, lat: float, lon: float, zoom: int = 15):
+        """Aktualisiert die OSM-Karte mit neuen Koordinaten."""
+        if hasattr(self, 'map_widget') and self.map_widget:
+            try:
+                self.map_widget.set_position(lat, lon, zoom=zoom)
+            except Exception as e:
+                logger.warning(f"Kartenaktualisierung fehlgeschlagen: {e}")
+
+    def _on_map_position_changed(self, lat: float, lon: float):
+        """Callback wenn der Benutzer den Kartenmarker verschiebt."""
+        # Koordinaten in climate_data aktualisieren
+        if self.climate_data is None:
+            self.climate_data = {}
+        if isinstance(self.climate_data, dict):
+            self.climate_data['latitude'] = lat
+            self.climate_data['longitude'] = lon
+
+        # Bohranzeige-Tab Koordinaten immer aktualisieren (Standort ist zentral)
+        if hasattr(self, 'bohranzeige_tab'):
+            self.bohranzeige_tab.koordinaten_label.configure(
+                text=f"Breite: {lat:.4f}°  |  Länge: {lon:.4f}°",
+                foreground="#1f4788"
+            )
+
+        self.status_var.set(f"📍 Standort: {lat:.5f}°, {lon:.5f}°")
+
     # ─── Bohranzeige Callbacks ──────────────────────────────
     
     def _get_bohranzeige_data(self) -> Dict[str, Any]:

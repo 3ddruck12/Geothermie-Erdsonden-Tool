@@ -10,7 +10,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/workflows/Tests/badge.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/actions)
 [![GitHub release](https://img.shields.io/github/release/3ddruck12/Geothermie-Erdsonden-Tool.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases)
-![Version](https://img.shields.io/badge/version-3.3.5-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.3.6.1-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -58,6 +58,18 @@
 
 ## ✨ Features
 
+### 🆕 Neu in V3.3.6.1 (Februar 2026)
+- 🗺️ **Interaktive OSM-Karte**: OpenStreetMap-Karte im Eingabe-Tab mit Marker-Platzierung per Rechtsklick
+- 📄 **Lageplan in Bohranzeige-PDF**: Automatischer OSM-Lageplan mit Standort-Marker und Koordinaten
+- 🔄 **Auto-Übernahme Projektdaten**: Eingabe-Tab → Bohranzeige beim Tab-Wechsel (Kunde, Adresse, Koordinaten)
+- 📍 **Karten-Synchronisation**: PVGIS-Geocoding aktualisiert automatisch die Karte und Bohranzeige-Koordinaten
+
+### 🆕 Neu in V3.3.6 (Februar 2026)
+- 📄 **Wasserrechtliche Bohranzeige (§ 49 WHG)**: Neuer Tab mit komplettem Formular für die Untere Wasserbehörde
+- 📋 **PDF-Export**: Behördengerechtes A4-Formular mit Antragsteller, Grundstück, Technik, Gewässerschutz
+- ⬇️ **Technische Daten aus Berechnung**: Ein-Klick-Übernahme aller 17 technischen Parameter
+- 💾 **Speichern in .get-Datei**: Bohranzeige-Daten werden im Projektformat mitgespeichert
+
 ### 🆕 Neu in V3.3.5 (Februar 2026)
 - 🔥 **Input-Validierung**: Zentrales Validierungsmodul mit Wertebereichen für ~30 physikalische Parameter
 - 🔥 **Erweiterte Pumpen-Datenbank**: Grundfos Alpha3, Wilo Stratos PICO, KSB EtaLine, Lowara ECOCIRC
@@ -102,10 +114,12 @@
   - Von Standard-Bentonit bis Hochleistungs-Graphit
 - ✅ **Rohr-Datenbank**: Laden aus `pipe.txt` oder EED-Dateien
 
-### 🌐 Klimadaten
+### 🌐 Klimadaten & Karten
 - ✅ **PVGIS-Integration**: Automatischer Abruf von EU-Klimadaten
 - ✅ **Temperaturschätzung**: Bodentemperatur aus Lufttemperatur
 - ✅ **Geocoding**: Koordinaten aus Adresse
+- ✅ **OSM-Karte**: Interaktive OpenStreetMap-Karte im Eingabe-Tab
+- ✅ **Lageplan**: Automatischer Kartenausschnitt in Bohranzeige-PDF
 
 ### 📊 Ausgabe & Export
 - ✅ **PDF-Berichte**: Professionelle Berichte mit allen Berechnungen
@@ -150,10 +164,10 @@ python main.py
 
 ```bash
 # Neueste Version herunterladen
-wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.3.5/geothermie-erdsondentool_3.3.5_amd64.deb
+wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.3.6.1/geothermie-erdsondentool_3.3.6.1_amd64.deb
 
 # Installieren/Upgraden (keine Deinstallation nötig)
-sudo dpkg -i geothermie-erdsondentool_3.3.5_amd64.deb
+sudo dpkg -i geothermie-erdsondentool_3.3.6.1_amd64.deb
 sudo apt-get install -f  # Falls Abhängigkeiten fehlen
 
 # Starten

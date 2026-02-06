@@ -3,7 +3,11 @@ matplotlib>=3.7.0
 scipy>=1.10.0
 reportlab>=4.0.0
 requests>=2.31.0
+Pillow>=10.0.0
 
 # V3.2: Bohrfeld-Simulationen mit g-Funktionen
 pygfunction[plot]>=2.3.0
+
+# V3.3.6.1: Interaktive OSM-Karte im Eingabe-Tab
+tkintermapview>=1.29
 

@@ -12,13 +12,21 @@ from reportlab.lib.units import cm, mm
 from reportlab.lib import colors
 from reportlab.platypus import (
     SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer,
-    PageBreak, HRFlowable, KeepTogether
+    PageBreak, HRFlowable, KeepTogether, Image as RLImage
 )
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
 from datetime import datetime
 import os
+import io
+import tempfile
 import logging
+
+try:
+    from utils.osm_map import generate_static_map
+    HAS_OSM_MAP = True
+except ImportError:
+    HAS_OSM_MAP = False
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +151,8 @@ class BohranzeigePDFGenerator:
 
             os.makedirs(os.path.dirname(filepath) if os.path.dirname(filepath) else '.', exist_ok=True)
 
+            self._lageplan_tmpfile = None  # Wird ggf. in _build_lageplan gesetzt
+
             doc = SimpleDocTemplate(
                 filepath,
                 pagesize=A4,
@@ -154,6 +164,13 @@ class BohranzeigePDFGenerator:
 
             story = self._build_story(data)
             doc.build(story, onFirstPage=self._add_footer, onLaterPages=self._add_footer)
+
+            # Temporäre Lageplan-Datei aufräumen
+            if self._lageplan_tmpfile and os.path.exists(self._lageplan_tmpfile):
+                try:
+                    os.unlink(self._lageplan_tmpfile)
+                except OSError:
+                    pass
 
             logger.info(f"Bohranzeige PDF erstellt: {filepath}")
             return True
@@ -209,6 +226,9 @@ class BohranzeigePDFGenerator:
             data.get('grundstueck', {}),
             data.get('koordinaten', {})
         ))
+
+        # === 2a. LAGEPLAN ===
+        story.extend(self._build_lageplan(data.get('koordinaten', {})))
 
         # === 3. BOHRUNTERNEHMEN ===
         story.extend(self._build_bohrunternehmen(data.get('bohrunternehmen', {})))
@@ -295,6 +315,75 @@ class BohranzeigePDFGenerator:
             rows.append(['Koordinaten:', f"Breite: {lat}°  |  Länge: {lon}°"])
 
         elements.append(self._make_form_table(rows))
+        elements.append(Spacer(1, 0.3 * cm))
+        return elements
+
+    def _build_lageplan(self, koordinaten: dict) -> list:
+        """2a. Lageplan – Statische OSM-Karte mit Standort-Marker."""
+        elements = []
+
+        if not HAS_OSM_MAP:
+            logger.info("OSM-Kartenmodul nicht verfügbar – Lageplan übersprungen")
+            return elements
+
+        lat = koordinaten.get('latitude')
+        lon = koordinaten.get('longitude')
+        if not lat or not lon:
+            return elements
+
+        try:
+            lat = float(lat)
+            lon = float(lon)
+        except (TypeError, ValueError):
+            return elements
+
+        elements.append(Paragraph("Lageplan (Übersichtskarte)", self.styles['SectionHeader']))
+
+        try:
+            # Statische Karte erzeugen
+            img = generate_static_map(
+                lat, lon,
+                zoom=16,
+                width=640,
+                height=380,
+                show_marker=True,
+                show_coords=True,
+            )
+
+            if img:
+                # Temporäre PNG-Datei für reportlab
+                tmp = tempfile.NamedTemporaryFile(
+                    suffix=".png", delete=False, prefix="get_lageplan_"
+                )
+                img.save(tmp, "PNG", quality=95)
+                tmp.close()
+                self._lageplan_tmpfile = tmp.name  # Referenz behalten
+
+                # Bildbreite = volle Formularbreite
+                img_width = self.FULL_WIDTH
+                # Seitenverhältnis beibehalten
+                aspect = img.height / img.width
+                img_height = img_width * aspect
+
+                elements.append(RLImage(tmp.name, width=img_width, height=img_height))
+                elements.append(Spacer(1, 0.15 * cm))
+                elements.append(Paragraph(
+                    f"Standort: {lat:.5f}° N, {lon:.5f}° E  |  "
+                    "Kartenquelle: © OpenStreetMap contributors (ODbL)",
+                    self.styles['FormHint']
+                ))
+            else:
+                elements.append(Paragraph(
+                    "(Lageplan konnte nicht erzeugt werden – keine Internetverbindung?)",
+                    self.styles['FormHint']
+                ))
+        except Exception as e:
+            logger.warning(f"Lageplan-Erzeugung fehlgeschlagen: {e}")
+            elements.append(Paragraph(
+                f"(Lageplan nicht verfügbar: {e})",
+                self.styles['FormHint']
+            ))
+
         elements.append(Spacer(1, 0.3 * cm))
         return elements
 
