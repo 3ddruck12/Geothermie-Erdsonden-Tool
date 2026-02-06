@@ -212,13 +212,12 @@ class GeothermieGUIProfessional:
 
     def _create_input_tab(self):
         """Erstellt den Eingabe-Tab mit allen Professional Features."""
-        # 2-Spalten-Layout: Eingaben links, Grafik rechts
-        main_container = ttk.Frame(self.input_frame)
+        # 2-Spalten-Layout: Eingaben links, Grafik rechts (PanedWindow für Verschiebbarkeit)
+        main_container = ttk.PanedWindow(self.input_frame, orient=tk.HORIZONTAL)
         main_container.pack(fill=tk.BOTH, expand=True)
         
         # Linke Seite: Scrollbarer Container für Eingaben
         left_frame = ttk.Frame(main_container)
-        left_frame.pack(side="left", fill="both", expand=True)
         
         canvas = tk.Canvas(left_frame)
         scrollbar = ttk.Scrollbar(left_frame, orient="vertical", command=canvas.yview)
@@ -233,7 +232,10 @@ class GeothermieGUIProfessional:
         
         # Rechte Seite: Karte + Grafik (scrollbar)
         right_frame = ttk.Frame(main_container, relief=tk.RIDGE, borderwidth=2)
-        right_frame.pack(side="right", fill="both", padx=10, pady=10)
+        
+        # PanedWindow: linke Seite bekommt mehr Platz (70/30) – Trennlinie verschiebbar
+        main_container.add(left_frame, weight=7)
+        main_container.add(right_frame, weight=3)
 
         right_canvas = tk.Canvas(right_frame)
         right_scrollbar = ttk.Scrollbar(right_frame, orient="vertical", command=right_canvas.yview)
