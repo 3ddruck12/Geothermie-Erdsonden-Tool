@@ -7,6 +7,13 @@ from typing import Tuple, Dict
 class HydraulicsCalculator:
     """Berechnet hydraulische Parameter für Erdwärmesonden."""
     
+    # Konstanten
+    DEFAULT_HORIZONTAL_LENGTH_M = 50  # Geschätzte horizontale Leitungslänge in m
+    DEFAULT_PUMP_EFFICIENCY = 0.5  # Standard-Pumpenwirkungsgrad
+    REGULATED_PUMP_ENERGY_SAVINGS = 0.55  # Geregelte Pumpe: Anteil Energieverbrauch (45% Ersparnis)
+    REGULATED_PUMP_EXTRA_COST_EUR = 200  # Mehrkosten für geregelte Pumpe
+    SMALLER_PUMP_FACTOR = 0.8  # Faktor für kleinere Pumpen-Alternative
+    
     # Frostschutzmittel-Eigenschaften (Ethylenglykol-Wasser-Gemisch)
     # WICHTIG: Werte gelten für Betriebstemperatur 0°C (typische Sole-Temperatur im Heizbetrieb)
     # Vol% -> Dichte (kg/m³), Dyn. Viskosität (Pa·s), Wärmekapazität (J/kg·K)
@@ -95,7 +102,21 @@ class HydraulicsCalculator:
         
         # Strömungsgeschwindigkeit
         area = math.pi * (pipe_diameter / 2) ** 2
+        if area <= 0:
+            raise ValueError(f"Ungültiger Rohr-Innendurchmesser: {pipe_diameter} m")
         velocity = volume_flow_m3s / area  # m/s
+        
+        # Schutz gegen Nulldurchfluss
+        if velocity <= 0:
+            return {
+                'pressure_drop_pa': 0.0,
+                'pressure_drop_bar': 0.0,
+                'pressure_drop_mbar': 0.0,
+                'velocity_m_s': 0.0,
+                'reynolds': 0.0,
+                'friction_factor': 0.0,
+                'flow_regime': 'kein Durchfluss'
+            }
         
         # Reynolds-Zahl
         reynolds = (props['density'] * velocity * pipe_diameter) / props['viscosity']
@@ -197,8 +218,9 @@ class HydraulicsCalculator:
         # Rohrlänge pro System-Kreis:
         # - Pro Bohrung: circuits_per_borehole × 2 × Tiefe (jeder Kreis hat Vorlauf + Rücklauf)
         #   Bei 4-Rohr-Systemen: 2 Kreise pro Bohrung = 2 × 2 × Tiefe = 4 × Tiefe pro Bohrung
-        # - Horizontale Leitung: geschätzt 50m pro System-Kreis
-        pipe_length_per_circuit = num_boreholes_per_circuit * circuits_per_borehole * 2 * borehole_depth + 50
+        # - Horizontale Leitung: geschätzte Länge pro System-Kreis
+        pipe_length_per_circuit = (num_boreholes_per_circuit * circuits_per_borehole * 2 * borehole_depth
+                                   + HydraulicsCalculator.DEFAULT_HORIZONTAL_LENGTH_M)
         
         # Druckverlust pro Kreis
         pressure_drop_circuit = HydraulicsCalculator.calculate_pressure_drop(
@@ -413,15 +435,15 @@ class HydraulicsCalculator:
         
         # Vergleich mit geregelter Pumpe (wenn konstant)
         if pump_efficiency_curve == "constant" and regulation_factor == 1.0:
-            # Annahme: Geregelte Pumpe spart 45% Energie
-            regulated_factor = 0.55
+            # Annahme: Geregelte Pumpe spart ca. 45% Energie
+            regulated_factor = HydraulicsCalculator.REGULATED_PUMP_ENERGY_SAVINGS
             regulated_annual_kwh = (pump_power_w * regulated_factor * annual_heating_hours) / 1000
             regulated_annual_cost = regulated_annual_kwh * electricity_price_per_kwh
             savings_annual = annual_cost - regulated_annual_cost
             savings_10y = savings_annual * 10
             
-            # Amortisation (Annahme: +200 EUR für geregelte Pumpe)
-            extra_cost_regulated = 200
+            # Amortisation (Mehrkosten für geregelte Pumpe)
+            extra_cost_regulated = HydraulicsCalculator.REGULATED_PUMP_EXTRA_COST_EUR
             if savings_annual > 0:
                 payback_years = extra_cost_regulated / savings_annual
             else:
@@ -434,8 +456,7 @@ class HydraulicsCalculator:
             payback_years = None
         
         # Vergleich mit kleinerer Pumpe (falls Überdimensionierung)
-        # Annahme: 20% kleinere Pumpe
-        smaller_pump_w = pump_power_w * 0.8
+        smaller_pump_w = pump_power_w * HydraulicsCalculator.SMALLER_PUMP_FACTOR
         smaller_annual_kwh = (smaller_pump_w * annual_heating_hours) / 1000
         smaller_annual_cost = smaller_annual_kwh * electricity_price_per_kwh
         savings_vs_smaller = annual_cost - smaller_annual_cost

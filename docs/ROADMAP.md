@@ -89,32 +89,88 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 
 ### Version 3.4
 
-#### 📊 Monatliche Lastprofile
-- [ ] **Monatliche Wärmebedarfs-Eingabe**
-  - 12 Eingabefelder für jeden Monat
-  - Heizlast pro Monat [kWh]
-  - Kühllast pro Monat [kWh]
-- [ ] **Warmwasser-Lastart**
-  - ✓/✗ Warmwasser ja/nein für jeden Monat
-  - Separate Warmwasser-Last
-  - Saisonale Warmwasser-Faktoren
-- [ ] **Diagramm Wärmebedarf**
-  - Balkendiagramm: Monatliche Belastung
-  - Liniendiagramm: Jahresverlauf
-  - Separate Darstellung: Heizen/Kühlen/Warmwasser
-  - Export der Diagramme (PNG, PDF)
+> **Schwerpunkt: Monatliche Lastprofile, Code-Qualität & GUI-Modernisierung**
+> **Geplant: Q2 2026 | GUI: tkinter (beibehalten)**
 
-#### 📊 Jahreszeiten & Langzeit-Simulation
-- [ ] Detaillierte Jahreszeiten-Simulation
-- [ ] Langzeit-Temperaturentwicklung (50+ Jahre)
-- [ ] Regenerations-Strategien für Erdreich
-- [ ] Saisonale Effizienz-Analyse
-- [ ] Temperaturfeld-Animation über Zeit
+#### 🏗️ Phase 1 – Architektur-Refactoring (Grundlage für alle Features)
 
-#### 📈 Erweiterte Auswertung
-- [ ] Monatliche Leistungsanalyse
-- [ ] Lastgang-Profile
-- [ ] Vergleich verschiedener Szenarien
+- [ ] **God-Class auflösen** – `main_window_v3_professional.py` (4.360 Zeilen) aufteilen:
+  - [ ] `gui/tabs/input_tab.py` – Eingabefelder, Dropdowns, Validierung
+  - [ ] `gui/tabs/results_tab.py` – Ergebnis-Anzeige, Text-Ausgabe
+  - [ ] `gui/tabs/diagrams_tab.py` – Alle 14 Matplotlib-Diagramme
+  - [ ] `gui/tabs/materials_tab.py` – Verfüllmaterial, Rohre, Fluide
+  - [ ] `gui/controllers/calculation_controller.py` – Berechnungssteuerung
+  - [ ] `gui/controllers/file_controller.py` – Import/Export (.get-Dateien)
+- [ ] **Input-Validierung integrieren** – `utils/validators.py` in GUI einbinden
+  - [ ] Wertebereiche bei Eingabe prüfen (rot markieren bei Fehler)
+  - [ ] Plausibilitäts-Checks vor Berechnung (z.B. T_min < T_boden)
+  - [ ] Komma-als-Dezimaltrennzeichen akzeptieren
+- [ ] **Unit-Tests für Berechnungskern** (pytest)
+  - [ ] `tests/test_thermal.py` – Thermische Widerstände
+  - [ ] `tests/test_hydraulics.py` – Druckverlust, Reynolds
+  - [ ] `tests/test_borehole.py` – Iterative Berechnung
+  - [ ] `tests/test_g_functions.py` – g-Funktionen
+  - [ ] `tests/test_validators.py` – Input-Validierung
+  - [ ] CI/CD-Pipeline (GitHub Actions)
+
+#### 📊 Phase 2 – Monatliche Lastprofile (Hauptfeature)
+
+- [ ] **Monatliche Wärmebedarfs-Eingabe** (neuer Tab)
+  - [ ] 12×3 Eingabetabelle (Monat | Heizlast [kWh] | Kühllast [kWh])
+  - [ ] Schnelleingabe: Jahreswert automatisch auf Monate verteilen
+  - [ ] Profile aus Vorlagen laden (EFH, MFH, Büro, Gewerbe)
+  - [ ] Summenzeile mit Plausibilitäts-Check (Summe = Jahresbedarf)
+  - [ ] Anbindung an `monthly_heating_factors` / `monthly_cooling_factors` (bereits im Backend vorhanden)
+- [ ] **Warmwasser-Lastprofil**
+  - [ ] Checkbox Warmwasser je Monat (Sommer/Winter-Unterscheidung)
+  - [ ] Warmwasser-Bedarf aus Personenzahl berechnen (VDI 2067)
+  - [ ] Separate Warmwasser-Last auf monatliche Faktoren aufteilen
+  - [ ] Saisonale Warmwasser-Faktoren (Sommer weniger als Winter)
+- [ ] **Lastprofil-Diagramme**
+  - [ ] Gestapeltes Balkendiagramm: Heizen + Kühlen + Warmwasser pro Monat
+  - [ ] Liniendiagramm: Jahresverlauf mit Spitzenlasten
+  - [ ] Monatliche Entzugsleistung (W/m) als Zeitreihe
+  - [ ] Export als PNG/PDF
+
+#### 📊 Phase 3 – Langzeit-Simulation
+
+- [ ] **Erweiterte Temperatur-Simulation**
+  - [ ] Langzeit-Temperaturentwicklung bis 50 Jahre (statt 25)
+  - [ ] Jahresgang der Fluid-Temperaturen mit monatlichen Profilen
+  - [ ] Bodentemperatur-Regeneration zwischen Heiz-/Kühlperioden
+- [ ] **Regenerations-Analyse**
+  - [ ] Thermische Balance: Wärmeentzug vs. Wärmeeintrag pro Jahr
+  - [ ] Warnung bei langfristiger Auskühlung des Erdreichs
+  - [ ] Optimaler Heiz/Kühl-Anteil für Langzeitstabilität
+- [ ] **Saisonale Effizienz (SCOP/SEER)**
+  - [ ] Monatliche COP-Berechnung basierend auf Fluidtemperatur
+  - [ ] Jahresarbeitszahl (JAZ) aus monatlichen Profilen
+  - [ ] Vergleich: JAZ bei verschiedenen Sondentiefen
+
+#### 🎨 Phase 4 – GUI-Modernisierung
+
+- [ ] **ttkbootstrap-Integration** – Modernes Dark/Light-Theme
+  - [ ] Drop-in-Ersatz für ttk (minimaler Änderungsaufwand)
+  - [ ] Theme-Auswahl im Einstellungs-Menü
+  - [ ] Konsistentes Farbschema für Diagramme
+- [ ] **Scrolling-Fix** – `bind_all("<MouseWheel>")` durch Widget-spezifisches Binding ersetzen
+- [ ] **Szenario-Vergleich** (Vorbereitung für V3.5)
+  - [ ] Mehrere Konfigurationen als Tabs nebeneinander
+  - [ ] Schnellvergleich: Tiefe, Kosten, Temperaturen
+
+#### 📈 Phase 5 – Erweiterte Auswertung
+
+- [ ] **Monatliche Leistungsanalyse**
+  - [ ] Tabelle: Monat | Entzugsleistung | Fluid-T | COP | Strom
+  - [ ] Vergleich: Geplant vs. tatsächlich (für Monitoring)
+- [ ] **Sensitivitäts-Analyse**
+  - [ ] Einfluss von λ_Boden auf Bohrtiefe (±10%, ±20%)
+  - [ ] Einfluss von Bohrabstand auf Langzeit-Temperatur
+  - [ ] Tornado-Diagramm: Welcher Parameter hat den größten Einfluss?
+- [ ] **CSV/Excel-Export** der Berechnungsergebnisse
+  - [ ] Monatliche Temperaturen, Leistungen, COP
+  - [ ] Hydraulik-Daten
+  - [ ] Für weitere Auswertung in Excel/Python
 
 ---
 
@@ -275,4 +331,4 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 
 **Diese Roadmap ist ein lebendiges Dokument und wird regelmäßig aktualisiert basierend auf Community-Feedback und Entwicklungs-Fortschritt.**
 
-**Stand**: Januar 2026 (nach Release V3.2.0)
+**Stand**: Februar 2026 (V3.3.0-beta3, Planung V3.4)

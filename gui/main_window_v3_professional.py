@@ -27,7 +27,7 @@ from calculations.hydraulics import HydraulicsCalculator
 from calculations.vdi4640 import VDI4640Calculator
 from utils import PDFReportGenerator
 from utils.pvgis_api import PVGISClient, FALLBACK_CLIMATE_DATA
-from data import GroutMaterialDB, SoilTypeDB, FluidDatabase, FluidDatabase
+from data import GroutMaterialDB, SoilTypeDB, FluidDatabase
 from data.pipes import PipeDatabase
 from gui.tooltips import InfoButton
 from gui.pump_selection_dialog import PumpSelectionDialog
@@ -47,9 +47,8 @@ class GeothermieGUIProfessional:
         self.pipe_parser = PipeParser()
         self.eed_parser = EEDParser()
         self.calculator = BoreholeCalculator()
-        # VDI 4640 Calculator mit Debug-Modus
-        debug_file = os.path.join(os.path.expanduser("~"), "vdi4640_debug.log")
-        self.vdi4640_calc = VDI4640Calculator(debug=True, debug_file=debug_file)
+        # VDI 4640 Calculator (Debug standardmäßig deaktiviert)
+        self.vdi4640_calc = VDI4640Calculator(debug=False)
         self.hydraulics_calc = HydraulicsCalculator()
         self.pdf_generator = PDFReportGenerator()
         self.pvgis_client = PVGISClient()
@@ -58,6 +57,9 @@ class GeothermieGUIProfessional:
         self.fluid_db = FluidDatabase()
         self.pipe_db = PipeDatabase()  # NEU: XML-basierte Rohr-Datenbank
         self.get_handler = GETFileHandler()
+        
+        # Debounce-Timer für automatische Neuberechnung
+        self._hydraulics_debounce_id = None
         
         # Daten
         self.pipes = []
@@ -1768,10 +1770,18 @@ class GeothermieGUIProfessional:
     
     def _on_parameter_changed(self):
         """Wird aufgerufen, wenn sich Parameter ändern, die den Volumenstrom beeinflussen."""
-        # Automatische Neuberechnung
+        # Debounce: Verzögere Berechnung um 500ms, damit nicht bei jedem Tastendruck
+        # eine komplette Neuberechnung ausgelöst wird
+        if self._hydraulics_debounce_id is not None:
+            self.root.after_cancel(self._hydraulics_debounce_id)
+        self._hydraulics_debounce_id = self.root.after(500, self._on_parameter_changed_debounced)
+    
+    def _on_parameter_changed_debounced(self):
+        """Tatsächliche Neuberechnung nach Debounce-Verzögerung."""
+        self._hydraulics_debounce_id = None
         try:
             self._calculate_hydraulics()
-        except:
+        except Exception:
             pass  # Fehler ignorieren, wenn noch nicht alle Parameter gesetzt sind
     
     def _on_fluid_temperature_changed(self):

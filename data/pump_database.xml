@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <pump_database>
     <metadata>
-        <version>1.0</version>
-        <last_updated>2026-01-01</last_updated>
+        <version>1.1</version>
+        <last_updated>2026-01-XX</last_updated>
         <description>Datenbank für Umwälzpumpen in Erdwärmesonden-Systemen</description>
+        <source>Herstellerangaben (Grundfos, Wilo, KSB, Lowara)</source>
     </metadata>
     
     <!-- HOCHEFFIZIENZ-PUMPEN (A++) -->
@@ -137,6 +138,169 @@
             </suitable_for>
         </pump>
         
+        <pump>
+            <manufacturer>Grundfos</manufacturer>
+            <model>Alpha3 25-40</model>
+            <series>Alpha3</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>2.5</max_flow_m3h>
+                <max_head_m>4.0</max_head_m>
+                <power_min_w>4</power_min_w>
+                <power_max_w>20</power_max_w>
+                <power_avg_w>10</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>440</price_eur>
+                <price_range>420-470</price_range>
+            </pricing>
+            <features>
+                <feature>Automatische Leistungsanpassung</feature>
+                <feature>Nachtabsenkung</feature>
+                <feature>Display mit Verbrauchsanzeige</feature>
+                <feature>EEI ≤ 0.18</feature>
+                <feature>Grundfos GO App kompatibel</feature>
+            </features>
+            <suitable_for>
+                <application>Kleine Anlagen bis 8 kW</application>
+                <min_power_kw>4</min_power_kw>
+                <max_power_kw>8</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Grundfos</manufacturer>
+            <model>Alpha3 25-60</model>
+            <series>Alpha3</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>3.5</max_flow_m3h>
+                <max_head_m>6.0</max_head_m>
+                <power_min_w>4</power_min_w>
+                <power_max_w>42</power_max_w>
+                <power_avg_w>22</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>470</price_eur>
+                <price_range>450-500</price_range>
+            </pricing>
+            <features>
+                <feature>Automatische Leistungsanpassung</feature>
+                <feature>Nachtabsenkung</feature>
+                <feature>Display mit Verbrauchsanzeige</feature>
+                <feature>EEI ≤ 0.18</feature>
+                <feature>Grundfos GO App kompatibel</feature>
+            </features>
+            <suitable_for>
+                <application>Mittelgroße Anlagen 8-15 kW</application>
+                <min_power_kw>8</min_power_kw>
+                <max_power_kw>15</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Grundfos</manufacturer>
+            <model>Alpha3 25-80</model>
+            <series>Alpha3</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>4.5</max_flow_m3h>
+                <max_head_m>8.0</max_head_m>
+                <power_min_w>5</power_min_w>
+                <power_max_w>60</power_max_w>
+                <power_avg_w>32</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>510</price_eur>
+                <price_range>490-540</price_range>
+            </pricing>
+            <features>
+                <feature>Automatische Leistungsanpassung</feature>
+                <feature>Nachtabsenkung</feature>
+                <feature>Display mit Verbrauchsanzeige</feature>
+                <feature>EEI ≤ 0.18</feature>
+                <feature>Grundfos GO App kompatibel</feature>
+            </features>
+            <suitable_for>
+                <application>Große Anlagen 15-25 kW</application>
+                <min_power_kw>15</min_power_kw>
+                <max_power_kw>25</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Wilo</manufacturer>
+            <model>Stratos PICO 25/1-4</model>
+            <series>Stratos PICO</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>2.5</max_flow_m3h>
+                <max_head_m>4.0</max_head_m>
+                <power_min_w>3</power_min_w>
+                <power_max_w>35</power_max_w>
+                <power_avg_w>18</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>460</price_eur>
+                <price_range>440-490</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor mit automatischer Anpassung</feature>
+                <feature>LED-Anzeige</feature>
+                <feature>Selbstentlüftend</feature>
+                <feature>EEI ≤ 0.20</feature>
+            </features>
+            <suitable_for>
+                <application>Kleine Anlagen bis 8 kW</application>
+                <min_power_kw>4</min_power_kw>
+                <max_power_kw>8</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Wilo</manufacturer>
+            <model>Stratos PICO 30/1-10</model>
+            <series>Stratos PICO</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>6.0</max_flow_m3h>
+                <max_head_m>10.0</max_head_m>
+                <power_min_w>6</power_min_w>
+                <power_max_w>80</power_max_w>
+                <power_avg_w>42</power_avg_w>
+                <connection_size>Rp 1 1/4"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>550</price_eur>
+                <price_range>530-590</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor mit automatischer Anpassung</feature>
+                <feature>LED-Anzeige</feature>
+                <feature>Selbstentlüftend</feature>
+                <feature>EEI ≤ 0.20</feature>
+            </features>
+            <suitable_for>
+                <application>Große Anlagen 20-30 kW</application>
+                <min_power_kw>20</min_power_kw>
+                <max_power_kw>30</max_power_kw>
+            </suitable_for>
+        </pump>
+        
     </pump_category>
     
     <!-- STANDARD-PUMPEN (D-Klasse) -->
@@ -238,6 +402,134 @@
             <note>Höherer Energieverbrauch als Hocheffizienz-Pumpen</note>
         </pump>
         
+        <pump>
+            <manufacturer>Grundfos</manufacturer>
+            <model>UPS 25-80 180</model>
+            <series>UPS</series>
+            <efficiency_class>D</efficiency_class>
+            <type>constant</type>
+            <specifications>
+                <max_flow_m3h>4.5</max_flow_m3h>
+                <max_head_m>8.0</max_head_m>
+                <power_min_w>130</power_min_w>
+                <power_max_w>130</power_max_w>
+                <power_avg_w>130</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>320</price_eur>
+                <price_range>300-350</price_range>
+            </pricing>
+            <features>
+                <feature>3 Drehzahlstufen manuell</feature>
+                <feature>Robuste Technik</feature>
+                <feature>Einfache Wartung</feature>
+            </features>
+            <suitable_for>
+                <application>Große Anlagen 15-25 kW (Budget)</application>
+                <min_power_kw>15</min_power_kw>
+                <max_power_kw>25</max_power_kw>
+            </suitable_for>
+            <note>Höherer Energieverbrauch als Hocheffizienz-Pumpen</note>
+        </pump>
+        
+        <pump>
+            <manufacturer>Wilo</manufacturer>
+            <model>Star-RS 30/6</model>
+            <series>Star-RS</series>
+            <efficiency_class>D</efficiency_class>
+            <type>constant</type>
+            <specifications>
+                <max_flow_m3h>4.5</max_flow_m3h>
+                <max_head_m>6.0</max_head_m>
+                <power_min_w>120</power_min_w>
+                <power_max_w>120</power_max_w>
+                <power_avg_w>120</power_avg_w>
+                <connection_size>Rp 1 1/4"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>310</price_eur>
+                <price_range>290-340</price_range>
+            </pricing>
+            <features>
+                <feature>3 Drehzahlstufen manuell</feature>
+                <feature>Kompakte Bauweise</feature>
+                <feature>Wartungsarm</feature>
+            </features>
+            <suitable_for>
+                <application>Große Anlagen 15-25 kW (Budget)</application>
+                <min_power_kw>15</min_power_kw>
+                <max_power_kw>25</max_power_kw>
+            </suitable_for>
+            <note>Höherer Energieverbrauch als Hocheffizienz-Pumpen</note>
+        </pump>
+        
+        <pump>
+            <manufacturer>KSB</manufacturer>
+            <model>Etanorm 25-40</model>
+            <series>Etanorm</series>
+            <efficiency_class>D</efficiency_class>
+            <type>constant</type>
+            <specifications>
+                <max_flow_m3h>2.5</max_flow_m3h>
+                <max_head_m>4.0</max_head_m>
+                <power_min_w>50</power_min_w>
+                <power_max_w>50</power_max_w>
+                <power_avg_w>50</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>240</price_eur>
+                <price_range>220-270</price_range>
+            </pricing>
+            <features>
+                <feature>3 Drehzahlstufen manuell</feature>
+                <feature>Robuste Bauweise</feature>
+                <feature>Langlebig</feature>
+            </features>
+            <suitable_for>
+                <application>Kleine Anlagen bis 8 kW (Budget)</application>
+                <min_power_kw>4</min_power_kw>
+                <max_power_kw>8</max_power_kw>
+            </suitable_for>
+            <note>Höherer Energieverbrauch als Hocheffizienz-Pumpen</note>
+        </pump>
+        
+        <pump>
+            <manufacturer>KSB</manufacturer>
+            <model>Etanorm 25-60</model>
+            <series>Etanorm</series>
+            <efficiency_class>D</efficiency_class>
+            <type>constant</type>
+            <specifications>
+                <max_flow_m3h>3.5</max_flow_m3h>
+                <max_head_m>6.0</max_head_m>
+                <power_min_w>100</power_min_w>
+                <power_max_w>100</power_max_w>
+                <power_avg_w>100</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>300</price_eur>
+                <price_range>280-330</price_range>
+            </pricing>
+            <features>
+                <feature>3 Drehzahlstufen manuell</feature>
+                <feature>Robuste Bauweise</feature>
+                <feature>Langlebig</feature>
+            </features>
+            <suitable_for>
+                <application>Mittelgroße Anlagen 8-15 kW (Budget)</application>
+                <min_power_kw>8</min_power_kw>
+                <max_power_kw>15</max_power_kw>
+            </suitable_for>
+            <note>Höherer Energieverbrauch als Hocheffizienz-Pumpen</note>
+        </pump>
+        
     </pump_category>
     
     <!-- LEISTUNGSSTARKE PUMPEN -->
@@ -304,6 +596,326 @@
                 <application>Große Anlagen 20-35 kW</application>
                 <min_power_kw>20</min_power_kw>
                 <max_power_kw>35</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Grundfos</manufacturer>
+            <model>Magna3 25-60 F</model>
+            <series>Magna3</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>3.5</max_flow_m3h>
+                <max_head_m>6.0</max_head_m>
+                <power_min_w>8</power_min_w>
+                <power_max_w>100</power_max_w>
+                <power_avg_w>50</power_avg_w>
+                <connection_size>DN 25</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>850</price_eur>
+                <price_range>800-950</price_range>
+            </pricing>
+            <features>
+                <feature>Permanentmagnet-Motor</feature>
+                <feature>AutoAdapt Funktion</feature>
+                <feature>Display mit Fernauslesung</feature>
+                <feature>MGE (Motor mit getrennter Elektronik)</feature>
+            </features>
+            <suitable_for>
+                <application>Mittelgroße Anlagen 10-20 kW</application>
+                <min_power_kw>10</min_power_kw>
+                <max_power_kw>20</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Grundfos</manufacturer>
+            <model>Magna3 25-80 F</model>
+            <series>Magna3</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>4.5</max_flow_m3h>
+                <max_head_m>8.0</max_head_m>
+                <power_min_w>10</power_min_w>
+                <power_max_w>150</power_max_w>
+                <power_avg_w>75</power_avg_w>
+                <connection_size>DN 25</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>950</price_eur>
+                <price_range>900-1050</price_range>
+            </pricing>
+            <features>
+                <feature>Permanentmagnet-Motor</feature>
+                <feature>AutoAdapt Funktion</feature>
+                <feature>Display mit Fernauslesung</feature>
+                <feature>MGE (Motor mit getrennter Elektronik)</feature>
+            </features>
+            <suitable_for>
+                <application>Große Anlagen 20-30 kW</application>
+                <min_power_kw>20</min_power_kw>
+                <max_power_kw>30</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Grundfos</manufacturer>
+            <model>Magna3 40-80 F</model>
+            <series>Magna3</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>12.0</max_flow_m3h>
+                <max_head_m>8.0</max_head_m>
+                <power_min_w>15</power_min_w>
+                <power_max_w>350</power_max_w>
+                <power_avg_w>180</power_avg_w>
+                <connection_size>DN 40</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>1450</price_eur>
+                <price_range>1350-1600</price_range>
+            </pricing>
+            <features>
+                <feature>Permanentmagnet-Motor</feature>
+                <feature>AutoAdapt Funktion</feature>
+                <feature>Display mit Fernauslesung</feature>
+                <feature>MGE (Motor mit getrennter Elektronik)</feature>
+            </features>
+            <suitable_for>
+                <application>Sehr große Anlagen über 40 kW</application>
+                <min_power_kw>40</min_power_kw>
+                <max_power_kw>70</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Wilo</manufacturer>
+            <model>Stratos 25/1-8</model>
+            <series>Stratos</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>4.5</max_flow_m3h>
+                <max_head_m>8.0</max_head_m>
+                <power_min_w>6</power_min_w>
+                <power_max_w>140</power_max_w>
+                <power_avg_w>70</power_avg_w>
+                <connection_size>DN 25</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>920</price_eur>
+                <price_range>850-1000</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor</feature>
+                <feature>Automatische Leistungsregelung</feature>
+                <feature>Integrierte Hydraulik</feature>
+                <feature>BACnet/Modbus Schnittstelle</feature>
+            </features>
+            <suitable_for>
+                <application>Große Anlagen 15-25 kW</application>
+                <min_power_kw>15</min_power_kw>
+                <max_power_kw>25</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Wilo</manufacturer>
+            <model>Stratos 40/1-12</model>
+            <series>Stratos</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>10.0</max_flow_m3h>
+                <max_head_m>12.0</max_head_m>
+                <power_min_w>12</power_min_w>
+                <power_max_w>320</power_max_w>
+                <power_avg_w>160</power_avg_w>
+                <connection_size>DN 40</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>1250</price_eur>
+                <price_range>1150-1400</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor</feature>
+                <feature>Automatische Leistungsregelung</feature>
+                <feature>Integrierte Hydraulik</feature>
+                <feature>BACnet/Modbus Schnittstelle</feature>
+            </features>
+            <suitable_for>
+                <application>Sehr große Anlagen über 40 kW</application>
+                <min_power_kw>40</min_power_kw>
+                <max_power_kw>70</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>KSB</manufacturer>
+            <model>EtaLine 25-40</model>
+            <series>EtaLine</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>2.5</max_flow_m3h>
+                <max_head_m>4.0</max_head_m>
+                <power_min_w>5</power_min_w>
+                <power_max_w>28</power_max_w>
+                <power_avg_w>15</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>430</price_eur>
+                <price_range>410-460</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor</feature>
+                <feature>Automatische Leistungsregelung</feature>
+                <feature>Display</feature>
+                <feature>EEI ≤ 0.20</feature>
+            </features>
+            <suitable_for>
+                <application>Kleine Anlagen bis 8 kW</application>
+                <min_power_kw>4</min_power_kw>
+                <max_power_kw>8</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>KSB</manufacturer>
+            <model>EtaLine 25-60</model>
+            <series>EtaLine</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>3.5</max_flow_m3h>
+                <max_head_m>6.0</max_head_m>
+                <power_min_w>6</power_min_w>
+                <power_max_w>50</power_max_w>
+                <power_avg_w>28</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>470</price_eur>
+                <price_range>450-500</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor</feature>
+                <feature>Automatische Leistungsregelung</feature>
+                <feature>Display</feature>
+                <feature>EEI ≤ 0.20</feature>
+            </features>
+            <suitable_for>
+                <application>Mittelgroße Anlagen 8-15 kW</application>
+                <min_power_kw>8</min_power_kw>
+                <max_power_kw>15</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Lowara</manufacturer>
+            <model>ECOCIRC 25-40</model>
+            <series>ECOCIRC</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>2.5</max_flow_m3h>
+                <max_head_m>4.0</max_head_m>
+                <power_min_w>4</power_min_w>
+                <power_max_w>25</power_max_w>
+                <power_avg_w>14</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>410</price_eur>
+                <price_range>390-440</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor</feature>
+                <feature>Automatische Leistungsregelung</feature>
+                <feature>Display</feature>
+                <feature>EEI ≤ 0.20</feature>
+            </features>
+            <suitable_for>
+                <application>Kleine Anlagen bis 8 kW</application>
+                <min_power_kw>4</min_power_kw>
+                <max_power_kw>8</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Lowara</manufacturer>
+            <model>ECOCIRC 25-60</model>
+            <series>ECOCIRC</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>3.5</max_flow_m3h>
+                <max_head_m>6.0</max_head_m>
+                <power_min_w>5</power_min_w>
+                <power_max_w>48</power_max_w>
+                <power_avg_w>26</power_avg_w>
+                <connection_size>Rp 1"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>450</price_eur>
+                <price_range>430-480</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor</feature>
+                <feature>Automatische Leistungsregelung</feature>
+                <feature>Display</feature>
+                <feature>EEI ≤ 0.20</feature>
+            </features>
+            <suitable_for>
+                <application>Mittelgroße Anlagen 8-15 kW</application>
+                <min_power_kw>8</min_power_kw>
+                <max_power_kw>15</max_power_kw>
+            </suitable_for>
+        </pump>
+        
+        <pump>
+            <manufacturer>Lowara</manufacturer>
+            <model>ECOCIRC 30-80</model>
+            <series>ECOCIRC</series>
+            <efficiency_class>A</efficiency_class>
+            <type>regulated</type>
+            <specifications>
+                <max_flow_m3h>5.5</max_flow_m3h>
+                <max_head_m>8.0</max_head_m>
+                <power_min_w>6</power_min_w>
+                <power_max_w>70</power_max_w>
+                <power_avg_w>38</power_avg_w>
+                <connection_size>Rp 1 1/4"</connection_size>
+                <voltage>230V</voltage>
+            </specifications>
+            <pricing>
+                <price_eur>530</price_eur>
+                <price_range>510-570</price_range>
+            </pricing>
+            <features>
+                <feature>EC-Motor</feature>
+                <feature>Automatische Leistungsregelung</feature>
+                <feature>Display</feature>
+                <feature>EEI ≤ 0.20</feature>
+            </features>
+            <suitable_for>
+                <application>Große Anlagen 15-25 kW</application>
+                <min_power_kw>15</min_power_kw>
+                <max_power_kw>25</max_power_kw>
             </suitable_for>
         </pump>
         

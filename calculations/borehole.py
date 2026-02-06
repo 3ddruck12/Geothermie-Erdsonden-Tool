@@ -1,10 +1,13 @@
 """Hauptberechnungsmodul für Erdwärmesonden-Dimensionierung."""
 
 import math
+import logging
 from dataclasses import dataclass
 from typing import List, Tuple, Optional
 from .thermal import ThermalResistanceCalculator
 from .g_functions import GFunctionCalculator
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -30,6 +33,13 @@ class BoreholeCalculator:
     Kombiniert thermische Widerstände und g-Funktionen, um die
     erforderliche Bohrtiefe und Betriebstemperaturen zu berechnen.
     """
+    
+    # Iterationsparameter
+    DEPTH_CORRECTION_FACTOR = 0.02  # ~2°C Temperaturdifferenz pro 100m Tiefe
+    MIN_DEPTH_M = 20    # Minimale sinnvolle Bohrtiefe
+    MAX_DEPTH_M = 300   # Maximale sinnvolle Bohrtiefe
+    MAX_ITERATIONS = 20
+    DEPTH_TOLERANCE_M = 0.5  # Konvergenz-Toleranz
     
     def __init__(self):
         """Initialisiert den Bohrloch-Rechner."""
@@ -117,8 +127,8 @@ class BoreholeCalculator:
         
         # Iteration zur Bestimmung der erforderlichen Tiefe
         depth = initial_depth
-        max_iterations = 20
-        tolerance = 0.5  # m
+        max_iterations = self.MAX_ITERATIONS
+        tolerance = self.DEPTH_TOLERANCE_M  # m
         
         for iteration in range(max_iterations):
             # Berechne thermische Widerstände
@@ -213,18 +223,24 @@ class BoreholeCalculator:
             # Passe Tiefe an
             if fluid_temp_min < min_fluid_temperature:
                 # Zu kalt -> mehr Tiefe benötigt
-                depth_correction = (min_fluid_temperature - fluid_temp_min) / 0.02  # ~2°C pro 100m
+                depth_correction = ((min_fluid_temperature - fluid_temp_min)
+                                    / self.DEPTH_CORRECTION_FACTOR)
                 depth += depth_correction
             elif fluid_temp_max > max_fluid_temperature:
                 # Zu warm -> mehr Tiefe benötigt (bei Kühlung)
-                depth_correction = (fluid_temp_max - max_fluid_temperature) / 0.02
+                depth_correction = ((fluid_temp_max - max_fluid_temperature)
+                                    / self.DEPTH_CORRECTION_FACTOR)
                 depth += depth_correction
             
             # Begrenze Tiefe auf sinnvolle Werte
-            depth = max(20, min(300, depth))
+            depth = max(self.MIN_DEPTH_M, min(self.MAX_DEPTH_M, depth))
             
             if iteration == max_iterations - 1:
-                print(f"Warnung: Maximale Iterationen erreicht. Tiefe möglicherweise nicht optimal.")
+                logger.warning(
+                    "Maximale Iterationen (%d) erreicht. "
+                    "Tiefe (%.1f m) möglicherweise nicht optimal.",
+                    max_iterations, depth
+                )
         
         # Berechne monatliche Temperaturen
         monthly_temps = self._calculate_monthly_temperatures(

@@ -11,6 +11,11 @@ class ThermalResistanceCalculator:
     Basiert auf der Multipol-Methode nach Bennet et al. (1987) und Hellström (1991).
     """
     
+    # Korrekturfaktoren für Double-U (mehr Rohre = besserer Wärmeübergang)
+    # Quelle: Hellström (1991), empirische Anpassung
+    DOUBLE_U_RB_CORRECTION = 0.7   # Bohrloch-Widerstand: 30% Reduktion
+    DOUBLE_U_RA_CORRECTION = 0.5   # Interner Widerstand: 50% Reduktion
+    
     @staticmethod
     def calculate_pipe_resistance(
         inner_diameter: float,
@@ -29,7 +34,10 @@ class ThermalResistanceCalculator:
             Thermischer Widerstand in m·K/W
         """
         if thermal_conductivity <= 0 or inner_diameter <= 0 or outer_diameter <= inner_diameter:
-            return 0.0
+            raise ValueError(
+                f"Ungültige Rohr-Parameter: inner_d={inner_diameter}, "
+                f"outer_d={outer_diameter}, lambda={thermal_conductivity}"
+            )
         
         r_pipe = (1 / (2 * math.pi * thermal_conductivity)) * \
                  math.log(outer_diameter / inner_diameter)
@@ -60,7 +68,9 @@ class ThermalResistanceCalculator:
             Konvektiver Widerstand in m·K/W
         """
         if inner_diameter <= 0 or flow_rate <= 0:
-            return 0.0
+            raise ValueError(
+                f"Ungültige Parameter für Konvektion: inner_d={inner_diameter}, flow_rate={flow_rate}"
+            )
         
         # Strömungsgeschwindigkeit
         area = math.pi * (inner_diameter / 2) ** 2
@@ -175,8 +185,8 @@ class ThermalResistanceCalculator:
         )
         
         # Korrektur für Double-U (mehr Rohre = besserer Wärmeübergang)
-        r_b = r_b * 0.7
-        r_a = r_a * 0.5
+        r_b = r_b * ThermalResistanceCalculator.DOUBLE_U_RB_CORRECTION
+        r_a = r_a * ThermalResistanceCalculator.DOUBLE_U_RA_CORRECTION
         
         return r_b, r_a
     
