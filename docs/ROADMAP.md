@@ -360,35 +360,28 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 - [ ] **Q3 2026**: Web-Frontend, Stripe-Integration, Beta-Launch
 - [ ] **Q4 2026**: Öffentlicher Launch (Free + Professional)
 - [ ] **Q2 2027**: Enterprise-Plan (3D-Vis, REST-API, BIM, Kosten, Angebots-PDF)
-- [ ] **Vision 2028+**: **GET IoT & Big Data Ecosystem**
-  - **Phase 1-2**: Digitales Schichtenverzeichnis & Cloud-Archiv (Q3-Q4 2027)
-  - **Phase 3**: Community-Geodatenbank (Real-world drilling data sharing) (2028)
-  - **Phase 4**: Hardware-Integration (IoT-Echtzeitdaten via ESP32) (2028+)
-  - **Phase 5**: KI-gestützte Bodenparameter-Vorhersage & Optimierung (2029+)
+- [ ] **Vision 2028+**: **GET IoT & Community Data**
+  - Vernetzung von Planung und Ausführung im Feld
+  - Digitale Dokumentationsunterstützung für Fachbetriebe
+  - Aufbau einer kollaborativen Geodatenbasis zur Präzisierung von Projektvorhersagen
+  - Datenbasierte Optimierungsalgorithmen für die Anlagenauslegung
 
-Details zur Monetarisierung siehe privates Repository `GET-Cloud`.
+Details zur Umsetzung siehe privates Repository `GET-Cloud`.
 
 ---
 
 ## 🔮 Langfristige Vision
 
-### 🛰️ GET IoT – Die 5 Phasen der Bohrdatenerfassung
+### 🛰️ GET IoT & Vernetzung
+- [ ] **Digitale Felndatenerfassung**: Unterstützung bei der Erfassung von Bohr- und Standortparametern direkt vor Ort
+- [ ] **Data Feedback Loop**: Validierung von Planungswerten durch reale Ausführungsdaten zur kontinuierlichen Verbesserung der Berechnungsmodelle
+- [ ] **Echtzeit-Assistenz**: Intelligente Assistenzsysteme während des Erstellungsprozesses von Erdwärme-Anlagen
 
-- [ ] **Phase 1: Digitales Schichtenverzeichnis** (Q3 2027)
-  - Web-Formular für Bodenschichten & Wasserführung direkt am Bohrgerät
-  - Automatischer PDF-Export (behördengerechtes Schichtenverzeichnis, SEP-3)
-- [ ] **Phase 2: Bohrdaten-Archiv & Dokumentation** (Q4 2027)
-  - Fotodokumentation des Bohrguts pro Tiefenmeter
-  - Georeferenzierte Speicherung aller Bohrprotokolle
-- [ ] **Phase 3: Community-Geodatenbank** (2028)
-  - Anonymisiertes Datensharing (Heatmap: Bodenarten & λ-Werte)
-  - Daten-Netzwerkeffekt: Jede Bohrung verbessert die Vorhersage für alle
-- [ ] **Phase 4: Hardware-Integration (IoT)** (2028+)
-  - **ESP32-Interface**: Bohrfortschritt, Druck & Temperatur in Echtzeit
-  - Live-Dashboard in GET Cloud während des Bohrprozesses
-- [ ] **Phase 5: Machine Learning & KI** (2029+)
-  - Prädiktive Geologie: λ-Vorhersage basierend auf Community-Daten
-  - Selbstlernende Algorithmen zur Effizienzsteigerung bei der Auslegung
+### 🧠 Community-Datenbank & KI
+- [ ] **Kollaborative Datenbasis**: Aufbau eines anonymisierten Datenpools zur Verbesserung lokaler geologischer Prognosen
+- [ ] **KI-gestützte Auslegung**: Intelligente Vorschlagssysteme basierend auf einer breiteren Datenbasis aus realen Projekten
+- [ ] **Automatisierte Qualitätsprüfung**: Datenbasierte Unterstützung bei der Einhaltung von Normen und Standards
+
 
 ### Internationalisierung
 - [ ] Englische Übersetzung (EN) – i18n-Infrastruktur wird in V3.4 vorbereitet

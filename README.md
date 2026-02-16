@@ -105,7 +105,7 @@ Neben der Open-Source Desktop-App planen wir **GET Cloud**, ein modernes Web-Ser
 - 🔒 **Wirtschaftlichkeit**: Umfassende Amortisations-Analysen & Angebots-PDFs
 - 🔒 **GEG/BEG-Check**: Automatische Prüfung der Förderfähigkeit und Norm-Compliance
 - 🔒 **Team-Collaboration**: Projekte gemeinsam bearbeiten und in der Cloud speichern
-- 🔒 **GET IoT**: Echtzeit-Bohrdatenerfassung via ESP32 & digitales Schichtenverzeichnis vor Ort
+- 🔒 **GET IoT**: Intelligente Dokumentationsunterstützung und Datenintegration direkt vor Ort
 
 > [!TIP]
 > Der Berechnungskern bleibt **Open Source (MIT)** und wird weiterhin parallel für die Desktop-App entwickelt. Die Cloud-Version bietet professionelle Mehrwert-Services auf dieser Basis. Zusätzlich bauen wir eine **Community-Geodatenbank** auf, um die Vorhersagequalität für alle Nutzer zu steigern.
