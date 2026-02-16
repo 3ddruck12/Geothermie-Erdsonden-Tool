@@ -37,6 +37,15 @@ from gui.map_widget import OSMMapWidget
 from utils.get_file_handler import GETFileHandler
 from utils.bohranzeige_pdf import BohranzeigePDFGenerator
 
+# V3.4 Modulare Architektur
+from gui.tabs.input_tab import InputTab
+from gui.tabs.results_tab import ResultsTab
+from gui.tabs.materials_tab import MaterialsTab
+from gui.tabs.diagrams_tab import DiagramsTab
+from gui.tabs.borefield_tab import BorefieldTab
+from gui.controllers.calculation_controller import CalculationController
+from gui.controllers.file_controller import FileController
+
 
 class GeothermieGUIProfessional:
     """Professional Edition V3 GUI."""
@@ -44,7 +53,7 @@ class GeothermieGUIProfessional:
     def __init__(self, root):
         """Initialisiert die Professional GUI."""
         self.root = root
-        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.3.0-beta3")
+        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1")
         self.root.geometry("1800x1100")
         
         # Module
@@ -76,6 +85,10 @@ class GeothermieGUIProfessional:
         self.climate_data = None
         self.borefield_config = None
         
+        # V3.4 Controller
+        self.calc_controller = CalculationController(self)
+        self.file_controller = FileController(self)
+
         # GUI aufbauen
         self._create_menu()
         self._create_main_layout()
@@ -91,32 +104,32 @@ class GeothermieGUIProfessional:
         
         file_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Datei", menu=file_menu)
-        file_menu.add_command(label="📥 .get Projekt laden...", command=self._import_get_file, accelerator="Ctrl+O")
-        file_menu.add_command(label="💾 Als .get speichern...", command=self._export_get_file, accelerator="Ctrl+S")
+        file_menu.add_command(label="📥 .get Projekt laden...", command=self.file_controller.import_get_file, accelerator="Ctrl+O")
+        file_menu.add_command(label="💾 Als .get speichern...", command=self.file_controller.export_get_file, accelerator="Ctrl+S")
         file_menu.add_separator()
         file_menu.add_command(label="Pipe.txt laden", command=self._load_pipe_file)
         file_menu.add_command(label="EED .dat laden", command=self._load_eed_file)
         file_menu.add_separator()
-        file_menu.add_command(label="PDF-Bericht erstellen", command=self._export_pdf, accelerator="Ctrl+P")
-        file_menu.add_command(label="📄 Bohranzeige als PDF", command=lambda: self._export_bohranzeige_pdf(self.bohranzeige_tab.collect_all_data()))
-        file_menu.add_command(label="Text exportieren", command=self._export_results)
+        file_menu.add_command(label="PDF-Bericht erstellen", command=self.calc_controller.export_pdf, accelerator="Ctrl+P")
+        file_menu.add_command(label="📄 Bohranzeige als PDF", command=lambda: self.file_controller.export_bohranzeige_pdf(self.bohranzeige_tab.collect_all_data()))
+        file_menu.add_command(label="Text exportieren", command=self.calc_controller.export_results_text)
         file_menu.add_separator()
         file_menu.add_command(label="Beenden", command=self.root.quit)
         
         tools_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Extras", menu=tools_menu)
         tools_menu.add_command(label="🌍 PVGIS Klimadaten laden", command=self._load_pvgis_data)
-        tools_menu.add_command(label="💧 Materialmengen berechnen", command=self._calculate_grout_materials)
-        tools_menu.add_command(label="💨 Hydraulik berechnen", command=self._calculate_hydraulics)
+        tools_menu.add_command(label="💧 Materialmengen berechnen", command=self.calc_controller.calculate_grout_materials)
+        tools_menu.add_command(label="💨 Hydraulik berechnen", command=self.calc_controller.calculate_hydraulics)
         
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Hilfe", menu=help_menu)
         help_menu.add_command(label="Über", command=self._show_about)
         help_menu.add_command(label="PVGIS Info", command=self._show_pvgis_info)
         
-        self.root.bind('<Control-o>', lambda e: self._import_get_file())
-        self.root.bind('<Control-s>', lambda e: self._export_get_file())
-        self.root.bind('<Control-p>', lambda e: self._export_pdf())
+        self.root.bind('<Control-o>', lambda e: self.file_controller.import_get_file())
+        self.root.bind('<Control-s>', lambda e: self.file_controller.export_get_file())
+        self.root.bind('<Control-p>', lambda e: self.calc_controller.export_pdf())
     
     def _create_main_layout(self):
         """Erstellt das Hauptlayout."""
@@ -483,7 +496,7 @@ class GeothermieGUIProfessional:
         
         # Button zur Mengenberechnung
         ttk.Button(parent, text="💧 Materialmengen berechnen", 
-                  command=self._calculate_grout_materials).grid(
+                  command=self.calc_controller.calculate_grout_materials).grid(
             row=row, column=0, columnspan=2, pady=5, padx=10)
         row += 1
         
@@ -539,7 +552,7 @@ class GeothermieGUIProfessional:
         
         # Hydraulik-Button
         ttk.Button(parent, text="💨 Hydraulik berechnen", 
-                  command=self._calculate_hydraulics).grid(
+                  command=self.calc_controller.calculate_hydraulics).grid(
             row=row, column=0, columnspan=2, pady=5, padx=10)
         row += 1
         
@@ -1840,7 +1853,7 @@ class GeothermieGUIProfessional:
     
     def _create_status_bar(self):
         """Erstellt die Statusleiste."""
-        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.3.0-beta3")
+        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.4.0-beta1")
         status_bar = ttk.Label(self.root, textvariable=self.status_var,
                               relief=tk.SUNKEN, anchor=tk.W)
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -1982,387 +1995,25 @@ class GeothermieGUIProfessional:
     # =========== BERECHNUNGEN ===========
     
     def _calculate_grout_materials(self):
-        """Berechnet Verfüllmaterial-Mengen."""
-        try:
-            # Hole Parameter
-            depth = float(self.entries["initial_depth"].get())
-            bh_diameter = float(self.entries["borehole_diameter"].get()) / 1000.0  # mm → m
-            pipe_diameter = float(self.entries["pipe_outer_diameter"].get()) / 1000.0  # mm → m
-            num_boreholes = int(self.borehole_entries["num_boreholes"].get())
-            
-            # Anzahl Rohre basierend auf Konfiguration
-            config = self.pipe_config_var.get()
-            if "4-rohr" in config or "double" in config:
-                num_pipes = 4
-            else:
-                num_pipes = 2
-            
-            # Volumen berechnen
-            volume_per_bh = self.grout_db.calculate_volume(depth, bh_diameter, pipe_diameter, num_pipes)
-            total_volume = volume_per_bh * num_boreholes
-            
-            # Material-Eigenschaften
-            material_name = self.grout_material_var.get()
-            material = self.grout_db.get_material(material_name)
-            
-            # Mengen berechnen
-            amounts = self.grout_db.calculate_material_amount(total_volume, material)
-            
-            # Speichern
-            self.grout_calculation = {
-                'material': material,
-                'amounts': amounts,
-                'num_boreholes': num_boreholes,
-                'volume_per_bh': volume_per_bh
-            }
-            
-            # Anzeigen
-            text = "=" * 60 + "\n"
-            text += "VERFÜLLMATERIAL-BERECHNUNG\n"
-            text += "=" * 60 + "\n\n"
-            text += f"Material: {material.name}\n"
-            text += f"  λ = {material.thermal_conductivity} W/m·K\n"
-            text += f"  ρ = {material.density} kg/m³\n"
-            text += f"  Preis: {material.price_per_kg} EUR/kg\n\n"
-            text += f"Konfiguration:\n"
-            text += f"  Anzahl Bohrungen: {num_boreholes}\n"
-            text += f"  Tiefe pro Bohrung: {depth} m\n"
-            text += f"  Bohrloch-Ø: {bh_diameter*1000:.0f} mm\n"
-            text += f"  Rohre: {num_pipes} × Ø {pipe_diameter*1000:.0f} mm\n\n"
-            text += f"Benötigte Mengen:\n"
-            text += f"  Volumen pro Bohrung: {volume_per_bh:.3f} m³ ({volume_per_bh*1000:.1f} Liter)\n"
-            text += f"  Volumen gesamt: {total_volume:.3f} m³ ({total_volume*1000:.1f} Liter)\n"
-            text += f"  Masse gesamt: {amounts['mass_kg']:.1f} kg\n"
-            text += f"  Säcke (25 kg): {amounts['bags_25kg']:.1f} Stück\n\n"
-            text += f"Kosten:\n"
-            text += f"  Gesamt: {amounts['total_cost_eur']:.2f} EUR\n"
-            text += f"  Pro Meter: {amounts['cost_per_m']:.2f} EUR/m\n\n"
-            text += "=" * 60 + "\n"
-            
-            self.grout_result_text.delete("1.0", tk.END)
-            self.grout_result_text.insert("1.0", text)
-            
-            self.status_var.set(f"✓ Materialberechnung: {total_volume*1000:.0f} Liter ({amounts['bags_25kg']:.0f} Säcke), {amounts['total_cost_eur']:.2f} EUR")
-            
-        except Exception as e:
-            messagebox.showerror("Fehler", f"Fehler bei Materialberechnung: {str(e)}")
-    
+        """Berechnet Verfüllmaterial-Mengen. (Delegiert an CalculationController)"""
+        self.calc_controller.calculate_grout_materials()
+
     def _calculate_hydraulics(self):
-        """Berechnet Hydraulik-Parameter."""
-        try:
-            # Hole Parameter
-            heat_power = float(self.heat_pump_entries["heat_pump_power"].get())
-            
-            # Hole Frostschutzkonzentration aus Fluid-Datenbank
-            if hasattr(self, 'fluid_var') and self.fluid_var.get():
-                fluid_name = self.fluid_var.get()
-                fluid = self.fluid_db.get_fluid(fluid_name)
-                if fluid:
-                    antifreeze_conc = fluid.concentration_percent
-                else:
-                    # Fallback: Versuche aus altem Eingabefeld
-                    try:
-                        antifreeze_conc = float(self.hydraulics_entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
-                    except (AttributeError, ValueError, KeyError):
-                        antifreeze_conc = 25.0  # Standard: 25%
-            else:
-                # Fallback: Versuche aus altem Eingabefeld
-                try:
-                    antifreeze_conc = float(self.hydraulics_entries.get("antifreeze_concentration", ttk.Entry()).get() or "25")
-                except (AttributeError, ValueError, KeyError):
-                    antifreeze_conc = 25.0  # Standard: 25%
-            
-            num_circuits = int(self.hydraulics_entries["num_circuits"].get())
-            num_boreholes = int(self.borehole_entries["num_boreholes"].get())
-            
-            # Verwende tatsächliche berechnete Tiefe (aus VDI 4640), falls vorhanden
-            if hasattr(self, 'vdi4640_result') and self.vdi4640_result and self.vdi4640_result.required_depth_final > 0:
-                depth = self.vdi4640_result.required_depth_final
-            else:
-                depth = float(self.entries["initial_depth"].get())
-            
-            # Konvertiere mm → m für Innendurchmesser-Berechnung
-            pipe_outer_d_m = float(self.entries["pipe_outer_diameter"].get()) / 1000.0
-            pipe_thickness_m = float(self.entries["pipe_thickness"].get()) / 1000.0
-            pipe_inner_d = pipe_outer_d_m - 2 * pipe_thickness_m
-            
-            # Hole COP für Kälteleistung
-            cop = float(self.entries["heat_pump_cop"].get())
-            
-            # Berechne Entzugsleistung (Kälteleistung) aus dem Erdreich
-            # Q_Entzug = Q_WP × (COP - 1) / COP
-            extraction_power = heat_power * (cop - 1) / cop
-            
-            # Hole Temperaturdifferenz für Volumenstrom-Berechnung (BUG-FIX: nicht COP!)
-            delta_t_fluid = float(self.entries.get("delta_t_fluid", ttk.Entry()).get() or "3.0")
-            
-            # Volumenstrom berechnen (KORREKT: delta_t_fluid statt COP)
-            # Verwende Entzugsleistung für physikalisch korrekte Berechnung
-            # Die Empfehlung 0.8-1.5 l/s/kW bezieht sich auf Wärmeleistung (mit Sicherheitsfaktor)
-            flow = self.hydraulics_calc.calculate_required_flow_rate(
-                extraction_power, delta_t_fluid, antifreeze_conc
-            )
-            
-            # Automatische Übernahme des berechneten Volumenstroms (in m³/h)
-            calculated_flow_m3h = flow['volume_flow_m3_h']
-            flow_entry = self.entries.get("fluid_flow_rate")
-            if flow_entry:
-                flow_entry.delete(0, tk.END)
-                flow_entry.insert(0, f"{calculated_flow_m3h:.3f}")
-            
-            # Warnung bei abweichenden Werten (wird später im Ergebnis-Text angezeigt)
-            calculated_flow_m3s = flow['volume_flow_m3_s']
-            flow_warnings = self._check_flow_rate_warnings(
-                heat_power, calculated_flow_m3s, num_boreholes, 
-                delta_t_fluid, antifreeze_conc, extraction_power
-            )
-            
-            # Bestimme Anzahl Kreise pro Bohrung basierend auf Rohrkonfiguration
-            pipe_config = self.pipe_config_var.get()
-            if "4-rohr" in pipe_config.lower() or "double" in pipe_config.lower():
-                circuits_per_borehole = 2  # 4-Rohr-Systeme haben 2 Kreise pro Bohrung
-            else:
-                circuits_per_borehole = 1  # Single-U hat 1 Kreis pro Bohrung
-            
-            # System-Druckverlust
-            system = self.hydraulics_calc.calculate_total_system_pressure_drop(
-                depth, num_boreholes, num_circuits, pipe_inner_d,
-                flow['volume_flow_m3_h'], antifreeze_conc, circuits_per_borehole
-            )
-            
-            # Pumpenleistung
-            pump = self.hydraulics_calc.calculate_pump_power(
-                flow['volume_flow_m3_h'], system['total_pressure_drop_bar']
-            )
-            
-            # Kälteleistung berechnen (COP wurde bereits oben geholt)
-            cold_power = heat_power * (cop - 1) / cop
-            self.cold_power_label.config(text=f"{cold_power:.2f} kW", foreground="blue")
-            
-            # Speichern
-            self.hydraulics_result = {
-                'flow': flow,
-                'system': system,
-                'pump': pump,
-                'cold_power': cold_power
-            }
-            
-            # Anzeigen
-            text = "=" * 60 + "\n"
-            text += "HYDRAULIK-BERECHNUNG\n"
-            text += "=" * 60 + "\n\n"
-            text += f"Wärmeleistung: {heat_power} kW\n"
-            text += f"COP: {cop}\n"
-            text += f"Entzugsleistung (Kälteleistung): {extraction_power:.2f} kW\n"
-            text += f"Frostschutz: {antifreeze_conc} Vol%\n"
-            text += f"Anzahl System-Kreise: {num_circuits}\n"
-            text += f"Anzahl Bohrungen: {num_boreholes}\n"
-            text += f"Kreise pro Bohrung: {circuits_per_borehole}\n"
-            text += f"Bohrtiefe: {depth:.1f} m\n"
-            text += f"Bohrungen pro System-Kreis: {num_boreholes / num_circuits:.1f}\n"
-            text += f"Rohrlänge pro System-Kreis: {system['pipe_length_per_circuit_m']:.1f} m\n\n"
-            text += f"Volumenstrom:\n"
-            text += f"  Gesamt: {flow['volume_flow_m3_h']:.3f} m³/h ({flow['volume_flow_l_min']:.1f} l/min)\n"
-            text += f"  Pro Kreis: {system['volume_flow_per_circuit_m3h']:.3f} m³/h\n"
-            text += f"  Geschwindigkeit: {system['velocity_m_s']:.2f} m/s\n"
-            text += f"  Reynolds: {system['reynolds']:.0f}\n\n"
-            text += f"Druckverlust:\n"
-            text += f"  Bohrungen: {system['pressure_drop_borehole_bar']:.2f} bar\n"
-            text += f"  Zusatzverluste: {system['additional_losses_bar']:.2f} bar\n"
-            text += f"  GESAMT: {system['total_pressure_drop_bar']:.2f} bar ({system['total_pressure_drop_mbar']:.0f} mbar)\n\n"
-            text += f"Pumpe:\n"
-            text += f"  Hydraulische Leistung: {pump['hydraulic_power_w']:.0f} W\n"
-            text += f"  Elektrische Leistung: {pump['electric_power_w']:.0f} W ({pump['electric_power_kw']:.2f} kW)\n\n"
-            
-            # Warnungen einfügen (falls vorhanden)
-            if flow_warnings:
-                text += flow_warnings + "\n\n"
-            
-            text += "=" * 60 + "\n"
-            
-            self.hydraulics_result_text.delete("1.0", tk.END)
-            self.hydraulics_result_text.insert("1.0", text)
-            
-            # Aktiviere Durchfluss-Optimierung Button (v3.3.0)
-            if hasattr(self, 'flow_optimizer_button'):
-                self.flow_optimizer_button.config(state="normal")
-            
-            # Fülle Analyse-Tabs automatisch (v3.3.0-beta3)
-            self._update_energy_analysis()
-            self._update_pressure_analysis()
-            self._update_pump_analysis()
-            
-            self.status_var.set(f"✓ Hydraulik: {flow['volume_flow_m3_h']:.2f} m³/h, {system['total_pressure_drop_mbar']:.0f} mbar, {pump['electric_power_w']:.0f} W")
-            
-        except Exception as e:
-            messagebox.showerror("Fehler", f"Fehler bei Hydraulik-Berechnung: {str(e)}")
-    
+        """Berechnet Hydraulik-Parameter. (Delegiert an CalculationController)"""
+        self.calc_controller.calculate_hydraulics()
+
     def _update_energy_analysis(self):
-        """Aktualisiert die Energieprognose im Analyse-Tab."""
-        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
-            return
-        
-        if not hasattr(self, 'energy_analysis_text'):
-            return
-        
-        try:
-            pump_power = self.hydraulics_result['pump']['electric_power_w']
-            hours = 1800  # Standard-Betriebsstunden
-            price = 0.30  # EUR/kWh
-            
-            energy = self.hydraulics_calc.calculate_pump_energy_consumption(
-                pump_power, hours, price
-            )
-            
-            text = "═══ ENERGIEVERBRAUCH-PROGNOSE ═══\n\n"
-            text += f"Pumpenleistung: {pump_power:.0f} W\n"
-            text += f"Betriebsstunden/Jahr: {hours} h\n"
-            text += f"Strompreis: {price:.2f} EUR/kWh\n\n"
-            text += "KONSTANTE PUMPE:\n"
-            text += f"  Verbrauch: {energy['annual_kwh']:.1f} kWh/Jahr\n"
-            text += f"  Kosten: {energy['annual_cost_eur']:.2f} EUR/Jahr\n\n"
-            text += "GEREGELTE PUMPE (30% Einsparung):\n"
-            regulated_kwh = energy['annual_kwh'] * 0.7
-            regulated_cost = energy['annual_cost_eur'] * 0.7
-            text += f"  Verbrauch: {regulated_kwh:.1f} kWh/Jahr\n"
-            text += f"  Kosten: {regulated_cost:.2f} EUR/Jahr\n\n"
-            text += "EINSPARUNG:\n"
-            savings_kwh = energy['annual_kwh'] - regulated_kwh
-            savings_eur = energy['annual_cost_eur'] - regulated_cost
-            text += f"  {savings_kwh:.1f} kWh/Jahr\n"
-            text += f"  {savings_eur:.2f} EUR/Jahr\n\n"
-            text += "─────────────────────────────\n\n"
-            text += "💡 Empfehlung: Geregelte Hocheffizienz-\n"
-            text += "   Pumpe (Klasse A) verwenden!\n"
-            
-            self.energy_analysis_text.delete("1.0", tk.END)
-            self.energy_analysis_text.insert("1.0", text)
-        except Exception as e:
-            if hasattr(self, 'energy_analysis_text'):
-                self.energy_analysis_text.delete("1.0", tk.END)
-                self.energy_analysis_text.insert("1.0", f"Fehler: {str(e)}")
-    
+        """Aktualisiert die Energieprognose. (Delegiert an CalculationController)"""
+        self.calc_controller.update_energy_analysis()
+
     def _update_pressure_analysis(self):
-        """Aktualisiert die Druckverlust-Analyse im Analyse-Tab."""
-        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
-            return
-        
-        if not hasattr(self, 'pressure_analysis_text'):
-            return
-        
-        try:
-            system = self.hydraulics_result.get('system', {})
-            flow = self.hydraulics_result.get('flow', {})
-            
-            text = "═══ DRUCKVERLUST-ANALYSE ═══\n\n"
-            text += f"Volumenstrom: {flow.get('volume_flow_m3_h', 0):.2f} m³/h\n"
-            text += f"Geschwindigkeit: {system.get('velocity', 0):.2f} m/s\n"
-            text += f"Reynolds: {system.get('reynolds', 0):.0f}\n\n"
-            
-            # Strömungsregime
-            reynolds = system.get('reynolds', 0)
-            if reynolds < 2300:
-                text += "⚠️  LAMINAR (Re < 2300)\n"
-                text += "    Risiko schlechter Wärmeübergang!\n"
-            elif reynolds < 2500:
-                text += "⚡ ÜBERGANGSBEREICH (Re 2300-2500)\n"
-                text += "   Grenzbereich, knapp turbulent\n"
-            else:
-                text += "✅ TURBULENT (Re > 2500)\n"
-                text += "   Guter Wärmeübergang\n"
-            
-            text += "\n─────────────────────────────\n\n"
-            text += "DRUCKVERLUSTE:\n"
-            text += f"  Total: {system.get('total_pressure_drop_bar', 0):.3f} bar\n"
-            text += f"        ({system.get('total_pressure_drop_mbar', 0):.0f} mbar)\n"
-            text += f"  Förderhöhe: {system.get('total_pressure_drop_bar', 0)*10.2:.1f} m\n\n"
-            
-            text += f"Rohrlänge/Kreis: {system.get('pipe_length_per_circuit_m', 0):.1f} m\n"
-            text += f"Reibungsverlust: {system.get('friction_factor', 0):.4f}\n\n"
-            
-            text += "─────────────────────────────\n\n"
-            text += "💡 Tipp: Für niedrigere Druckverluste\n"
-            text += "   größeren Rohrdurchmesser wählen!\n"
-            
-            self.pressure_analysis_text.delete("1.0", tk.END)
-            self.pressure_analysis_text.insert("1.0", text)
-        except Exception as e:
-            self.pressure_analysis_text.delete("1.0", tk.END)
-            self.pressure_analysis_text.insert("1.0", f"Fehler: {str(e)}")
-    
+        """Aktualisiert die Druckverlust-Analyse. (Delegiert an CalculationController)"""
+        self.calc_controller.update_pressure_analysis()
+
     def _update_pump_analysis(self):
-        """Aktualisiert die Pumpen-Empfehlungen im Analyse-Tab."""
-        if not hasattr(self, 'hydraulics_result') or not self.hydraulics_result:
-            return
-        
-        if not hasattr(self, 'pump_analysis_text'):
-            return
-        
-        try:
-            from data.pump_db import PumpDatabase
-            
-            # Hole Hydraulik-Daten
-            flow_m3h = self.hydraulics_result['flow']['volume_flow_m3_h']
-            total_dp = self.hydraulics_result['system']['total_pressure_drop_bar']
-            head_m = total_dp * 10.2
-            power_kw = float(self.heat_pump_entries["heat_pump_power"].get() or "11")
-            
-            # Lade Pumpen-Datenbank
-            pump_db = PumpDatabase()
-            
-            text = "═══ PUMPEN-EMPFEHLUNGEN ═══\n\n"
-            text += f"Volumenstrom: {flow_m3h:.2f} m³/h\n"
-            text += f"Förderhöhe: {head_m:.1f} m\n"
-            text += f"Leistung WP: {power_kw:.0f} kW\n"
-            text += f"Pumpen in DB: {len(pump_db.pumps)}\n\n"
-            text += "─────────────────────────────\n\n"
-            
-            suitable_pumps = pump_db.find_suitable_pumps(
-                flow_m3h=flow_m3h,
-                head_m=head_m,
-                power_kw=power_kw,
-                max_results=5
-            )
-            
-            if suitable_pumps:
-                for i, (score, pump) in enumerate(suitable_pumps, 1):
-                    if i == 1:
-                        text += "🥇 "
-                    elif i == 2:
-                        text += "🥈 "
-                    elif i == 3:
-                        text += "🥉 "
-                    else:
-                        text += f"#{i} "
-                    
-                    text += f"{pump.get_full_name()}\n"
-                    text += f"   Score: {score:.0f}/100\n"
-                    text += f"   Typ: {'Geregelt' if pump.pump_type == 'regulated' else 'Konstant'}\n"
-                    text += f"   Max: {pump.specs.max_flow_m3h} m³/h, {pump.specs.max_head_m} m\n"
-                    text += f"   Leistung: {pump.specs.power_avg_w} W\n"
-                    text += f"   Effizienz: {pump.efficiency_class}\n"
-                    text += f"   Preis: {pump.price_eur:.0f} EUR\n\n"
-            else:
-                text += "⚠️ Keine passenden Pumpen gefunden.\n\n"
-                text += "Mögliche Gründe:\n"
-                text += f"• Volumenstrom zu hoch (> {flow_m3h/1.1:.1f} m³/h nötig)\n"
-                text += f"• Förderhöhe zu hoch (> {head_m/1.1:.1f} m nötig)\n"
-                text += "• Leistungsbereich passt nicht\n\n"
-                text += "Prüfen Sie:\n"
-                text += "- Anzahl Bohrungen erhöhen\n"
-                text += "- ΔT erhöhen (weniger Volumenstrom)\n"
-                text += "- Rohrdurchmesser vergrößern\n"
-            
-            text += "\n─────────────────────────────\n\n"
-            text += "💡 Empfehlung: Geregelte Hocheffizienz-\n"
-            text += "   Pumpe für beste Energieeffizienz!\n"
-            
-            self.pump_analysis_text.delete("1.0", tk.END)
-            self.pump_analysis_text.insert("1.0", text)
-        except Exception as e:
-            self.pump_analysis_text.delete("1.0", tk.END)
-            self.pump_analysis_text.insert("1.0", f"Fehler: {str(e)}\n\nPumpen-Datenbank konnte nicht\ngeladen werden.")
-    
+        """Aktualisiert die Pumpen-Empfehlungen. (Delegiert an CalculationController)"""
+        self.calc_controller.update_pump_analysis()
+
     def _on_borehole_count_changed(self, event=None):
         """Wird aufgerufen, wenn sich die Anzahl der Bohrungen ändert."""
         try:
@@ -2964,88 +2615,11 @@ class GeothermieGUIProfessional:
     
     def _check_flow_rate_warnings(self, heat_power_kw: float, flow_rate_m3s: float, num_boreholes: int,
                                    current_delta_t: float, antifreeze_conc: float, extraction_power: float):
-        """Prüft Volumenstrom auf empfohlene Werte und gibt Warnungen als Text zurück."""
-        # Empfohlene Werte: 0.8 - 1.5 l/s pro kW (für Sole-Wasser-WP)
-        recommended_min_ls_per_kw = 0.8  # l/s pro kW
-        recommended_max_ls_per_kw = 1.5   # l/s pro kW
-        
-        # Umrechnung: m³/s → l/s
-        flow_rate_ls = flow_rate_m3s * 1000
-        flow_rate_ls_per_kw = flow_rate_ls / heat_power_kw if heat_power_kw > 0 else 0
-        
-        # Mindestwert pro Sonde für turbulente Strömung (Re > 2500)
-        # v3.3.0-beta1: Erhöht von 2.1 auf 2.5 m³/h aufgrund korrigierter Viskosität
-        # Mit realistischen VDI-Wärmeatlas Werten (0°C) ist höherer Volumenstrom nötig
-        min_per_borehole_m3h = 2.5  # Entspricht Re ≈ 2500 bei 0°C, 25% Glykol
-        flow_rate_m3h = flow_rate_m3s * 3600
-        flow_per_borehole_m3h = flow_rate_m3h / num_boreholes if num_boreholes > 0 else 0
-        
-        warnings = []
-        
-        # Prüfe Empfehlung pro kW (zeige auch in m³/h)
-        flow_rate_m3h = flow_rate_m3s * 3600
-        recommended_min_m3h = recommended_min_ls_per_kw * heat_power_kw * 3.6  # l/s → m³/h
-        recommended_max_m3h = recommended_max_ls_per_kw * heat_power_kw * 3.6
-        
-        if flow_rate_ls_per_kw < recommended_min_ls_per_kw:
-            # Berechne optimale ΔT für empfohlenen Mindest-Volumenstrom
-            # V̇ = Q / (c_p × ρ × ΔT) → ΔT = Q / (c_p × ρ × V̇)
-            props = self.hydraulics_calc._get_fluid_properties(antifreeze_conc)
-            target_flow_m3s = (recommended_min_ls_per_kw * heat_power_kw) / 1000  # l/s → m³/s
-            optimal_delta_t = (extraction_power * 1000) / (props['heat_capacity'] * props['density'] * target_flow_m3s)
-            
-            # Schätze Pumpenleistung bei optimalem Volumenstrom (grob)
-            # Druckverlust steigt quadratisch mit Volumenstrom
-            if hasattr(self, 'hydraulics_result') and self.hydraulics_result:
-                current_pump_w = self.hydraulics_result.get('pump', {}).get('electric_power_w', 0)
-                flow_ratio = target_flow_m3s / flow_rate_m3s if flow_rate_m3s > 0 else 1
-                estimated_pump_w = current_pump_w * (flow_ratio ** 2)
-            else:
-                estimated_pump_w = 150  # Schätzwert
-            
-            warnings.append(
-                f"⚠️ VOLUMENSTROM ZU NIEDRIG:\n"
-                f"   Aktuell: {flow_rate_m3h:.2f} m³/h ({flow_rate_ls_per_kw:.2f} l/s/kW)\n"
-                f"   Empfohlen: {recommended_min_m3h:.1f} - {recommended_max_m3h:.1f} m³/h\n"
-                f"   \n"
-                f"   💡 OPTIMIERUNGSVORSCHLAG:\n"
-                f"   • ΔT von {current_delta_t:.1f}K auf ca. {optimal_delta_t:.1f}K reduzieren\n"
-                f"   • Volumenstrom steigt dann auf ca. {target_flow_m3s * 3600:.2f} m³/h\n"
-                f"   • Pumpenleistung steigt auf ca. {estimated_pump_w:.0f} W\n"
-                f"   \n"
-                f"   ⚡ FOLGEN BEI ZU NIEDRIGEM VOLUMENSTROM:\n"
-                f"   • Schlechterer Wärmeübergang\n"
-                f"   • Höhere Vorlauftemperatur nötig\n"
-                f"   • JAZ-Reduktion: 8-15%"
-            )
-        elif flow_rate_ls_per_kw > recommended_max_ls_per_kw:
-            warnings.append(
-                f"⚠️ VOLUMENSTROM ZU HOCH:\n"
-                f"   Aktuell: {flow_rate_m3h:.2f} m³/h ({flow_rate_ls_per_kw:.2f} l/s/kW)\n"
-                f"   Empfohlen: {recommended_min_m3h:.1f} - {recommended_max_m3h:.1f} m³/h\n"
-                f"   \n"
-                f"   ⚡ FOLGEN:\n"
-                f"   • Hoher Druckverlust\n"
-                f"   • Hohe Pumpenleistung\n"
-                f"   • Parasitäre Verluste: 3-8%"
-            )
-        
-        # Prüfe Mindestwert pro Sonde
-        if flow_per_borehole_m3h < min_per_borehole_m3h:
-            warnings.append(
-                f"⚠️ VOLUMENSTROM PRO SONDE ZU NIEDRIG:\n"
-                f"   Aktuell: {flow_per_borehole_m3h:.2f} m³/h pro Sonde\n"
-                f"   Minimum: {min_per_borehole_m3h} m³/h pro Sonde\n"
-                f"   \n"
-                f"   ⚡ PROBLEM: Strömung nicht turbulent (Re < 2300)\n"
-                f"   → Schlechter Wärmeübergang"
-            )
-        
-        # Zeige Warnungen (nur erste, um nicht zu überladen)
-        if warnings:
-            return warnings[0]
-        return ""
-    
+        """Prüft Volumenstrom. (Delegiert an CalculationController)"""
+        return self.calc_controller._check_flow_rate_warnings(
+            heat_power_kw, flow_rate_m3s, num_boreholes,
+            current_delta_t, antifreeze_conc, extraction_power)
+
     def _load_pvgis_data(self):
         """Lädt Klimadaten von PVGIS."""
         # Benutzerdefinierten Dialog für bessere Sichtbarkeit
@@ -3185,196 +2759,9 @@ class GeothermieGUIProfessional:
             self.status_var.set("❌ PVGIS-Fehler")
     
     def _run_calculation(self):
-        """Führt die Hauptberechnung durch."""
-        try:
-            # Sammle Parameter
-            params = {}
-            for key, entry in self.entries.items():
-                value = entry.get()
-                if value:
-                    try:
-                        params[key] = float(value)
-                    except ValueError:
-                        params[key] = value  # String-Werte behalten
-                else:
-                    params[key] = 0.0  # Default für leere numerische Felder
-            
-            # Konvertiere mm → m für Rohr-Parameter und Bohrlochdurchmesser
-            params["pipe_outer_diameter"] = params["pipe_outer_diameter"] / 1000.0
-            params["pipe_thickness"] = params["pipe_thickness"] / 1000.0
-            params["borehole_diameter"] = params["borehole_diameter"] / 1000.0
-            # Konvertiere Schenkelabstand von mm → m
-            params["shank_spacing"] = params["shank_spacing"] / 1000.0
-            
-            self.status_var.set("⏳ Berechnung läuft...")
-            self.root.update()
-            
-            # Pipe Config anpassen
-            pipe_config = self.pipe_config_var.get()
-            if "4-rohr" in pipe_config:
-                pipe_config = "double-u"
-            
-            # Anzahl Bohrungen
-            num_boreholes = int(self.borehole_entries["num_boreholes"].get())
-            
-            # Prüfe Berechnungsmethode
-            method = self.calculation_method_var.get()
-            
-            if method == "vdi4640":
-                # === VDI 4640 BERECHNUNG ===
-                
-                # Berechne Bohrlochwiderstand (vereinfachte Methode)
-                # Für eine genauere Berechnung könnte hier die Multipol-Methode verwendet werden
-                # Hier verwenden wir einen typischen Wert basierend auf der Geometrie
-                
-                # Vereinfachter Bohrlochwiderstand nach VDI 4640
-                borehole_radius = params["borehole_diameter"] / 2
-                pipe_outer_radius = params["pipe_outer_diameter"] / 2
-                
-                # Thermischer Widerstand Verfüllung (vereinfacht)
-                r_grout = (1 / (2 * math.pi * params["grout_thermal_cond"])) * \
-                          math.log(borehole_radius / pipe_outer_radius)
-                
-                # Thermischer Widerstand Rohr
-                pipe_inner_radius = (params["pipe_outer_diameter"] - 2 * params["pipe_thickness"]) / 2
-                r_pipe = (1 / (2 * math.pi * params["pipe_thermal_cond"])) * \
-                         math.log(params["pipe_outer_diameter"] / (2 * pipe_inner_radius))
-                
-                # Konvektiver Widerstand (vereinfacht)
-                r_conv = 1 / (2 * math.pi * pipe_inner_radius * 500)  # h ≈ 500 W/m²K typisch
-                
-                # Gesamtwiderstand (vereinfacht für Single-U oder Double-U)
-                if pipe_config == "single-u":
-                    r_borehole = r_grout + r_pipe + r_conv
-                else:  # double-u
-                    r_borehole = 0.8 * (r_grout + r_pipe + r_conv)  # Reduktion durch 4 Rohre
-                
-                # Mindestens 0.05 m·K/W
-                r_borehole = max(0.05, r_borehole)
-                
-                # Thermische Diffusivität
-                thermal_diffusivity = params["ground_thermal_cond"] / params["ground_heat_cap"]
-                
-                # VDI 4640 Berechnung (Debug-Modus ist bereits aktiviert)
-                self.vdi4640_result = self.vdi4640_calc.calculate_complete(
-                    ground_thermal_conductivity=params["ground_thermal_cond"],
-                    ground_thermal_diffusivity=thermal_diffusivity,
-                    t_undisturbed=params["ground_temp"],
-                    borehole_diameter=params["borehole_diameter"] * 1000,  # zurück in mm
-                    borehole_depth_initial=params["initial_depth"],
-                    n_boreholes=num_boreholes,
-                    r_borehole=r_borehole,
-                    annual_heating_demand=params["annual_heating"],  # jetzt in kWh
-                    peak_heating_load=params["peak_heating"],
-                    annual_cooling_demand=params["annual_cooling"],  # jetzt in kWh
-                    peak_cooling_load=params["peak_cooling"],
-                    heat_pump_cop_heating=params["heat_pump_cop"],
-                    heat_pump_cop_cooling=params.get("heat_pump_eer", params["heat_pump_cop"]),
-                    t_fluid_min_required=params["min_fluid_temp"],
-                    t_fluid_max_required=params["max_fluid_temp"],
-                    delta_t_fluid=params.get("delta_t_fluid", 3.0)
-                )
-                
-                # Prüfe maximale Sondenlänge (nur bei VDI 4640) - nur Warnung, keine automatische Anpassung
-                max_depth_entry = self.entries.get("max_depth_per_borehole")
-                if max_depth_entry:
-                    max_depth_per_borehole = float(max_depth_entry.get() or "999")
-                else:
-                    max_depth_per_borehole = 999.0
-                
-                # Nur Warnung anzeigen, wenn Tiefe über Maximum liegt
-                # KEINE automatische Anpassung der Bohrlochanzahl mehr!
-                if max_depth_per_borehole < 999 and self.vdi4640_result.required_depth_final > max_depth_per_borehole:
-                    # Berechne Vorschlag: Mehr Bohrungen mit geringerer Tiefe
-                    total_length_needed = self.vdi4640_result.required_depth_final * num_boreholes
-                    suggested_num_boreholes = int(num_boreholes) + 1
-                    suggested_depth = min(80.0, total_length_needed / suggested_num_boreholes)
-                    
-                    # Versuche verschiedene Konfigurationen
-                    for test_boreholes in range(int(num_boreholes) + 1, int(num_boreholes) + 4):
-                        test_depth = total_length_needed / test_boreholes
-                        if test_depth <= max_depth_per_borehole:
-                            suggested_num_boreholes = test_boreholes
-                            suggested_depth = test_depth
-                            break
-                    
-                    messagebox.showwarning(
-                        "Hinweis - Maximale Sondenlänge überschritten", 
-                        f"Die berechnete Sondenlänge beträgt {self.vdi4640_result.required_depth_final:.1f} m pro Bohrung "
-                        f"bei {num_boreholes} Bohrungen.\n\n"
-                        f"Dies überschreitet Ihr Maximum von {max_depth_per_borehole:.0f} m pro Bohrung.\n\n"
-                        f"📊 AKTUELLE KONFIGURATION:\n"
-                        f"   {num_boreholes} Bohrungen à {self.vdi4640_result.required_depth_final:.1f} m\n"
-                        f"   Gesamtlänge: {total_length_needed:.1f} m\n\n"
-                        f"💡 VORSCHLAG:\n"
-                        f"   {suggested_num_boreholes} Bohrungen à {suggested_depth:.1f} m\n"
-                        f"   Gesamtlänge: {total_length_needed:.1f} m\n\n"
-                        f"Bitte passen Sie die Anzahl der Bohrungen manuell an."
-                    )
-                
-                # Erstelle BoreholeResult für Kompatibilität
-                from calculations.borehole import BoreholeResult
-                self.result = BoreholeResult(
-                    required_depth=self.vdi4640_result.required_depth_final,
-                    fluid_temperature_min=self.vdi4640_result.t_wp_aus_heating_min,
-                    fluid_temperature_max=self.vdi4640_result.t_wp_aus_cooling_max,
-                    borehole_resistance=r_borehole,
-                    effective_resistance=r_borehole + self.vdi4640_result.r_grundlast,
-                    heat_extraction_rate=self.vdi4640_result.q_nettogrundlast_heating / self.vdi4640_result.required_depth_final if self.vdi4640_result.required_depth_final > 0 else 0,
-                    monthly_temperatures=[self.vdi4640_result.t_wp_aus_heating_min] * 12
-                )
-                
-                # Status anzeigen
-                self.status_var.set(f"✓ VDI 4640 Berechnung: {self.vdi4640_result.required_depth_final:.1f}m (ausgelegt für {self.vdi4640_result.design_case.upper()})")
-                
-            else:
-                # === ITERATIVE BERECHNUNG (Original) ===
-                self.result = self.calculator.calculate_required_depth(
-                    ground_thermal_conductivity=params["ground_thermal_cond"],
-                    ground_heat_capacity=params["ground_heat_cap"],
-                    undisturbed_ground_temp=params["ground_temp"],
-                    geothermal_gradient=params["geothermal_gradient"],
-                    borehole_diameter=params["borehole_diameter"],
-                    pipe_configuration=pipe_config,
-                    pipe_outer_diameter=params["pipe_outer_diameter"],
-                    pipe_wall_thickness=params["pipe_thickness"],
-                    pipe_thermal_conductivity=params["pipe_thermal_cond"],
-                    shank_spacing=params["shank_spacing"],
-                    grout_thermal_conductivity=params["grout_thermal_cond"],
-                    fluid_thermal_conductivity=params["fluid_thermal_cond"],
-                    fluid_heat_capacity=params["fluid_heat_cap"],
-                    fluid_density=params["fluid_density"],
-                    fluid_viscosity=params["fluid_viscosity"],
-                    fluid_flow_rate=params["fluid_flow_rate"] / 3600.0,  # m³/h → m³/s
-                    annual_heating_demand=params["annual_heating"] / 1000,  # kWh → MWh
-                    annual_cooling_demand=params["annual_cooling"] / 1000,  # kWh → MWh
-                    peak_heating_load=params["peak_heating"],
-                    peak_cooling_load=params["peak_cooling"],
-                    heat_pump_cop=params["heat_pump_cop"],
-                    min_fluid_temperature=params["min_fluid_temp"],
-                    max_fluid_temperature=params["max_fluid_temp"],
-                    simulation_years=int(params["simulation_years"]),
-                    initial_depth=params["initial_depth"]
-                )
-                
-                self.vdi4640_result = None
-                self.status_var.set(f"✓ Berechnung erfolgreich! {self.result.required_depth:.1f}m × {num_boreholes} = {self.result.required_depth * num_boreholes:.1f}m gesamt")
-            
-            self.current_params = params
-            self.current_params['pipe_configuration'] = self.pipe_config_var.get()
-            self.current_params['calculation_method'] = method
-            
-            self._display_results()
-            self._plot_results()
-            
-            self.notebook.select(self.results_frame)
-            
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            messagebox.showerror("Fehler", f"Fehler bei der Berechnung: {str(e)}")
-            self.status_var.set("❌ Berechnung fehlgeschlagen")
-    
+        """Führt die Hauptberechnung durch. (Delegiert an CalculationController)"""
+        self.calc_controller.run_calculation()
+
     def _get_pipe_length_factor(self, pipe_config: str) -> int:
         """
         Gibt den Faktor für die Gesamtlänge der Leitungen zurück.
@@ -3418,134 +2805,9 @@ class GeothermieGUIProfessional:
             return [(0, 0), (0, 0)]
     
     def _display_results(self):
-        """Zeigt Ergebnisse an."""
-        if not self.result:
-            return
-        
-        num_bh = int(self.borehole_entries["num_boreholes"].get())
-        
-        self.results_text.config(state=tk.NORMAL)
-        self.results_text.delete("1.0", tk.END)
-        
-        # === HEADER ===
-        text = "=" * 80 + "\n"
-        text += "ERDWÄRMESONDEN-BERECHNUNGSERGEBNIS (Professional V3.2.1)\n"
-        text += "=" * 80 + "\n\n"
-        
-        # Projekt Info
-        proj_name = self.project_entries["project_name"].get()
-        if proj_name:
-            text += f"📋 Projekt: {proj_name}\n"
-            text += f"👤 Kunde: {self.project_entries['customer_name'].get()}\n\n"
-        
-        # === BERECHNUNGSMETHODE ===
-        method = self.current_params.get('calculation_method', 'iterativ')
-        if method == "vdi4640" and self.vdi4640_result:
-            text += "📐 BERECHNUNGSMETHODE: VDI 4640 (Koenigsdorff)\n"
-            text += "=" * 80 + "\n\n"
-            
-            # === AUSLEGUNGSFALL ===
-            text += "🎯 AUSLEGUNGSFALL\n"
-            text += "-" * 80 + "\n"
-            if self.vdi4640_result.design_case == "heating":
-                text += "✓ HEIZEN ist auslegungsrelevant\n"
-                text += f"  Erforderliche Sondenlänge: {self.vdi4640_result.required_depth_heating:.1f} m\n"
-                text += f"  (Kühlen würde nur {self.vdi4640_result.required_depth_cooling:.1f} m benötigen)\n"
-            else:
-                text += "✓ KÜHLEN ist auslegungsrelevant (dominante Kühllast!)\n"
-                text += f"  Erforderliche Sondenlänge: {self.vdi4640_result.required_depth_cooling:.1f} m\n"
-                text += f"  (Heizen würde nur {self.vdi4640_result.required_depth_heating:.1f} m benötigen)\n"
-            text += f"\n  → Ausgelegte Sondenlänge: {self.vdi4640_result.required_depth_final:.1f} m\n"
-            text += f"  → Anzahl Bohrungen: {num_bh}\n"
-            text += f"  → Gesamtlänge (Bohrungen): {self.vdi4640_result.required_depth_final * num_bh:.1f} m\n"
-            
-            # Berechne Gesamtlänge der Leitungen
-            pipe_config = self.pipe_config_var.get()
-            pipe_length_factor = self._get_pipe_length_factor(pipe_config)
-            pipe_length_per_borehole = self.vdi4640_result.required_depth_final * pipe_length_factor
-            total_pipe_length = pipe_length_per_borehole * num_bh
-            text += f"  → Gesamtlänge (Leitungen): {total_pipe_length:.1f} m\n"
-            text += f"     ({pipe_length_factor} Leitungen pro Bohrung × {self.vdi4640_result.required_depth_final:.1f} m = {pipe_length_per_borehole:.1f} m pro Bohrung)\n\n"
-            
-            # === WÄRMEPUMPENAUSTRITTSTEMPERATUREN ===
-            text += "🌡️  WÄRMEPUMPENAUSTRITTSTEMPERATUREN\n"
-            text += "-" * 80 + "\n"
-            text += f"Heizen (minimale WP-Austrittstemperatur): {self.vdi4640_result.t_wp_aus_heating_min:.2f} °C\n"
-            text += f"  Komponenten:\n"
-            text += f"    T_ungestört:            {self.current_params['ground_temp']:.2f} °C\n"
-            text += f"    - ΔT_Grundlast:        {self.vdi4640_result.delta_t_grundlast_heating:.3f} K\n"
-            text += f"    - ΔT_Periodisch:       {self.vdi4640_result.delta_t_per_heating:.3f} K\n"
-            text += f"    - ΔT_Peak:             {self.vdi4640_result.delta_t_peak_heating:.3f} K\n"
-            text += f"    - 0.5 · ΔT_Fluid:      {self.vdi4640_result.delta_t_fluid_heating / 2:.2f} K\n\n"
-            
-            text += f"Kühlen (maximale WP-Austrittstemperatur): {self.vdi4640_result.t_wp_aus_cooling_max:.2f} °C\n"
-            text += f"  Komponenten:\n"
-            text += f"    T_ungestört:            {self.current_params['ground_temp']:.2f} °C\n"
-            text += f"    + ΔT_Grundlast:        {self.vdi4640_result.delta_t_grundlast_cooling:.3f} K\n"
-            text += f"    + ΔT_Periodisch:       {self.vdi4640_result.delta_t_per_cooling:.3f} K\n"
-            text += f"    + ΔT_Peak:             {self.vdi4640_result.delta_t_peak_cooling:.3f} K\n"
-            text += f"    - 0.5 · ΔT_Fluid:      {self.vdi4640_result.delta_t_fluid_cooling / 2:.2f} K\n\n"
-            
-            # === THERMISCHE WIDERSTÄNDE ===
-            text += "♨️  THERMISCHE WIDERSTÄNDE\n"
-            text += "-" * 80 + "\n"
-            text += f"R_Grundlast (10 Jahre):     {self.vdi4640_result.r_grundlast:.6f} m·K/W  (g={self.vdi4640_result.g_grundlast:.4f})\n"
-            text += f"R_Periodisch (1 Monat):     {self.vdi4640_result.r_per:.6f} m·K/W  (g={self.vdi4640_result.g_per:.4f})\n"
-            text += f"R_Peak (6 Stunden):         {self.vdi4640_result.r_peak:.6f} m·K/W  (g={self.vdi4640_result.g_peak:.4f})\n"
-            text += f"R_Bohrloch:                 {self.vdi4640_result.r_borehole:.6f} m·K/W\n\n"
-            
-            # === LASTEN ===
-            text += "⚡ LASTDATEN\n"
-            text += "-" * 80 + "\n"
-            text += "HEIZEN:\n"
-            text += f"  Jahresenergie:         {self.current_params['annual_heating']:.0f} kWh\n"
-            text += f"  Q_Nettogrundlast:      {self.vdi4640_result.q_nettogrundlast_heating/1000:.3f} kW  (Jahresmittel)\n"
-            text += f"  Q_Periodisch:          {self.vdi4640_result.q_per_heating/1000:.3f} kW  (kritischster Monat)\n"
-            text += f"  Q_Peak:                {self.vdi4640_result.q_peak_heating/1000:.3f} kW  (Spitzenlast)\n\n"
-            
-            text += "KÜHLEN:\n"
-            text += f"  Jahresenergie:         {self.current_params['annual_cooling']:.0f} kWh\n"
-            text += f"  Q_Nettogrundlast:      {self.vdi4640_result.q_nettogrundlast_cooling/1000:.3f} kW  (Jahresmittel)\n"
-            text += f"  Q_Periodisch:          {self.vdi4640_result.q_per_cooling/1000:.3f} kW  (kritischster Monat)\n"
-            text += f"  Q_Peak:                {self.vdi4640_result.q_peak_cooling/1000:.3f} kW  (Spitzenlast)\n\n"
-            
-        else:
-            # === ITERATIVE METHODE ===
-            text += "⚙️  BERECHNUNGSMETHODE: Iterativ (Eskilson/Hellström)\n"
-            text += "=" * 80 + "\n\n"
-            
-            text += "🎯 BOHRFELD\n"
-            text += "-" * 80 + "\n"
-            text += f"Anzahl Bohrungen:      {num_bh}\n"
-            text += f"Tiefe pro Bohrung:     {self.result.required_depth:.1f} m\n"
-            text += f"Gesamtlänge (Bohrungen): {self.result.required_depth * num_bh:.1f} m\n"
-            
-            # Berechne Gesamtlänge der Leitungen
-            pipe_config = self.pipe_config_var.get()
-            pipe_length_factor = self._get_pipe_length_factor(pipe_config)
-            total_pipe_length = self.result.required_depth * num_bh * pipe_length_factor
-            text += f"Gesamtlänge (Leitungen): {total_pipe_length:.1f} m\n"
-            text += f"  ({pipe_length_factor} Leitungen pro Bohrung)\n\n"
-            
-            text += "🌡️  TEMPERATUREN\n"
-            text += "-" * 80 + "\n"
-            text += f"Min. Fluidtemperatur:  {self.result.fluid_temperature_min:.2f} °C\n"
-            text += f"Max. Fluidtemperatur:  {self.result.fluid_temperature_max:.2f} °C\n\n"
-            
-            text += "♨️  WIDERSTÄNDE\n"
-            text += "-" * 80 + "\n"
-            text += f"R_Bohrloch:            {self.result.borehole_resistance:.6f} m·K/W\n"
-            text += f"R_effektiv:            {self.result.effective_resistance:.6f} m·K/W\n\n"
-            
-            text += "⚡ ENTZUGSLEISTUNG\n"
-            text += "-" * 80 + "\n"
-            text += f"Spezifisch:            {self.result.heat_extraction_rate:.2f} W/m\n\n"
-        
-        text += "=" * 80 + "\n"
-        
-        self.results_text.insert("1.0", text)
-        self.results_text.config(state=tk.DISABLED)
-    
+        """Zeigt Ergebnisse an. (Delegiert an CalculationController)"""
+        self.calc_controller.display_results()
+
     def _plot_results(self):
         """Aktualisiert alle Diagramme im neuen Diagramm-Tab."""
         # Aktualisiere alle Diagramme im neuen System
@@ -3553,117 +2815,13 @@ class GeothermieGUIProfessional:
             self._update_all_diagrams()
     
     def _export_pdf(self):
-        """Exportiert PDF mit allen Daten."""
-        if not self.result:
-            messagebox.showwarning("Keine Daten", "Bitte zuerst Berechnung durchführen.")
-            return
-        
-        # Dateiname
-        proj_name = self.project_entries["project_name"].get() or "Projekt"
-        filename = filedialog.asksaveasfilename(
-            title="PDF-Bericht speichern",
-            defaultextension=".pdf",
-            initialfile=f"Bericht_{proj_name.replace(' ', '_')}_V3.pdf",
-            filetypes=[("PDF", "*.pdf")]
-        )
-        
-        if filename:
-            try:
-                self.status_var.set("📄 Erstelle PDF-Bericht...")
-                self.root.update()
-                
-                # Projektinfo
-                project_info = {key: entry.get() for key, entry in self.project_entries.items()}
-                
-                # Bohrfeld
-                borehole_config = {key: float(entry.get()) for key, entry in self.borehole_entries.items()}
-                
-                # Fluid-Info für PDF
-                fluid_info = None
-                if hasattr(self, 'fluid_var') and self.fluid_var.get():
-                    fluid_name = self.fluid_var.get()
-                    fluid = self.fluid_db.get_fluid(fluid_name)
-                    if fluid:
-                        try:
-                            temp = float(self.entries.get("fluid_temperature", ttk.Entry()).get() or "5.0")
-                        except (ValueError, AttributeError):
-                            temp = 5.0
-                        props = fluid.get_properties_at_temp(temp)
-                        fluid_info = {
-                            'name': fluid.name,
-                            'type': fluid.type,
-                            'concentration_percent': fluid.concentration_percent,
-                            'min_temp': fluid.min_temp,
-                            'max_temp': fluid.max_temp,
-                            **props
-                        }
-                
-                # Sammle Diagramme für PDF
-                diagram_data = {}
-                if hasattr(self, 'diagram_figures'):
-                    # Aktualisiere alle Diagramme zuerst
-                    self._update_all_diagrams()
-                    
-                    # Sammle Diagramme
-                    diagram_mapping = {
-                        'Monatliche Temperaturen': 'monthly_temperatures',
-                        'Bohrloch-Schema': 'borehole_schema',
-                        'Pumpen-Kennlinien': 'pump_characteristics',
-                        'Reynolds-Kurve': 'reynolds_curve',
-                        'Druckverlust-Komponenten': 'pressure_components',
-                        'Volumenstrom vs. Druckverlust': 'flow_vs_pressure',
-                        'Pumpenleistung über Betriebszeit': 'pump_power_time',
-                        'Temperaturspreizung Sole': 'temperature_spread',
-                        'COP vs. Sole-Eintrittstemperatur': 'cop_inlet_temp',
-                        'COP vs. Vorlauftemperatur': 'cop_flow_temp',
-                        'JAZ-Abschätzung': 'jaz_estimation',
-                        'Energieverbrauch-Vergleich': 'energy_consumption'
-                    }
-                    
-                    for diagram_info in self.diagram_figures:
-                        title = diagram_info['title']
-                        if title in diagram_mapping:
-                            key = diagram_mapping[title]
-                            # Prüfe ob Diagramm Daten hat (nicht nur Platzhalter)
-                            try:
-                                ax = diagram_info['figure'].gca()
-                                if ax.get_lines() or ax.patches or len(ax.texts) > 1:
-                                    diagram_data[key] = diagram_info['figure']
-                            except:
-                                pass
-                
-                # PDF erstellen (mit optionalen Verfüllmaterial-, Hydraulik-, Bohrfeld-, VDI4640-, Fluid- und Diagramm-Daten)
-                self.pdf_generator.generate_report(
-                    filename, self.result, self.current_params,
-                    project_info, borehole_config,
-                    grout_calculation=getattr(self, 'grout_calculation', None),
-                    hydraulics_result=getattr(self, 'hydraulics_result', None),
-                    borefield_result=getattr(self, 'borefield_result', None),
-                    vdi4640_result=getattr(self, 'vdi4640_result', None),
-                    fluid_info=fluid_info,
-                    diagram_data=diagram_data
-                )
-                
-                self.status_var.set(f"✓ PDF erstellt: {os.path.basename(filename)}")
-                messagebox.showinfo("Erfolg", f"PDF-Bericht wurde erstellt!")
-                
-            except Exception as e:
-                messagebox.showerror("Fehler", f"PDF-Fehler: {str(e)}")
-                self.status_var.set("❌ PDF-Export fehlgeschlagen")
-    
+        """Exportiert PDF. (Delegiert an CalculationController)"""
+        self.calc_controller.export_pdf()
+
     def _export_results(self):
-        """Exportiert Text."""
-        if not self.result:
-            messagebox.showwarning("Keine Daten", "Keine Ergebnisse vorhanden.")
-            return
-        
-        filename = filedialog.asksaveasfilename(defaultextension=".txt",
-                                               filetypes=[("Text", "*.txt")])
-        if filename:
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(self.results_text.get("1.0", tk.END))
-            self.status_var.set(f"✓ Text exportiert")
-    
+        """Exportiert Text. (Delegiert an CalculationController)"""
+        self.calc_controller.export_results_text()
+
     def _create_borefield_tab(self):
         """Erstellt den Bohrfeld-Simulation Tab mit g-Funktionen."""
         # Import hier, um OptionalDependency zu behandeln
@@ -3936,12 +3094,12 @@ und wird rechts visualisiert.""")
     def _show_about(self):
         """Zeigt Über-Dialog."""
         about = """Geothermie Erdsonden-Tool
-Professional Edition V3.3.0-beta3
+Professional Edition V3.4.0-beta1
 
 Für eine vollständige Liste aller Änderungen und neuen Features
 siehe bitte den Changelog:
 
-CHANGELOG_V3.3.0-beta3.md
+CHANGELOG_V3.4.0-beta1.md
 
 © 2026 - Open Source (MIT Lizenz)"""
         messagebox.showinfo("Über", about)
@@ -4159,482 +3317,28 @@ In diesem Tool verfügbar über:
         }
     
     def _export_bohranzeige_pdf(self, data: Dict[str, Any]):
-        """Exportiert die Bohranzeige als PDF."""
-        filepath = filedialog.asksaveasfilename(
-            defaultextension=".pdf",
-            filetypes=[("PDF Dateien", "*.pdf"), ("Alle Dateien", "*.*")],
-            title="Bohranzeige als PDF speichern",
-            initialfile=f"Bohranzeige_{datetime.now().strftime('%Y%m%d')}.pdf"
-        )
-        
-        if not filepath:
-            return
-        
-        try:
-            # Technik-Daten für PDF aufbereiten (numerisch statt Strings)
-            technik_raw = data.get('technik', {})
-            technik_pdf = {}
-            for key, val in technik_raw.items():
-                if isinstance(val, str):
-                    # "152 mm" → 152.0, "6.0 kW" → 6.0
-                    try:
-                        num = float(val.split()[0].replace(",", ""))
-                        technik_pdf[key] = num
-                    except (ValueError, IndexError):
-                        technik_pdf[key] = val
-                else:
-                    technik_pdf[key] = val
-            
-            pdf_data = {
-                'antragsteller': data.get('antragsteller', {}),
-                'grundstueck': data.get('grundstueck', {}),
-                'koordinaten': data.get('koordinaten', {}),
-                'bohrunternehmen': data.get('bohrunternehmen', {}),
-                'ausfuehrung': data.get('ausfuehrung', {}),
-                'technik': technik_pdf,
-                'gewaesserschutz': data.get('gewaesserschutz', {}),
-            }
-            
-            success = self.bohranzeige_pdf.generate(filepath, pdf_data)
-            
-            if success:
-                messagebox.showinfo("Erfolg", f"✅ Bohranzeige gespeichert:\n{os.path.basename(filepath)}")
-                self.status_var.set(f"📄 Bohranzeige: {os.path.basename(filepath)}")
-            else:
-                messagebox.showerror("Fehler", "❌ PDF-Erstellung fehlgeschlagen")
-                
-        except Exception as e:
-            messagebox.showerror("Fehler", f"❌ Bohranzeige-Fehler:\n{str(e)}")
-    
-    def _export_get_file(self):
-        """Exportiert aktuelles Projekt als .get Datei."""
-        filepath = filedialog.asksaveasfilename(
-            defaultextension=".get",
-            filetypes=[("GET Projekt", "*.get"), ("Alle Dateien", "*.*")],
-            title="Projekt speichern"
-        )
-        
-        if not filepath:
-            return
-        
-        try:
-            # Sammle alle Daten aus GUI
-            params = {}
-            for key, entry in self.entries.items():
-                try:
-                    params[key] = float(entry.get())
-                except:
-                    params[key] = entry.get() if entry.get() else 0.0
-            
-            # Projektdaten
-            project_data = {}
-            for key, entry in self.project_entries.items():
-                project_data[key] = entry.get()
-            
-            # Bohrfeld-Daten
-            borehole_data = {}
-            for key, entry in self.borehole_entries.items():
-                try:
-                    borehole_data[key] = float(entry.get())
-                except:
-                    borehole_data[key] = entry.get() if entry.get() else 0.0
-            
-            # Wärmepumpen-Daten
-            hp_data = {}
-            for key, entry in self.heat_pump_entries.items():
-                try:
-                    hp_data[key] = float(entry.get())
-                except:
-                    hp_data[key] = entry.get() if entry.get() else 0.0
-            
-            # Exportiere
-            success = self.get_handler.export_to_get(
-                filepath=filepath,
-                metadata={
-                    "project_name": project_data.get("project_name", ""),
-                    "location": f"{project_data.get('city', '')} {project_data.get('postal_code', '')}",
-                    "designer": project_data.get("customer_name", ""),
-                    "date": project_data.get("date", ""),
-                    "notes": f"{project_data.get('address', '')}"
-                },
-                ground_props={
-                    "thermal_conductivity": params.get("ground_thermal_cond", 2.5),
-                    "heat_capacity": params.get("ground_heat_cap", 2.4e6),
-                    "undisturbed_temp": params.get("ground_temp", 10.0),
-                    "geothermal_gradient": params.get("geothermal_gradient", 0.03),
-                    "soil_type": self.soil_type_var.get() if hasattr(self, 'soil_type_var') else ""
-                },
-                borehole_config={
-                    "diameter_mm": params.get("borehole_diameter", 152.0),
-                    "depth_m": params.get("initial_depth", 100.0),
-                    "pipe_configuration": self.pipe_config_var.get(),
-                    "shank_spacing_mm": float(self.entries.get("shank_spacing", ttk.Entry()).get() or "65"),  # Wert in mm direkt aus Entry
-                    "num_boreholes": int(borehole_data.get("num_boreholes", 1))
-                },
-                pipe_props={
-                    "material": self.pipe_type_var.get() if hasattr(self, 'pipe_type_var') else "PE-100",
-                    "outer_diameter_mm": params.get("pipe_outer_diameter", 32.0),
-                    "wall_thickness_mm": params.get("pipe_thickness", 2.9),
-                    "thermal_conductivity": params.get("pipe_thermal_cond", 0.42),
-                    "inner_diameter_mm": params.get("pipe_outer_diameter", 32.0) - 2 * params.get("pipe_thickness", 2.9)
-                },
-                grout_material={
-                    "name": self.grout_type_var.get() if hasattr(self, 'grout_type_var') else "",
-                    "thermal_conductivity": params.get("grout_thermal_cond", 2.0),
-                    "density": 1800.0,
-                    "volume_per_borehole_liters": self.grout_calculation.get('volume_liters', 0.0) if self.grout_calculation else 0.0
-                },
-                fluid_props={
-                    "type": "Wasser/Glykol",
-                    "thermal_conductivity": params.get("fluid_thermal_cond", 0.48),
-                    "heat_capacity": params.get("fluid_heat_cap", 3795.0),
-                    "density": params.get("fluid_density", 1042.0),
-                    "viscosity": params.get("fluid_viscosity", 0.00345),
-                    "flow_rate_m3h": params.get("fluid_flow_rate", 1.8),  # bereits in m³/h
-                    "freeze_temperature": -15.0
-                },
-                # NEU: Fluid-Datenbank-Informationen
-                fluid_database_info={
-                    "fluid_name": self.fluid_var.get() if hasattr(self, 'fluid_var') and self.fluid_var.get() else None,
-                    "operating_temperature": float(self.entries.get("fluid_temperature", ttk.Entry()).get() or "5.0") if "fluid_temperature" in self.entries else 5.0
-                } if (hasattr(self, 'fluid_var') and self.fluid_var.get()) else None,
-                loads={
-                    "annual_heating_kwh": params.get("annual_heating", 45000.0),
-                    "annual_cooling_kwh": params.get("annual_cooling", 0.0),
-                    "peak_heating_kw": params.get("peak_heating", 12.5),
-                    "peak_cooling_kw": params.get("peak_cooling", 0.0),
-                    "heat_pump_cop": hp_data.get("cop_heating", 4.5)
-                },
-                temp_limits={
-                    "min_fluid_temp": params.get("min_fluid_temp", -3.0),
-                    "max_fluid_temp": params.get("max_fluid_temp", 20.0)
-                },
-                simulation={
-                    "years": int(params.get("simulation_years", 50)),
-                    "initial_depth": params.get("initial_depth", 100.0),
-                    "calculation_method": self.calculation_method_var.get() if hasattr(self, 'calculation_method_var') else "iterativ",
-                    "heat_pump_eer": params.get("heat_pump_eer", params.get("heat_pump_cop", 4.0)),
-                    "delta_t_fluid": params.get("delta_t_fluid", 3.0),
-                    "max_depth_per_borehole": float(self.borehole_entries.get("max_depth_per_borehole", ttk.Entry()).get() or "100.0") if "max_depth_per_borehole" in self.borehole_entries else 100.0
-                },
-                climate_data=self.climate_data,
-                borefield_data=self.borefield_config,
-                results={
-                    "standard": self.result.__dict__ if self.result and hasattr(self.result, '__dict__') else None,
-                    "vdi4640": self.vdi4640_result.__dict__ if hasattr(self, 'vdi4640_result') and self.vdi4640_result else None
-                },
-                # NEU: Separate Export-Felder für bessere Struktur
-                vdi4640_result=self.vdi4640_result.__dict__ if hasattr(self, 'vdi4640_result') and self.vdi4640_result else None,
-                hydraulics_result=self.hydraulics_result if hasattr(self, 'hydraulics_result') and self.hydraulics_result else None,
-                grout_calculation=self.grout_calculation if hasattr(self, 'grout_calculation') and self.grout_calculation else None,
-                # NEU in V3.3: Diagramm-Konfigurationen
-                diagrams={
-                    "pump_characteristics": {"enabled": True},
-                    "reynolds_curve": {"enabled": True, "glycol_concentrations": [0, 25, 30, 40]},
-                    "pressure_components": {"enabled": True, "chart_type": "pie"},
-                    "flow_vs_pressure": {"enabled": True},
-                    "pump_power_time": {"enabled": True},
-                    "temperature_spread": {"enabled": True},
-                    "cop_inlet_temp": {"enabled": True},
-                    "cop_flow_temp": {"enabled": True},
-                    "jaz_estimation": {"enabled": True},
-                    "energy_consumption": {"enabled": True, "show_10_year": True}
-                },
-                # NEU in V3.3.6: Bohranzeige-Daten
-                bohranzeige_data=self.bohranzeige_tab.collect_all_data() if hasattr(self, 'bohranzeige_tab') else None
-            )
-            
-            if success:
-                messagebox.showinfo("Erfolg", f"✅ Projekt gespeichert:\n{os.path.basename(filepath)}")
-                self.status_var.set(f"💾 Gespeichert: {os.path.basename(filepath)}")
-            else:
-                messagebox.showerror("Fehler", "❌ Speichern fehlgeschlagen")
-        
-        except Exception as e:
-            messagebox.showerror("Fehler", f"❌ Export-Fehler:\n{str(e)}")
-    
-    def _import_get_file(self):
-        """Importiert ein .get Projekt."""
-        filepath = filedialog.askopenfilename(
-            filetypes=[("GET Projekt", "*.get"), ("Alle Dateien", "*.*")],
-            title="Projekt laden"
-        )
-        
-        if not filepath:
-            return
-        
-        try:
-            data = self.get_handler.import_from_get(filepath)
-            
-            if not data:
-                messagebox.showerror("Fehler", "❌ Datei konnte nicht geladen werden")
-                return
-            
-            # Zeige Versions-Info
-            version = data.get("format_version", "unbekannt")
-            if version != self.get_handler.format_version:
-                messagebox.showinfo(
-                    "Migration",
-                    f"🔄 Datei wurde von Version {version} auf {self.get_handler.format_version} migriert"
-                )
-            
-            # Fülle GUI-Felder
-            self._populate_from_get_data(data)
-            
-            messagebox.showinfo("Erfolg", f"✅ Projekt geladen:\n{os.path.basename(filepath)}")
-            self.status_var.set(f"📥 Geladen: {os.path.basename(filepath)}")
-        
-        except Exception as e:
-            messagebox.showerror("Fehler", f"❌ Import-Fehler:\n{str(e)}")
-    
-    def _populate_from_get_data(self, data: Dict[str, Any]):
-        """Füllt GUI mit Daten aus .get Datei."""
-        try:
-            # Bodeneigenschaften
-            ground = data.get("ground_properties", {})
-            self._set_entry("ground_thermal_cond", ground.get("thermal_conductivity", 2.5))
-            self._set_entry("ground_heat_cap", ground.get("heat_capacity", 2.4e6))
-            self._set_entry("ground_temp", ground.get("undisturbed_temp", 10.0))
-            self._set_entry("geothermal_gradient", ground.get("geothermal_gradient", 0.03))
-            
-            # Bohrlochkonfiguration
-            borehole = data.get("borehole_config", {})
-            self._set_entry("borehole_diameter", borehole.get("diameter_mm", 152.0))
-            self._set_entry("initial_depth", borehole.get("depth_m", 100.0))
-            self._set_entry("shank_spacing", borehole.get("shank_spacing_mm", 80.0))
-            
-            if hasattr(self, 'pipe_config_var'):
-                self.pipe_config_var.set(borehole.get("pipe_configuration", "2-rohr-u (Serie)"))
-            
-            # Rohreigenschaften
-            pipe = data.get("pipe_properties", {})
-            self._set_entry("pipe_outer_diameter", pipe.get("outer_diameter_mm", 32.0))
-            self._set_entry("pipe_thickness", pipe.get("wall_thickness_mm", 2.9))
-            self._set_entry("pipe_thermal_cond", pipe.get("thermal_conductivity", 0.42))
-            
-            # Verfüllmaterial
-            grout = data.get("grout_material", {})
-            self._set_entry("grout_thermal_cond", grout.get("thermal_conductivity", 2.0))
-            
-            # Flüssigkeit
-            fluid = data.get("heat_carrier_fluid", {})
-            self._set_entry("fluid_thermal_cond", fluid.get("thermal_conductivity", 0.48))
-            self._set_entry("fluid_heat_cap", fluid.get("heat_capacity", 3795.0))
-            self._set_entry("fluid_density", fluid.get("density", 1042.0))
-            self._set_entry("fluid_viscosity", fluid.get("viscosity", 0.00345))
-            # Volumenstrom ist bereits in m³/h
-            flow_rate_m3h = fluid.get("flow_rate_m3h", 1.8)
-            self._set_entry("fluid_flow_rate", flow_rate_m3h)
-            
-            # Lasten
-            loads = data.get("loads", {})
-            self._set_entry("annual_heating", loads.get("annual_heating_kwh", 45000.0))
-            self._set_entry("annual_cooling", loads.get("annual_cooling_kwh", 0.0))
-            self._set_entry("peak_heating", loads.get("peak_heating_kw", 12.5))
-            self._set_entry("peak_cooling", loads.get("peak_cooling_kw", 0.0))
-            
-            # Temperaturgrenzen
-            temp = data.get("temperature_limits", {})
-            self._set_entry("min_fluid_temp", temp.get("min_fluid_temp", -3.0))
-            self._set_entry("max_fluid_temp", temp.get("max_fluid_temp", 20.0))
-            
-            # Simulation
-            sim = data.get("simulation_settings", {})
-            self._set_entry("simulation_years", sim.get("years", 50))
-            
-            # Berechnungsmethode (NEU in V3.2)
-            if hasattr(self, 'calculation_method_var'):
-                method = sim.get("calculation_method", "iterativ")
-                self.calculation_method_var.set(method)
-            
-            # VDI 4640 Parameter (NEU in V3.2)
-            if "heat_pump_eer" in sim:
-                self._set_entry("heat_pump_eer", sim.get("heat_pump_eer", 4.0))
-            if "delta_t_fluid" in sim:
-                self._set_entry("delta_t_fluid", sim.get("delta_t_fluid", 3.0))
-            if "max_depth_per_borehole" in sim:
-                if "max_depth_per_borehole" in self.borehole_entries:
-                    self.borehole_entries["max_depth_per_borehole"].delete(0, tk.END)
-                    self.borehole_entries["max_depth_per_borehole"].insert(0, str(sim.get("max_depth_per_borehole", 100.0)))
-            
-            # NEU: Fluid-Datenbank-Informationen importieren
-            fluid_db_info = data.get("fluid_database_info")
-            if fluid_db_info and hasattr(self, 'fluid_var'):
-                fluid_name = fluid_db_info.get("fluid_name")
-                if fluid_name and fluid_name in self.fluid_db.get_all_names():
-                    self.fluid_var.set(fluid_name)
-                    # Trigger Fluid-Auswahl-Event
-                    self._on_fluid_selected(None)
-                # Betriebstemperatur setzen
-                if "operating_temperature" in fluid_db_info and "fluid_temperature" in self.entries:
-                    self.entries["fluid_temperature"].delete(0, tk.END)
-                    self.entries["fluid_temperature"].insert(0, str(fluid_db_info["operating_temperature"]))
-                    self._on_fluid_temperature_changed()
-            
-            # NEU: VDI 4640 Ergebnis importieren
-            vdi_result = data.get("vdi4640_result")
-            if vdi_result:
-                from calculations.vdi4640 import VDI4640Result
-                # Konvertiere Dict zurück zu VDI4640Result
-                if isinstance(vdi_result, dict):
-                    try:
-                        # Rekonstruiere VDI4640Result aus Dict (dataclass)
-                        self.vdi4640_result = VDI4640Result(**vdi_result)
-                    except Exception as e:
-                        print(f"⚠️ Konnte VDI4640Result nicht rekonstruieren: {e}")
-                        # Fallback: Speichere als Dict
-                        self.vdi4640_result = vdi_result
-                else:
-                    self.vdi4640_result = vdi_result
-            
-            # NEU: Hydraulik-Ergebnis importieren
-            hydraulics_result = data.get("hydraulics_result")
-            if hydraulics_result:
-                self.hydraulics_result = hydraulics_result
-                # Aktualisiere Hydraulik-Anzeige
-                if hasattr(self, 'hydraulics_result_text'):
-                    text = "=" * 60 + "\n"
-                    text += "HYDRAULIK-BERECHNUNG (aus .get Datei geladen)\n"
-                    text += "=" * 60 + "\n\n"
-                    flow = hydraulics_result.get('flow', {})
-                    system = hydraulics_result.get('system', {})
-                    pump = hydraulics_result.get('pump', {})
-                    if flow and system and pump:
-                        text += f"Volumenstrom: {flow.get('volume_flow_m3_h', 0):.3f} m³/h\n"
-                        text += f"Druckverlust: {system.get('total_pressure_drop_bar', 0):.2f} bar\n"
-                        text += f"Pumpenleistung: {pump.get('electric_power_w', 0):.0f} W\n"
-                    self.hydraulics_result_text.delete("1.0", tk.END)
-                    self.hydraulics_result_text.insert("1.0", text)
-            
-            # NEU: Verfüllmaterial-Berechnung importieren
-            grout_calc = data.get("grout_calculation")
-            if grout_calc:
-                self.grout_calculation = grout_calc
-                # Aktualisiere Material-Anzeige
-                if hasattr(self, 'grout_result_text'):
-                    material = grout_calc.get('material', {})
-                    amounts = grout_calc.get('amounts', {})
-                    text = "=" * 60 + "\n"
-                    text += "VERFÜLLMATERIAL-BERECHNUNG (aus .get Datei geladen)\n"
-                    text += "=" * 60 + "\n\n"
-                    if isinstance(material, dict):
-                        text += f"Material: {material.get('name', 'N/A')}\n"
-                        text += f"Volumen gesamt: {amounts.get('mass_kg', 0):.1f} kg\n"
-                    self.grout_result_text.delete("1.0", tk.END)
-                    self.grout_result_text.insert("1.0", text)
-            
-            # Klimadaten speichern
-            self.climate_data = data.get("climate_data")
-            
-            # Bohrfeld-Daten V3.2
-            self.borefield_config = data.get("borefield_v32")
-            
-            # NEU V3.3.6: Bohranzeige-Daten laden
-            bohranzeige = data.get("bohranzeige_data")
-            if bohranzeige and hasattr(self, 'bohranzeige_tab'):
-                self.bohranzeige_tab.set_data(bohranzeige)
-            
-            # Fülle Bohrfeld-Tab wenn Daten vorhanden
-            if self.borefield_config and self.borefield_config.get("enabled"):
-                self._populate_borefield_tab(self.borefield_config)
-            
-            print("✅ GUI mit .get Daten gefüllt")
-            
-        except Exception as e:
-            print(f"⚠️ Fehler beim Füllen der GUI: {e}")
-    
-    def _populate_borefield_tab(self, borefield_data: Dict[str, Any]):
-        """Füllt Bohrfeld-Tab mit geladenen Daten."""
-        try:
-            if not hasattr(self, 'borefield_entries'):
-                return
-            
-            # Layout setzen
-            if hasattr(self, 'borefield_layout_var'):
-                layout = borefield_data.get('layout', 'rectangle')
-                self.borefield_layout_var.set(layout)
-            
-            # Eingabefelder füllen
-            self.borefield_entries['num_x'].delete(0, tk.END)
-            self.borefield_entries['num_x'].insert(0, str(borefield_data.get('num_boreholes_x', 3)))
-            
-            self.borefield_entries['num_y'].delete(0, tk.END)
-            self.borefield_entries['num_y'].insert(0, str(borefield_data.get('num_boreholes_y', 2)))
-            
-            self.borefield_entries['spacing_x'].delete(0, tk.END)
-            self.borefield_entries['spacing_x'].insert(0, str(borefield_data.get('spacing_x_m', 6.5)))
-            
-            self.borefield_entries['spacing_y'].delete(0, tk.END)
-            self.borefield_entries['spacing_y'].insert(0, str(borefield_data.get('spacing_y_m', 6.5)))
-            
-            # Durchmesser setzen (entweder aus Daten oder aus Hauptmaske)
-            if 'borehole_diameter_mm' in borefield_data:
-                self.borefield_entries['diameter'].delete(0, tk.END)
-                self.borefield_entries['diameter'].insert(0, str(borefield_data.get('borehole_diameter_mm', 152.0)))
-            elif 'borehole_radius_m' in borefield_data:
-                # Alte Dateien mit Radius konvertieren
-                radius_m = borefield_data.get('borehole_radius_m', 0.076)
-                diameter_mm = radius_m * 2000.0
-                self.borefield_entries['diameter'].delete(0, tk.END)
-                self.borefield_entries['diameter'].insert(0, str(diameter_mm))
-            else:
-                # Nutze Wert aus Hauptmaske
-                if 'borehole_diameter' in self.entries:
-                    try:
-                        self.borefield_entries['diameter'].delete(0, tk.END)
-                        self.borefield_entries['diameter'].insert(0, self.entries['borehole_diameter'].get())
-                    except:
-                        pass
-            
-            # Diffusivität berechnen aus Bodendaten wenn vorhanden
-            diffusivity = borefield_data.get('soil_thermal_diffusivity', 1.0e-6)
-            self.borefield_entries['diffusivity'].delete(0, tk.END)
-            self.borefield_entries['diffusivity'].insert(0, str(diffusivity))
-            
-            self.borefield_entries['years'].delete(0, tk.END)
-            self.borefield_entries['years'].insert(0, str(borefield_data.get('simulation_years', 25)))
-            
-            # Info in Ergebnis-Textfeld
-            if hasattr(self, 'borefield_result_text'):
-                self.borefield_result_text.config(state="normal")
-                self.borefield_result_text.delete("1.0", tk.END)
-                self.borefield_result_text.insert("1.0", 
-                    f"📥 Bohrfeld-Konfiguration geladen!\n\n"
-                    f"Layout: {borefield_data.get('layout', 'N/A').upper()}\n"
-                    f"Bohrungen: {borefield_data.get('num_boreholes_x', 0)}×{borefield_data.get('num_boreholes_y', 0)}\n"
-                    f"Abstand: {borefield_data.get('spacing_x_m', 0)} × {borefield_data.get('spacing_y_m', 0)} m\n\n"
-                    f"Klicke 'g-Funktion berechnen'\num die Simulation zu starten."
-                )
-                self.borefield_result_text.config(state="disabled")
-            
-            print(f"✅ Bohrfeld-Tab gefüllt: {borefield_data.get('layout', 'N/A').upper()}")
-            
-        except Exception as e:
-            print(f"⚠️ Fehler beim Füllen des Bohrfeld-Tabs: {e}")
-    
-    def _set_entry(self, key: str, value: Any):
-        """Hilfsmethode zum Setzen von Entry-Werten."""
-        entry = None
-        was_readonly = False
-        
-        if key in self.entries:
-            entry = self.entries[key]
-        elif key in self.project_entries:
-            entry = self.project_entries[key]
-        elif key in self.borehole_entries:
-            entry = self.borehole_entries[key]
-        elif key in self.heat_pump_entries:
-            entry = self.heat_pump_entries[key]
-        
-        if entry:
-            # Temporär readonly aufheben, falls nötig
-            was_readonly = entry.cget("state") == "readonly"
-            if was_readonly:
-                entry.config(state="normal")
-            entry.delete(0, tk.END)
-            entry.insert(0, str(value))
-            # Feld bleibt immer editierbar (readonly wird nicht wieder gesetzt)
+        """Exportiert die Bohranzeige als PDF. (Delegiert an FileController)"""
+        self.file_controller.export_bohranzeige_pdf(data)
 
+    def _export_get_file(self):
+        """Exportiert Projekt als .get Datei. (Delegiert an FileController)"""
+        self.file_controller.export_get_file()
+
+    def _import_get_file(self):
+        """Importiert ein .get Projekt. (Delegiert an FileController)"""
+        self.file_controller.import_get_file()
+
+    def _populate_from_get_data(self, data: Dict[str, Any]):
+        """Füllt GUI mit Daten. (Delegiert an FileController)"""
+        self.file_controller._populate_from_get_data(data)
+
+    def _populate_borefield_tab(self, borefield_data: Dict[str, Any]):
+        """Füllt Bohrfeld-Tab. (Delegiert an FileController)"""
+        self.file_controller.populate_borefield_tab(borefield_data)
+
+    def _set_entry(self, key: str, value: Any):
+        """Setzt Entry-Werte. (Delegiert an FileController)"""
+        self.file_controller._set_entry(key, value)
 
 def main():
     """Haupteinstiegspunkt."""

@@ -125,22 +125,30 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 ## 📅 Geplante Releases
 
-### Version 3.4
+### Version 3.4 (in Entwicklung)
 
 > **Schwerpunkt: Code-Qualität, Monatliche Lastprofile & GUI-Modernisierung**
 > **Geplant: Q2 2026 | GUI: tkinter (beibehalten)**
 
-#### 🏗️ Phase 1 – Architektur-Refactoring (Grundlage für alle Features)
+#### 🏗️ Phase 1 – Architektur-Refactoring ✓
 
-- [ ] **God-Class auflösen** – `main_window_v3_professional.py` (4.649 Zeilen, 97 Methoden) aufteilen:
-  - [ ] `gui/tabs/input_tab.py` – Eingabefelder, Dropdowns, Validierung
-  - [ ] `gui/tabs/results_tab.py` – Ergebnis-Anzeige, Text-Ausgabe
-  - [ ] `gui/tabs/diagrams_tab.py` – Alle 14 Matplotlib-Diagramme
-  - [ ] `gui/tabs/materials_tab.py` – Verfüllmaterial, Rohre, Fluide
-  - [ ] `gui/tabs/bohranzeige_tab.py` – Bohranzeige (bereits existierend, integrieren)
-  - [ ] `gui/controllers/calculation_controller.py` – Berechnungssteuerung
-  - [ ] `gui/controllers/file_controller.py` – Import/Export (.get-Dateien)
-- [ ] **Legacy-GUIs entfernen** – `main_window.py` (V1) und `main_window_extended.py` (V2) entfernen
+> **Fertiggestellt: Februar 2026 (V3.4.0-beta1)**
+
+- [x] **God-Class aufgelöst** – `main_window_v3_professional.py` (4.648 → 3.353 Zeilen) aufgeteilt:
+  - [x] `gui/tabs/input_tab.py` – Eingabefelder, Dropdowns, Validierung
+  - [x] `gui/tabs/results_tab.py` – Ergebnis-Anzeige, Text-Ausgabe
+  - [x] `gui/tabs/diagrams_tab.py` – Alle 12 Matplotlib-Diagramme
+  - [x] `gui/tabs/materials_tab.py` – Verfüllmaterial, Rohre, Fluide
+  - [x] `gui/tabs/borefield_tab.py` – Bohrfeld-Simulation (g-Funktionen)
+  - [x] `gui/controllers/calculation_controller.py` – Berechnungssteuerung
+  - [x] `gui/controllers/file_controller.py` – Import/Export (.get-Dateien)
+- [x] **Legacy-GUIs entfernt** – `main_window.py` (V1) und `main_window_extended.py` (V2) gelöscht
+- [x] **Unit-Tests mit pytest** (71 Tests)
+  - [x] `tests/test_thermal.py` – 16 Tests (thermische Widerstände)
+  - [x] `tests/test_hydraulics.py` – 24 Tests (Druckverlust, Reynolds)
+  - [x] `tests/test_borehole.py` – 10 Tests (iterative Berechnung)
+  - [x] `tests/test_validators.py` – 21 Tests (Input-Validierung)
+  - [x] CI/CD-Pipeline (GitHub Actions) auf pytest umgestellt
 - [ ] **Input-Validierung integrieren** – `utils/validators.py` in GUI einbinden
   - [ ] Wertebereiche bei Eingabe prüfen (rot markieren bei Fehler)
   - [ ] Plausibilitäts-Checks vor Berechnung (z.B. T_min < T_boden)
@@ -150,14 +158,6 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [ ] Maximale spezifische Entzugsleistung (W/m) pro Bodentyp
   - [ ] Frostschutzprüfung: Sole-Austrittstemperatur > -2°C
 - [ ] **Auto-Save** – Periodischer Auto-Save der `.get`-Datei (alle 5 Min.)
-- [ ] **Unit-Tests für Berechnungskern** (pytest)
-  - [ ] `tests/test_thermal.py` – Thermische Widerstände
-  - [ ] `tests/test_hydraulics.py` – Druckverlust, Reynolds
-  - [ ] `tests/test_borehole.py` – Iterative Berechnung
-  - [ ] `tests/test_g_functions.py` – g-Funktionen
-  - [ ] `tests/test_validators.py` – Input-Validierung
-  - [ ] Bestehende Tests in `testing/` nach pytest migrieren
-  - [ ] CI/CD-Pipeline (GitHub Actions) erweitern
 - [ ] **i18n-Infrastruktur vorbereiten** – `gettext`-Wrapper für alle UI-Strings
 
 #### 📊 Phase 2 – Monatliche Lastprofile (Hauptfeature)
@@ -266,21 +266,12 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 ### Version 4.0
 
-> **Schwerpunkt: Plugin-System & Community-Erweiterbarkeit**
+> **Schwerpunkt: Wartung & Stabilität**
 > **Geplant: 2027–2028**
-
-#### 🔌 Plugin-System
-- [ ] Plugin-API für Community-Erweiterungen
-- [ ] Plugin-Lader mit Versionierung
-- [ ] Beispiel-Plugins (z.B. regionale Bodentypen, eigene Berechnungen)
-
-#### 📐 CAD-Integration
-- [ ] CAD-Import/Export-Schnittstelle
-- [ ] Grundriss-Anbindung
 
 > [!NOTE]
 > Folgende Features aus V4.0 wurden in **GET Cloud** (proprietär) verschoben:
-> 3D-Visualisierung, REST-API, BIM-Export (IFC), Kostenberechnung, Angebots-PDF
+> Plugin-System, Plugin-API, CAD-Integration, 3D-Visualisierung, REST-API, BIM-Export (IFC), Kostenberechnung, Angebots-PDF
 
 ---
 
@@ -334,7 +325,6 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 - ✅ PDF-Export & Bohranzeige-Generator
 - ✅ Vergleichsberichte (Basis)
 - ✅ Alle Datenbanken (Boden, Rohre, Fluide, Pumpen)
-- ✅ Plugin-System (V4.0)
 - ✅ Interferenz-Berechnung, erweiterte Hydraulik (V3.6)
 - ✅ Jeder Bugfix und jede neue Berechnungsnorm
 
@@ -342,6 +332,8 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 
 - 🔒 Web-Frontend (Vue.js / Next.js)
 - 🔒 Cloud-Infrastruktur & Hosting (Hetzner, DSGVO-konform)
+- 🔒 Plugin-System & Plugin-API
+- 🔒 CAD-Integration & CAD-Import/Export
 - 🔒 Wärmepumpen-Hersteller-Datenbank (reale Kennlinien)
 - 🔒 GEG/BEG-Prüflogik & Förderrechner
 - 🔒 Wirtschaftlichkeitsberechnung & Angebots-PDF
@@ -426,8 +418,8 @@ Features werden priorisiert nach:
 
 ## 🎯 Kurzfristige Ziele (Q1–Q2 2026)
 
-- [ ] V3.4 Phase 1: Architektur-Refactoring starten
-- [ ] Unit-Tests aufbauen (pytest + CI/CD)
+- [x] V3.4 Phase 1: Architektur-Refactoring ✓ (God-Class aufgelöst, 71 Tests)
+- [x] Unit-Tests aufbauen (pytest + CI/CD) ✓
 - [ ] Community aufbauen & Feedback sammeln
 - [ ] Dokumentation erweitern
 - [ ] Video-Tutorials erstellen
@@ -438,6 +430,7 @@ Features werden priorisiert nach:
 ## 📝 Changelog
 
 Aktuelle Änderungen siehe:
+- [CHANGELOG_V3.4.0-beta1](../CHANGELOG_V3.4.0-beta1.md)
 - [CHANGELOG_V3.3.0-beta1](../CHANGELOG_V3.3.0-beta1.md)
 - [CHANGELOG_V3.3.0-beta2](../CHANGELOG_V3.3.0-beta2.md)
 - [CHANGELOG_V3.3.0-beta3](../CHANGELOG_V3.3.0-beta3.md)
@@ -461,4 +454,4 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 
 **Diese Roadmap ist ein lebendiges Dokument und wird regelmäßig aktualisiert basierend auf Community-Feedback und Entwicklungs-Fortschritt.**
 
-**Stand**: Februar 2026 (V3.3.6.2, Planung V3.4 & GET Cloud)
+**Stand**: Februar 2026 (V3.4.0-beta1, Planung V3.4 Phase 2–4 & GET Cloud)

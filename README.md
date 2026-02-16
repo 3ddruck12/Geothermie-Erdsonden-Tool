@@ -10,7 +10,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/workflows/Tests/badge.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/actions)
 [![GitHub release](https://img.shields.io/github/release/3ddruck12/Geothermie-Erdsonden-Tool.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases)
-![Version](https://img.shields.io/badge/version-3.3.6.2-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.4.0--beta1-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -59,7 +59,15 @@
 
 ## ✨ Features
 
-### 🆕 Neu in V3.3.6.1 (Februar 2026)
+### 🆕 Neu in V3.4.0-beta1 (Februar 2026)
+- 🏗️ **Architektur-Refactoring**: God-Class aufgelöst (4648 → 3353 Zeilen)
+  - 5 Tab-Module: `InputTab`, `ResultsTab`, `MaterialsTab`, `DiagramsTab`, `BorefieldTab`
+  - 2 Controller: `CalculationController`, `FileController`
+- 🧹 **Legacy entfernt**: V1/V2 GUI gelöscht, Import-Fallback-Kette entfernt
+- ✅ **71 pytest Unit-Tests** für Berechnungskern (thermal, hydraulics, borehole, validators)
+- 🔄 **CI/CD**: GitHub Actions pytest-Integration
+
+### Neu in V3.3.6.1 (Februar 2026)
 - 🗺️ **Interaktive OSM-Karte**: OpenStreetMap-Karte im Eingabe-Tab mit Marker-Platzierung per Rechtsklick
 - 📄 **Lageplan in Bohranzeige-PDF**: Automatischer OSM-Lageplan mit Standort-Marker und Koordinaten
 - 🔄 **Auto-Übernahme Projektdaten**: Eingabe-Tab → Bohranzeige beim Tab-Wechsel (Kunde, Adresse, Koordinaten)

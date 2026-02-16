@@ -202,16 +202,18 @@ jobs:
           ```
           
           ### Features
+          - ✅ Architektur-Refactoring (God-Class aufgelöst)
+          - ✅ 71 pytest Unit-Tests
+          - ✅ 5 Tab-Module + 2 Controller
           - ✅ Berechnung von Erdwärmesonden bis 100m
           - ✅ PE 100 RC Rohre mit Dual- und 4-Verbinder
           - ✅ PDF-Berichtserstellung
           - ✅ PVGIS Klimadaten-Integration
           - ✅ Bodendatenbank nach VDI 4640
-          - ✅ Verfüllmaterial-Datenbank
-          - ✅ Info-Buttons mit Hilfe
           - ✅ VDI 4640 Berechnungsmethode
           - ✅ Bohrfeld-Simulation mit g-Funktionen
-          - ✅ Fluid-Datenbank
+          - ✅ Wasserrechtliche Bohranzeige (§ 49 WHG)
+          - ✅ OSM-Karte & Lageplan
           
           [Vollständige Dokumentation](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/tree/main/docs)
       env:

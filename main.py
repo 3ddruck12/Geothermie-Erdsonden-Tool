@@ -22,21 +22,8 @@ logger = logging.getLogger("geothermie")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # Importiere die GUI
-try:
-    # Versuche zuerst die Professional V3 GUI mit allen Features
-    from gui.main_window_v3_professional import GeothermieGUIProfessional as GUI
-    logger.info("Starte Professional GUI V3")
-except ImportError as e:
-    logger.warning("Import der V3 Professional GUI fehlgeschlagen: %s", e)
-    try:
-        # Fallback auf Extended V2 GUI
-        from gui.main_window_extended import GeothermieGUIExtended as GUI
-        logger.info("Starte Extended GUI V2 (Fallback)")
-    except ImportError as e2:
-        logger.warning("Import der Extended GUI fehlgeschlagen: %s", e2)
-        # Letzter Fallback auf Original
-        from gui.main_window import GeothermieGUI as GUI
-        logger.info("Starte Original GUI V1 (Fallback)")
+from gui.main_window_v3_professional import GeothermieGUIProfessional as GUI
+logger.info("Starte Professional GUI V3.4")
 
 
 def main():

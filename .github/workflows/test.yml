@@ -53,9 +53,15 @@ jobs:
         python -m py_compile calculations/*.py
         python -m py_compile data/*.py
         python -m py_compile gui/*.py
+        for f in gui/tabs/*.py gui/controllers/*.py; do [ -f "$f" ] && python -m py_compile "$f"; done
         python -m py_compile parsers/*.py
         python -m py_compile utils/*.py
       shell: bash
+    
+    - name: Run pytest
+      run: |
+        pip install pytest -q
+        python -m pytest tests/ -v
 
 
 
