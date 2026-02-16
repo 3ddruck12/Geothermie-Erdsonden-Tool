@@ -359,14 +359,36 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 - [ ] **Q2 2026**: FastAPI-Backend (Berechnungskern als Web-Service)
 - [ ] **Q3 2026**: Web-Frontend, Stripe-Integration, Beta-Launch
 - [ ] **Q4 2026**: Öffentlicher Launch (Free + Professional)
-- [ ] **Q1 2027**: Business-Plan (Wirtschaftlichkeit, GEG/BEG, Sensitivität, Geologie)
 - [ ] **Q2 2027**: Enterprise-Plan (3D-Vis, REST-API, BIM, Kosten, Angebots-PDF)
+- [ ] **Vision 2028+**: **GET IoT & Big Data Ecosystem**
+  - **Phase 1-2**: Digitales Schichtenverzeichnis & Cloud-Archiv (Q3-Q4 2027)
+  - **Phase 3**: Community-Geodatenbank (Real-world drilling data sharing) (2028)
+  - **Phase 4**: Hardware-Integration (IoT-Echtzeitdaten via ESP32) (2028+)
+  - **Phase 5**: KI-gestützte Bodenparameter-Vorhersage & Optimierung (2029+)
 
 Details zur Monetarisierung siehe privates Repository `GET-Cloud`.
 
 ---
 
 ## 🔮 Langfristige Vision
+
+### 🛰️ GET IoT – Die 5 Phasen der Bohrdatenerfassung
+
+- [ ] **Phase 1: Digitales Schichtenverzeichnis** (Q3 2027)
+  - Web-Formular für Bodenschichten & Wasserführung direkt am Bohrgerät
+  - Automatischer PDF-Export (behördengerechtes Schichtenverzeichnis, SEP-3)
+- [ ] **Phase 2: Bohrdaten-Archiv & Dokumentation** (Q4 2027)
+  - Fotodokumentation des Bohrguts pro Tiefenmeter
+  - Georeferenzierte Speicherung aller Bohrprotokolle
+- [ ] **Phase 3: Community-Geodatenbank** (2028)
+  - Anonymisiertes Datensharing (Heatmap: Bodenarten & λ-Werte)
+  - Daten-Netzwerkeffekt: Jede Bohrung verbessert die Vorhersage für alle
+- [ ] **Phase 4: Hardware-Integration (IoT)** (2028+)
+  - **ESP32-Interface**: Bohrfortschritt, Druck & Temperatur in Echtzeit
+  - Live-Dashboard in GET Cloud während des Bohrprozesses
+- [ ] **Phase 5: Machine Learning & KI** (2029+)
+  - Prädiktive Geologie: λ-Vorhersage basierend auf Community-Daten
+  - Selbstlernende Algorithmen zur Effizienzsteigerung bei der Auslegung
 
 ### Internationalisierung
 - [ ] Englische Übersetzung (EN) – i18n-Infrastruktur wird in V3.4 vorbereitet
