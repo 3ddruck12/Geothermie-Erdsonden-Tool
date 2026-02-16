@@ -10,7 +10,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/workflows/Tests/badge.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/actions)
 [![GitHub release](https://img.shields.io/github/release/3ddruck12/Geothermie-Erdsonden-Tool.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases)
-![Version](https://img.shields.io/badge/version-3.3.6.1-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.3.6.2-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -22,6 +22,7 @@
 
 - [Systemanforderungen](#-systemanforderungen)
 - [Features](#-features)
+- [GET Cloud ☁️](#-get-cloud-)
 - [Installation](#-installation)
 - [Schnellstart](#-schnellstart)
 - [Dokumentation](#-dokumentation)
@@ -92,7 +93,27 @@
 - 🔥 **pygfunction Integration**: Bohrfeld-Simulationen mit g-Funktionen
 - 🔥 **Abwärtskompatibilität**: Automatische Migration von V3.0/3.1 Dateien
 
-### 🔧 Berechnungen
+---
+
+## ☁️ GET Cloud – Die Zukunft von GET
+
+Neben der Open-Source Desktop-App planen wir **GET Cloud**, ein modernes Web-Service-Angebot für professionelle Anwender. 
+
+**Vorteile der Cloud-Version:**
+- 🔒 **SaaS-Features**: Zugriff von überall ohne Installation
+- 🔒 **Hersteller-Datenbanken**: Reale Wärmepumpen-Kennlinien (Viessmann, Vaillant, etc.)
+- 🔒 **Wirtschaftlichkeit**: Umfassende Amortisations-Analysen & Angebots-PDFs
+- 🔒 **GEG/BEG-Check**: Automatische Prüfung der Förderfähigkeit und Norm-Compliance
+- 🔒 **Team-Collaboration**: Projekte gemeinsam bearbeiten und in der Cloud speichern
+
+> [!TIP]
+> Der Berechnungskern bleibt **Open Source (MIT)** und wird weiterhin parallel für die Desktop-App entwickelt. Die Cloud-Version bietet professionelle Mehrwert-Services auf dieser Basis.
+
+Details findest du in der [aktuellen Roadmap](docs/ROADMAP.md#️-get-cloud--open-core-saas).
+
+---
+
+## 🔧 Berechnungen
 - ✅ **Zwei Berechnungsmethoden**:
   - **Iterativ**: Eskilson/Hellström (klassisch)
   - **VDI 4640**: Koenigsdorff-Methode (normkonform)
