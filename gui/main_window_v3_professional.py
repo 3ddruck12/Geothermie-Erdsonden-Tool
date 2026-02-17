@@ -53,7 +53,7 @@ class GeothermieGUIProfessional:
     def __init__(self, root):
         """Initialisiert die Professional GUI."""
         self.root = root
-        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1")
+        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1.5")
         self.root.geometry("1800x1100")
         
         # Module
@@ -89,6 +89,10 @@ class GeothermieGUIProfessional:
         self.calc_controller = CalculationController(self)
         self.file_controller = FileController(self)
 
+        # V3.4 Auto-Save
+        self._current_file_path = None
+        self._auto_save_interval = 300_000  # 5 Minuten in ms
+
         # GUI aufbauen
         self._create_menu()
         self._create_main_layout()
@@ -96,6 +100,9 @@ class GeothermieGUIProfessional:
         
         # Lade Daten
         self._load_default_pipes()
+        
+        # V3.4 Auto-Save starten
+        self._start_auto_save()
     
     def _create_menu(self):
         """Erstellt die Menüleiste."""
@@ -1853,11 +1860,33 @@ class GeothermieGUIProfessional:
     
     def _create_status_bar(self):
         """Erstellt die Statusleiste."""
-        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.4.0-beta1")
+        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.4.0-beta1.5")
         status_bar = ttk.Label(self.root, textvariable=self.status_var,
                               relief=tk.SUNKEN, anchor=tk.W)
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
     
+    # =========== AUTO-SAVE ===========
+
+    def _start_auto_save(self):
+        """Startet den Auto-Save-Timer."""
+        self.root.after(self._auto_save_interval, self._auto_save)
+
+    def _auto_save(self):
+        """Speichert das Projekt automatisch, wenn ein Dateipfad bekannt ist."""
+        if self._current_file_path:
+            try:
+                success = self.file_controller.save_to_path(self._current_file_path)
+                if success:
+                    timestamp = datetime.now().strftime('%H:%M:%S')
+                    self.status_var.set(
+                        f"💾 Auto-Save: {os.path.basename(self._current_file_path)} "
+                        f"({timestamp})")
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning(f"Auto-Save Fehler: {e}")
+        # Timer neu starten
+        self.root.after(self._auto_save_interval, self._auto_save)
+
     # =========== EVENT HANDLER ===========
     
     def _on_soil_selected(self, event):
@@ -3094,7 +3123,7 @@ und wird rechts visualisiert.""")
     def _show_about(self):
         """Zeigt Über-Dialog."""
         about = """Geothermie Erdsonden-Tool
-Professional Edition V3.4.0-beta1
+Professional Edition V3.4.0-beta1.5
 
 Für eine vollständige Liste aller Änderungen und neuen Features
 siehe bitte den Changelog:

@@ -1,6 +1,7 @@
 """Controller für Berechnungssteuerung, Ergebnisanzeige, Materialmengen und Hydraulik.
 
 Extrahiert aus main_window_v3_professional.py (V3.4 Refactoring).
+V3.4: Input-Validierung und VDI 4640 Compliance-Check integriert.
 Delegiert GUI-Zugriffe an die App-Referenz.
 """
 
@@ -9,6 +10,11 @@ import os
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import logging
+
+from utils.validators import (
+    safe_float, validate_parameters, check_vdi4640_compliance,
+    format_compliance_results, GUI_KEY_TO_VALIDATOR
+)
 
 logger = logging.getLogger(__name__)
 
@@ -32,14 +38,27 @@ class CalculationController:
         """Führt die Hauptberechnung (iterativ oder VDI 4640) durch."""
         app = self.app
         try:
-            # Parameter sammeln
+            # V3.4: Input-Validierung vor Berechnung
+            if hasattr(app, 'input_tab') and hasattr(app.input_tab, 'validate_all_entries'):
+                errors = app.input_tab.validate_all_entries()
+                if errors:
+                    error_text = "Folgende Eingaben sind ungültig:\n\n"
+                    for err in errors:
+                        error_text += f"• {err}\n"
+                    error_text += "\nBitte korrigieren Sie die rot markierten Felder."
+                    messagebox.showwarning("Eingabe-Validierung", error_text)
+                    app.status_var.set("❌ Validierung fehlgeschlagen")
+                    return
+
+            # Parameter sammeln (mit safe_float für Komma-Unterstützung)
             params = {}
             for key, entry in app.entries.items():
                 value = entry.get()
                 if value:
-                    try:
-                        params[key] = float(value)
-                    except ValueError:
+                    converted = safe_float(value, default=None)
+                    if converted is not None:
+                        params[key] = converted
+                    else:
                         params[key] = value
                 else:
                     params[key] = 0.0
@@ -71,6 +90,10 @@ class CalculationController:
 
             self.display_results()
             self._plot_results()
+
+            # V3.4: VDI 4640 Compliance-Check nach Berechnung
+            self._run_compliance_check(params, num_boreholes)
+
             app.notebook.select(app.results_frame)
 
         except Exception as e:
@@ -79,6 +102,50 @@ class CalculationController:
             messagebox.showerror("Fehler",
                                  f"Fehler bei der Berechnung: {str(e)}")
             app.status_var.set("❌ Berechnung fehlgeschlagen")
+
+    def _run_compliance_check(self, params, num_boreholes):
+        """Führt VDI 4640 Compliance-Check nach Berechnung durch."""
+        app = self.app
+        try:
+            # Borehole-Entrys auch einbeziehen
+            check_params = dict(params)
+            for key, entry in app.borehole_entries.items():
+                val = safe_float(entry.get(), default=None)
+                if val is not None:
+                    check_params[key] = val
+
+            # Spez. Entzugsleistung ermitteln
+            extraction_rate = None
+            if app.result and hasattr(app.result, 'heat_extraction_rate'):
+                extraction_rate = app.result.heat_extraction_rate
+
+            soil_type = ""
+            if hasattr(app, 'soil_type_var'):
+                soil_type = app.soil_type_var.get()
+
+            results = check_vdi4640_compliance(
+                check_params, soil_type, extraction_rate)
+
+            if results:
+                compliance_text = format_compliance_results(results)
+                # In Ergebnis-Tab anzeigen
+                if hasattr(app, 'results_text'):
+                    app.results_text.config(state=tk.NORMAL)
+                    app.results_text.insert(tk.END, "\n" + compliance_text)
+                    app.results_text.config(state=tk.DISABLED)
+
+                # Statusleiste aktualisieren
+                has_errors = any(r.level == "error" for r in results)
+                has_warnings = any(r.level == "warning" for r in results)
+                if has_errors:
+                    status = app.status_var.get()
+                    app.status_var.set(status + " | ❌ VDI 4640 Fehler")
+                elif has_warnings:
+                    status = app.status_var.get()
+                    app.status_var.set(status + " | ⚠️ VDI 4640 Warnungen")
+
+        except Exception as e:
+            logger.warning(f"Compliance-Check Fehler: {e}")
 
     def _run_vdi4640(self, params, pipe_config, num_boreholes):
         """VDI 4640 Berechnungspfad."""

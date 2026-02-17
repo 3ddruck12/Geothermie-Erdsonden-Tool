@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<installforge>
+  <project>
+    <general>
+      <name>Geothermie Erdsondentool</name>
+      <version>3.4.0-beta1.5</version>
+      <publisher>3ddruck12</publisher>
+      <website>https://github.com/3ddruck12/Geothermie-Erdsonden-Tool</website>
+      <icon>Icons\icon.ico</icon>
+      <language>German</language>
+    </general>
+
+    <setup>
+      <languages>
+        <language>German</language>
+        <language>English</language>
+      </languages>
+
+      <welcome>
+        <title>Geothermie Erdsondentool - Setup</title>
+        <text>Willkommen beim Setup-Assistenten für das Geothermie Erdsondentool.
+
+Dieses Tool berechnet Erdwärmesonden nach VDI 4640 und bietet professionelle
+Funktionen für Planung und Dimensionierung.
+
+Klicken Sie auf "Weiter" um die Installation zu starten.</text>
+      </welcome>
+
+      <!-- Lizenzvereinbarung -->
+      <license>
+        <file>LICENSE</file>
+      </license>
+
+      <!-- Installationspfad -->
+      <destination>
+        <default>&lt;programfiles&gt;\Geothermie Erdsondentool</default>
+        <allowchange>true</allowchange>
+      </destination>
+
+      <!-- Dateien: alle aus dem PyInstaller onedir Build -->
+      <files>
+        <source>dist\GeothermieErdsondentool\*</source>
+        <destination>&lt;installpath&gt;</destination>
+        <overwrite>always</overwrite>
+      </files>
+
+      <!-- Zusätzliche Dateien -->
+      <files>
+        <source>README.md</source>
+        <destination>&lt;installpath&gt;</destination>
+        <overwrite>always</overwrite>
+      </files>
+      <files>
+        <source>LICENSE</source>
+        <destination>&lt;installpath&gt;</destination>
+        <overwrite>always</overwrite>
+      </files>
+
+      <!-- Verknüpfungen -->
+      <shortcuts>
+        <!-- Desktop-Verknüpfung -->
+        <shortcut>
+          <name>Geothermie Erdsondentool</name>
+          <target>&lt;installpath&gt;\GeothermieErdsondentool.exe</target>
+          <icon>&lt;installpath&gt;\Icons\icon.ico</icon>
+          <location>desktop</location>
+          <workdir>&lt;installpath&gt;</workdir>
+        </shortcut>
+
+        <!-- Startmenü-Verknüpfung -->
+        <shortcut>
+          <name>Geothermie Erdsondentool</name>
+          <target>&lt;installpath&gt;\GeothermieErdsondentool.exe</target>
+          <icon>&lt;installpath&gt;\Icons\icon.ico</icon>
+          <location>startmenu</location>
+          <folder>Geothermie Erdsondentool</folder>
+          <workdir>&lt;installpath&gt;</workdir>
+        </shortcut>
+
+        <!-- Startmenü: Deinstallieren -->
+        <shortcut>
+          <name>Geothermie Erdsondentool deinstallieren</name>
+          <target>&lt;installpath&gt;\uninstall.exe</target>
+          <location>startmenu</location>
+          <folder>Geothermie Erdsondentool</folder>
+        </shortcut>
+      </shortcuts>
+
+      <!-- Uninstaller -->
+      <uninstall>
+        <enabled>true</enabled>
+        <name>Geothermie Erdsondentool</name>
+      </uninstall>
+
+      <!-- Kompression -->
+      <compression>
+        <method>lzma</method>
+        <level>normal</level>
+      </compression>
+
+      <!-- Fertig-Dialog -->
+      <finish>
+        <text>Das Geothermie Erdsondentool wurde erfolgreich installiert.
+
+Klicken Sie auf "Fertig" um den Setup-Assistenten zu beenden.</text>
+        <runapp>
+          <enabled>true</enabled>
+          <text>Geothermie Erdsondentool jetzt starten</text>
+          <target>&lt;installpath&gt;\GeothermieErdsondentool.exe</target>
+        </runapp>
+      </finish>
+    </setup>
+
+    <!-- Ausgabe -->
+    <output>
+      <filename>Setup_GET_v3.4.0-beta1.exe</filename>
+    </output>
+  </project>
+</installforge>

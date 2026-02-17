@@ -240,3 +240,180 @@ def safe_float(value_str: str, default: float = 0.0) -> float:
         return float(value_str.strip().replace(",", "."))
     except (ValueError, AttributeError):
         return default
+
+
+# ============================================================
+# GUI Entry-Key → Validator-Key Mapping
+# ============================================================
+
+GUI_KEY_TO_VALIDATOR: Dict[str, str] = {
+    # Bohrloch-Geometrie
+    "borehole_diameter": "borehole_diameter",
+    "initial_depth": "borehole_depth",
+    "num_boreholes": "num_boreholes",
+    "spacing_between": "borehole_spacing",
+    # Rohre
+    "pipe_outer_diameter": "pipe_outer_diameter",
+    "pipe_thickness": "pipe_thickness",
+    "shank_spacing": "shank_spacing",
+    "pipe_thermal_cond": "pipe_thermal_conductivity",
+    # Boden
+    "ground_thermal_cond": "ground_thermal_conductivity",
+    "ground_heat_cap": "ground_heat_capacity",
+    "ground_temp": "undisturbed_ground_temp",
+    "geothermal_gradient": "geothermal_gradient",
+    # Verfüllung
+    "grout_thermal_cond": "grout_thermal_conductivity",
+    # Wärmepumpe & Lasten
+    "heat_pump_cop": "heat_pump_cop",
+    "heat_pump_power": "heat_pump_power",
+    "annual_heating": "annual_heating_demand",
+    "annual_cooling": "annual_cooling_demand",
+    "peak_heating": "peak_heating_load",
+    "peak_cooling": "peak_cooling_load",
+    # Betriebsbedingungen
+    "min_fluid_temp": "min_fluid_temperature",
+    "max_fluid_temp": "max_fluid_temperature",
+    "simulation_years": "simulation_years",
+    # Hydraulik
+    "delta_t_fluid": "delta_t_fluid",
+    "fluid_flow_rate": "fluid_flow_rate",
+    "num_circuits": "num_circuits",
+}
+
+
+def validate_gui_entry(gui_key: str, value: float) -> Tuple[bool, str]:
+    """Validiert einen GUI-Entry-Wert über das Key-Mapping.
+
+    Args:
+        gui_key: GUI Entry-Schlüssel (z.B. 'ground_thermal_cond')
+        value: Zu prüfender Wert
+
+    Returns:
+        Tuple (is_valid, error_message)
+    """
+    validator_key = GUI_KEY_TO_VALIDATOR.get(gui_key)
+    if validator_key is None:
+        return True, ""  # Kein Mapping → nicht prüfbar
+    return validate_parameter(validator_key, value)
+
+
+# ============================================================
+# VDI 4640 Normen-Compliance-Check
+# ============================================================
+
+# Max. spezifische Entzugsleistung nach VDI 4640 [W/m]
+# (für 1800 Heizstunden/Jahr, Einzelsonde)
+VDI4640_MAX_EXTRACTION_RATES: Dict[str, float] = {
+    "Sand (trocken)": 20.0,
+    "Sand (feucht)": 65.0,
+    "Sand": 40.0,
+    "Lehm": 35.0,
+    "Schluff": 35.0,
+    "Ton": 35.0,
+    "Kies": 40.0,
+    "Granit": 65.0,
+    "Gneis": 70.0,
+    "Basalt": 40.0,
+    "Sandstein": 55.0,
+    "Kalkstein": 55.0,
+}
+
+
+@dataclass
+class ComplianceResult:
+    """Ergebnis eines Compliance-Checks."""
+    level: str       # "info", "warning", "error"
+    message: str     # Beschreibung
+    norm_ref: str    # Normen-Referenz (z.B. "VDI 4640-2")
+
+
+def check_vdi4640_compliance(
+    params: Dict[str, float],
+    soil_type: str = "",
+    extraction_rate_wm: Optional[float] = None,
+) -> List[ComplianceResult]:
+    """Prüft VDI 4640 Normen-Compliance.
+
+    Args:
+        params: Parameter-Dictionary (GUI-Keys oder Validator-Keys)
+        soil_type: Bodentyp-Name (z.B. "Sand", "Granit")
+        extraction_rate_wm: Berechnete spez. Entzugsleistung [W/m]
+
+    Returns:
+        Liste von ComplianceResult (leer wenn alles konform)
+    """
+    results: List[ComplianceResult] = []
+
+    # --- 1. Mindestabstand zwischen Bohrungen ---
+    spacing = params.get("spacing_between",
+                         params.get("borehole_spacing", None))
+    num_bh = params.get("num_boreholes",
+                        params.get("num_boreholes", 1))
+
+    if spacing is not None and num_bh is not None and num_bh > 1:
+        if spacing < 3.0:
+            results.append(ComplianceResult(
+                level="error",
+                message=(f"Bohrabstand {spacing:.1f} m ist zu gering! "
+                         f"Minimaler Abstand: 3 m (kritisch)."),
+                norm_ref="VDI 4640-2, Abschn. 5.2"
+            ))
+        elif spacing < 6.0:
+            results.append(ComplianceResult(
+                level="warning",
+                message=(f"Bohrabstand {spacing:.1f} m unterschreitet die "
+                         f"Empfehlung von ≥ 6 m. Thermische Beeinflussung "
+                         f"der Bohrungen möglich."),
+                norm_ref="VDI 4640-2, Abschn. 5.2"
+            ))
+
+    # --- 2. Max. spezifische Entzugsleistung ---
+    if extraction_rate_wm is not None and soil_type:
+        max_rate = VDI4640_MAX_EXTRACTION_RATES.get(soil_type)
+        if max_rate and extraction_rate_wm > max_rate:
+            results.append(ComplianceResult(
+                level="warning",
+                message=(f"Spez. Entzugsleistung {extraction_rate_wm:.1f} W/m "
+                         f"überschreitet VDI 4640 Maximum für {soil_type} "
+                         f"({max_rate:.0f} W/m)."),
+                norm_ref="VDI 4640-2, Tabelle 1"
+            ))
+
+    # --- 3. Frostschutzprüfung ---
+    t_min = params.get("min_fluid_temp",
+                       params.get("min_fluid_temperature", None))
+    if t_min is not None and t_min <= -2.0:
+        results.append(ComplianceResult(
+            level="warning",
+            message=(f"Min. Fluidtemperatur {t_min:.1f}°C liegt bei oder "
+                     f"unter -2°C. Frostgefahr im Bohrlochbereich! "
+                     f"Frostschutz und Verfüllmaterial prüfen."),
+            norm_ref="VDI 4640-2, Abschn. 6.3"
+        ))
+
+    return results
+
+
+def format_compliance_results(results: List[ComplianceResult]) -> str:
+    """Formatiert Compliance-Ergebnisse als lesbaren Text.
+
+    Args:
+        results: Liste von ComplianceResult
+
+    Returns:
+        Formatierter Warnungstext
+    """
+    if not results:
+        return "✅ VDI 4640 Compliance: Alle Prüfungen bestanden"
+
+    icons = {"info": "ℹ️", "warning": "⚠️", "error": "❌"}
+    lines = ["VDI 4640 Compliance-Prüfung:", ""]
+
+    for r in results:
+        icon = icons.get(r.level, "❓")
+        lines.append(f"  {icon} {r.message}")
+        lines.append(f"     Referenz: {r.norm_ref}")
+        lines.append("")
+
+    return "\n".join(lines)

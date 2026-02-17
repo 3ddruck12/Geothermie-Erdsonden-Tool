@@ -1,6 +1,7 @@
 """Controller für .get-Datei Import/Export und GUI-Populating.
 
 Extrahiert aus main_window_v3_professional.py (V3.4 Refactoring).
+V3.4: Auto-Save und save_to_path hinzugefügt.
 """
 
 import os
@@ -177,6 +178,7 @@ class FileController:
             )
 
             if success:
+                app._current_file_path = filepath
                 messagebox.showinfo(
                     "Erfolg",
                     f"✅ Projekt gespeichert:\n{os.path.basename(filepath)}")
@@ -212,6 +214,7 @@ class FileController:
                     f"{app.get_handler.format_version} migriert")
 
             self._populate_from_get_data(data)
+            app._current_file_path = filepath
             messagebox.showinfo(
                 "Erfolg",
                 f"✅ Projekt geladen:\n{os.path.basename(filepath)}")
@@ -548,3 +551,131 @@ class FileController:
                 val = entry.get() if hasattr(entry, 'get') else ""
                 result[key] = val if val else 0.0
         return result
+
+    # ──────────────── Auto-Save ────────────────
+
+    def save_to_path(self, filepath: str) -> bool:
+        """Speichert Projekt still an den angegebenen Pfad (ohne Dialog).
+
+        Verwendet die gleiche Logik wie export_get_file, aber ohne
+        Dateidialog und Info-Meldung. Für Auto-Save.
+
+        Args:
+            filepath: Ziel-Dateipfad (.get)
+
+        Returns:
+            True bei Erfolg, False bei Fehler
+        """
+        app = self.app
+        try:
+            params = self._collect_entry_values(app.entries)
+            project_data = {k: e.get() for k, e in app.project_entries.items()}
+            borehole_data = self._collect_entry_values(app.borehole_entries)
+            hp_data = self._collect_entry_values(app.heat_pump_entries)
+
+            success = app.get_handler.export_to_get(
+                filepath=filepath,
+                metadata={
+                    "project_name": project_data.get("project_name", ""),
+                    "location": (f"{project_data.get('city', '')} "
+                                 f"{project_data.get('postal_code', '')}"),
+                    "designer": project_data.get("customer_name", ""),
+                    "date": project_data.get("date", ""),
+                    "notes": project_data.get("address", ""),
+                },
+                ground_props={
+                    "thermal_conductivity": params.get("ground_thermal_cond", 2.5),
+                    "heat_capacity": params.get("ground_heat_cap", 2.4e6),
+                    "undisturbed_temp": params.get("ground_temp", 10.0),
+                    "geothermal_gradient": params.get("geothermal_gradient", 0.03),
+                    "soil_type": (app.soil_type_var.get()
+                                  if hasattr(app, 'soil_type_var') else ""),
+                },
+                borehole_config={
+                    "diameter_mm": params.get("borehole_diameter", 152.0),
+                    "depth_m": params.get("initial_depth", 100.0),
+                    "pipe_configuration": app.pipe_config_var.get(),
+                    "shank_spacing_mm": float(
+                        app.entries.get("shank_spacing", ttk.Entry()).get()
+                        or "65"),
+                    "num_boreholes": int(borehole_data.get("num_boreholes", 1)),
+                },
+                pipe_props={
+                    "material": (app.pipe_type_var.get()
+                                 if hasattr(app, 'pipe_type_var')
+                                 else "PE-100"),
+                    "outer_diameter_mm": params.get("pipe_outer_diameter", 32.0),
+                    "wall_thickness_mm": params.get("pipe_thickness", 2.9),
+                    "thermal_conductivity": params.get("pipe_thermal_cond", 0.42),
+                    "inner_diameter_mm": (
+                        params.get("pipe_outer_diameter", 32.0)
+                        - 2 * params.get("pipe_thickness", 2.9)),
+                },
+                grout_material={
+                    "name": (app.grout_type_var.get()
+                             if hasattr(app, 'grout_type_var') else ""),
+                    "thermal_conductivity": params.get("grout_thermal_cond", 2.0),
+                    "density": 1800.0,
+                    "volume_per_borehole_liters": (
+                        app.grout_calculation.get('volume_liters', 0.0)
+                        if app.grout_calculation else 0.0),
+                },
+                fluid_props={
+                    "type": "Wasser/Glykol",
+                    "thermal_conductivity": params.get("fluid_thermal_cond", 0.48),
+                    "heat_capacity": params.get("fluid_heat_cap", 3795.0),
+                    "density": params.get("fluid_density", 1042.0),
+                    "viscosity": params.get("fluid_viscosity", 0.00345),
+                    "flow_rate_m3h": params.get("fluid_flow_rate", 1.8),
+                    "freeze_temperature": -15.0,
+                },
+                fluid_database_info=(
+                    {
+                        "fluid_name": app.fluid_var.get(),
+                        "operating_temperature": float(
+                            app.entries.get("fluid_temperature",
+                                            ttk.Entry()).get() or "5.0"
+                        ) if "fluid_temperature" in app.entries else 5.0,
+                    }
+                    if (hasattr(app, 'fluid_var') and app.fluid_var.get())
+                    else None
+                ),
+                loads={
+                    "annual_heating_kwh": params.get("annual_heating", 45000.0),
+                    "annual_cooling_kwh": params.get("annual_cooling", 0.0),
+                    "peak_heating_kw": params.get("peak_heating", 12.5),
+                    "peak_cooling_kw": params.get("peak_cooling", 0.0),
+                    "heat_pump_cop": hp_data.get("cop_heating", 4.5),
+                },
+                temp_limits={
+                    "min_fluid_temp": params.get("min_fluid_temp", -3.0),
+                    "max_fluid_temp": params.get("max_fluid_temp", 20.0),
+                },
+                simulation={
+                    "years": int(params.get("simulation_years", 50)),
+                    "initial_depth": params.get("initial_depth", 100.0),
+                    "calculation_method": (
+                        app.calculation_method_var.get()
+                        if hasattr(app, 'calculation_method_var')
+                        else "iterativ"),
+                    "heat_pump_eer": params.get(
+                        "heat_pump_eer", params.get("heat_pump_cop", 4.0)),
+                    "delta_t_fluid": params.get("delta_t_fluid", 3.0),
+                },
+                climate_data=app.climate_data,
+                borefield_data=app.borefield_config,
+                results={
+                    "standard": (app.result.__dict__
+                                 if app.result and hasattr(app.result, '__dict__')
+                                 else None),
+                    "vdi4640": (app.vdi4640_result.__dict__
+                                if hasattr(app, 'vdi4640_result')
+                                and app.vdi4640_result else None),
+                },
+            )
+            if success:
+                logger.info(f"Auto-Save: {filepath}")
+            return success
+        except Exception as e:
+            logger.error(f"Auto-Save fehlgeschlagen: {e}")
+            return False

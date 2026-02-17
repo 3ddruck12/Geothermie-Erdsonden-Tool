@@ -1,6 +1,7 @@
 """Eingabe-Tab: Alle Eingabefelder, Sektionen und Event-Handler.
 
 Extrahiert aus main_window_v3_professional.py (V3.4 Refactoring).
+V3.4: Input-Validierung mit visuellem Feedback integriert.
 """
 
 import tkinter as tk
@@ -10,8 +11,16 @@ import logging
 
 from gui.tooltips import InfoButton
 from utils.pvgis_api import FALLBACK_CLIMATE_DATA
+from utils.validators import (
+    validate_gui_entry, safe_float, GUI_KEY_TO_VALIDATOR, PARAMETER_RANGES
+)
 
 logger = logging.getLogger(__name__)
+
+# Farben für Validierungsfeedback
+_COLOR_ERROR = "#ffcccc"       # Hintergrund bei Fehler
+_COLOR_NORMAL = "white"        # Normaler Hintergrund
+_COLOR_ERROR_FG = "#cc0000"    # Fehlermeldung Textfarbe
 
 
 class InputTab:
@@ -174,16 +183,21 @@ class InputTab:
 
     def _add_entry(self, parent, row, label, key, default, dict_target,
                    info_key=None):
-        """Fügt ein Eingabefeld hinzu, optional mit Info-Button."""
+        """Fügt ein Eingabefeld hinzu, optional mit Info-Button und Validierung."""
         ttk.Label(parent, text=label).grid(row=row, column=0, sticky="w",
                                            padx=10, pady=5)
-        entry = ttk.Entry(parent, width=32)
+        entry = tk.Entry(parent, width=32, bg=_COLOR_NORMAL)
         entry.insert(0, default)
         entry.grid(row=row, column=1, sticky="w", padx=10, pady=5)
         dict_target[key] = entry
 
         if info_key:
             InfoButton.create_info_button(parent, row, 2, info_key)
+
+        # Validierung bei FocusOut (nur numerische Felder)
+        if key in GUI_KEY_TO_VALIDATOR:
+            entry.bind("<FocusOut>",
+                       lambda e, k=key, ent=entry: self._validate_entry(ent, k))
 
         # Spezialbehandlung für Anzahl Bohrungen
         if key == "num_boreholes":
@@ -566,6 +580,72 @@ class InputTab:
         ttk.Button(button_frame, text="📄 PDF-Bericht erstellen",
                    command=self.app._export_pdf,
                    width=25).pack(side=tk.LEFT, padx=5)
+
+    # ─── Validierung ─────────────────────────────────────────────
+
+    def _validate_entry(self, entry, gui_key):
+        """Validiert ein einzelnes Eingabefeld mit visuellem Feedback.
+
+        Args:
+            entry: tk.Entry Widget
+            gui_key: GUI-Entry-Schlüssel
+        """
+        raw_value = entry.get().strip()
+        if not raw_value:
+            entry.config(bg=_COLOR_NORMAL)
+            return True
+
+        value = safe_float(raw_value)
+
+        # Komma automatisch zu Punkt konvertieren
+        if "," in raw_value:
+            entry.delete(0, tk.END)
+            entry.insert(0, str(value))
+
+        is_valid, msg = validate_gui_entry(gui_key, value)
+
+        if is_valid:
+            entry.config(bg=_COLOR_NORMAL)
+            # Tooltip entfernen falls vorhanden
+            if hasattr(entry, '_validation_tooltip'):
+                entry._validation_tooltip = None
+        else:
+            entry.config(bg=_COLOR_ERROR)
+            entry._validation_tooltip = msg
+            logger.debug(f"Validierung fehlgeschlagen: {gui_key} = {value}: {msg}")
+
+        return is_valid
+
+    def validate_all_entries(self):
+        """Validiert alle Eingabefelder. Gibt Fehlerliste zurück.
+
+        Returns:
+            Liste von Fehlermeldungen (leer wenn alles OK)
+        """
+        errors = []
+        all_dicts = [
+            self.entries,
+            self.borehole_entries,
+            self.heat_pump_entries,
+            self.hydraulics_entries,
+        ]
+
+        for dict_target in all_dicts:
+            for key, entry in dict_target.items():
+                if key not in GUI_KEY_TO_VALIDATOR:
+                    continue
+                raw_value = entry.get().strip()
+                if not raw_value:
+                    continue
+                value = safe_float(raw_value)
+                is_valid, msg = validate_gui_entry(key, value)
+                if not is_valid:
+                    entry.config(bg=_COLOR_ERROR)
+                    errors.append(msg)
+                else:
+                    entry.config(bg=_COLOR_NORMAL)
+
+        return errors
 
     # ─── Event-Handler ───────────────────────────────────────────
 

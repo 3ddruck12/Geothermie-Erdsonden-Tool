@@ -42,7 +42,7 @@ jobs:
         pip install -r requirements.txt
         pip install pyinstaller
     
-    - name: Build Windows executable
+    - name: Build Windows executable (portable)
       run: |
         # Erstelle spec mit Version im Namen
         $specContent = Get-Content geothermie.spec -Raw
@@ -50,11 +50,44 @@ jobs:
         $specContent | Set-Content geothermie-versioned.spec
         pyinstaller geothermie-versioned.spec
     
-    - name: Upload Windows artifact
+    - name: Build Windows onedir (für Installer)
+      run: |
+        pyinstaller geothermie_onedir.spec
+    
+    - name: Download and install InstallForge
+      run: |
+        # InstallForge herunterladen und silent installieren
+        Invoke-WebRequest -Uri "https://installforge.net/download/installforge-setup.exe" -OutFile "installforge-setup.exe"
+        Start-Process -FilePath ".\installforge-setup.exe" -ArgumentList "/VERYSILENT /NORESTART" -Wait
+    
+    - name: Build Setup Installer with InstallForge
+      run: |
+        # Version in .ifp-Datei ersetzen
+        $ifpContent = Get-Content "installer\GET_Setup.ifp" -Raw
+        $ifpContent = $ifpContent -replace "3\.4\.0-beta1", "$env:VERSION"
+        $ifpContent = $ifpContent -replace "Setup_GET_v3\.4\.0-beta1\.exe", "Setup_GET_v$env:VERSION.exe"
+        $ifpContent | Set-Content "installer\GET_Setup.ifp"
+        
+        # InstallForge CLI Builder ausführen
+        $ifBuild = "C:\Program Files (x86)\solicus\InstallForge\bin\ifbuildx86.exe"
+        if (Test-Path $ifBuild) {
+          & $ifBuild "installer\GET_Setup.ifp"
+        } else {
+          Write-Warning "InstallForge nicht gefunden – Installer-Build übersprungen"
+        }
+    
+    - name: Upload Windows portable artifact
       uses: actions/upload-artifact@v4
       with:
         name: GeothermieErdsondentool-Windows
         path: dist/GeothermieErdsondentool-v*.exe
+    
+    - name: Upload Windows installer artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GeothermieErdsondentool-Setup
+        path: Setup_GET_v*.exe
+        if-no-files-found: warn
   
   build-linux:
     name: Build Linux DEB
@@ -163,10 +196,16 @@ jobs:
         echo "VERSION=$VERSION" >> $GITHUB_ENV
         echo "Version: $VERSION"
     
-    - name: Download Windows artifact
+    - name: Download Windows portable artifact
       uses: actions/download-artifact@v4
       with:
         name: GeothermieErdsondentool-Windows
+    
+    - name: Download Windows installer artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: GeothermieErdsondentool-Setup
+      continue-on-error: true
     
     - name: Download Linux DEB artifact
       uses: actions/download-artifact@v4
@@ -178,6 +217,7 @@ jobs:
       with:
         files: |
           GeothermieErdsondentool-v*.exe
+          Setup_GET_v*.exe
           *.deb
         tag_name: ${{ github.ref_name }}
         name: Release ${{ env.VERSION }}
@@ -185,14 +225,20 @@ jobs:
           ## Geothermie Erdsondentool Release ${{ env.VERSION }}
           
           ### Downloads
-          - **Windows**: `GeothermieErdsondentool-v${{ env.VERSION }}.exe`
+          - **Windows Installer**: `Setup_GET_v${{ env.VERSION }}.exe` (empfohlen)
+          - **Windows Portable**: `GeothermieErdsondentool-v${{ env.VERSION }}.exe`
           - **Linux**: `geothermie-erdsondentool_${{ env.VERSION }}_amd64.deb`
           
           ### Installation
           
-          #### Windows
-          1. EXE herunterladen
-          2. Ausführen (eventuell Windows Defender Warnung bestätigen)
+          #### Windows (Installer)
+          1. `Setup_GET_v${{ env.VERSION }}.exe` herunterladen
+          2. Setup-Wizard folgen
+          3. Programm über Desktop- oder Startmenü-Verknüpfung starten
+          
+          #### Windows (Portable)
+          1. `GeothermieErdsondentool-v${{ env.VERSION }}.exe` herunterladen
+          2. Direkt ausführen (keine Installation nötig)
           
           #### Linux (Debian/Ubuntu)
           ```bash

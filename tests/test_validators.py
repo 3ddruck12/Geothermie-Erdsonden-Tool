@@ -152,3 +152,139 @@ class TestValidationError:
         assert str(err) == "Test-Fehler"
         assert err.parameter == "depth"
         assert err.value == 500
+
+
+class TestValidateGuiEntry:
+    """Tests für GUI-Entry-Validierung mit Key-Mapping."""
+
+    def test_valid_gui_entry(self):
+        """Gültiger GUI-Entry-Wert."""
+        from utils.validators import validate_gui_entry
+        is_valid, msg = validate_gui_entry("ground_thermal_cond", 2.0)
+        assert is_valid
+
+    def test_invalid_gui_entry(self):
+        """Ungültiger GUI-Entry-Wert."""
+        from utils.validators import validate_gui_entry
+        is_valid, msg = validate_gui_entry("ground_thermal_cond", 0.1)
+        assert not is_valid
+        assert "zu klein" in msg
+
+    def test_unmapped_key_is_valid(self):
+        """Nicht gemappter GUI-Key → gültig."""
+        from utils.validators import validate_gui_entry
+        is_valid, msg = validate_gui_entry("project_name", 999)
+        assert is_valid
+
+    def test_depth_mapping(self):
+        """GUI-Key 'initial_depth' mappt auf 'borehole_depth'."""
+        from utils.validators import validate_gui_entry
+        is_valid, _ = validate_gui_entry("initial_depth", 100)
+        assert is_valid
+        is_valid, _ = validate_gui_entry("initial_depth", 5)
+        assert not is_valid
+
+
+class TestVDI4640Compliance:
+    """Tests für VDI 4640 Normen-Compliance."""
+
+    def test_valid_configuration(self):
+        """Gültige Konfiguration → keine Warnungen."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance({
+            "spacing_between": 6.0,
+            "num_boreholes": 2,
+            "min_fluid_temp": -1.0,
+        })
+        assert len(results) == 0
+
+    def test_spacing_warning(self):
+        """Bohrabstand < 6m → Warnung."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance({
+            "spacing_between": 4.0,
+            "num_boreholes": 2,
+        })
+        assert len(results) == 1
+        assert results[0].level == "warning"
+        assert "Bohrabstand" in results[0].message
+
+    def test_spacing_error(self):
+        """Bohrabstand < 3m → Fehler."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance({
+            "spacing_between": 2.0,
+            "num_boreholes": 2,
+        })
+        assert len(results) == 1
+        assert results[0].level == "error"
+
+    def test_single_borehole_no_spacing_check(self):
+        """Einzelbohrung → kein Abstandscheck."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance({
+            "spacing_between": 2.0,
+            "num_boreholes": 1,
+        })
+        assert len(results) == 0
+
+    def test_frost_protection_warning(self):
+        """T_min ≤ -2°C → Warnung."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance({
+            "min_fluid_temp": -2.0,
+        })
+        assert len(results) == 1
+        assert results[0].level == "warning"
+        assert "Frostgefahr" in results[0].message
+
+    def test_frost_protection_ok(self):
+        """T_min > -2°C → keine Warnung."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance({
+            "min_fluid_temp": -1.0,
+        })
+        assert len(results) == 0
+
+    def test_extraction_rate_warning(self):
+        """Entzugsleistung > max → Warnung."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance(
+            params={},
+            soil_type="Sand",
+            extraction_rate_wm=50.0  # > 40 W/m für Sand
+        )
+        assert len(results) == 1
+        assert "Entzugsleistung" in results[0].message
+
+    def test_extraction_rate_ok(self):
+        """Entzugsleistung ≤ max → keine Warnung."""
+        from utils.validators import check_vdi4640_compliance
+        results = check_vdi4640_compliance(
+            params={},
+            soil_type="Granit",
+            extraction_rate_wm=60.0  # ≤ 65 W/m für Granit
+        )
+        assert len(results) == 0
+
+    def test_format_compliance_results_empty(self):
+        """Leere Liste → Alle-OK-Meldung."""
+        from utils.validators import format_compliance_results
+        text = format_compliance_results([])
+        assert "Alle Prüfungen bestanden" in text
+
+    def test_format_compliance_results_with_warnings(self):
+        """Warnungen werden formatiert."""
+        from utils.validators import (
+            check_vdi4640_compliance,
+            format_compliance_results,
+        )
+        results = check_vdi4640_compliance({
+            "spacing_between": 4.0,
+            "num_boreholes": 2,
+            "min_fluid_temp": -3.0,
+        })
+        text = format_compliance_results(results)
+        assert "⚠️" in text
+        assert "VDI 4640" in text
+
