@@ -56,16 +56,16 @@ jobs:
     
     - name: Download and install InstallForge
       run: |
-        # InstallForge herunterladen und silent installieren
-        Invoke-WebRequest -Uri "https://installforge.net/download/installforge-setup.exe" -OutFile "installforge-setup.exe"
-        Start-Process -FilePath ".\installforge-setup.exe" -ArgumentList "/VERYSILENT /NORESTART" -Wait
+        # InstallForge von GitHub Releases herunterladen und silent installieren
+        Invoke-WebRequest -Uri "https://github.com/soner-boztas/installforge/releases/download/v1.6.1/IFInst.exe" -OutFile "if_setup.exe"
+        Start-Process -FilePath ".\if_setup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait
     
     - name: Build Setup Installer with InstallForge
       run: |
         # Version in .ifp-Datei ersetzen
         $ifpContent = Get-Content "installer\GET_Setup.ifp" -Raw
-        $ifpContent = $ifpContent -replace "3\.4\.0-beta1", "$env:VERSION"
-        $ifpContent = $ifpContent -replace "Setup_GET_v3\.4\.0-beta1\.exe", "Setup_GET_v$env:VERSION.exe"
+        $ifpContent = $ifpContent -replace "3\.4\.0-beta1(\.5)?", "$env:VERSION"
+        $ifpContent = $ifpContent -replace "Setup_GET_v3\.4\.0-beta1(\.5)?\.exe", "Setup_GET_v$env:VERSION.exe"
         $ifpContent | Set-Content "installer\GET_Setup.ifp"
         
         # InstallForge CLI Builder ausführen
@@ -74,6 +74,7 @@ jobs:
           & $ifBuild "installer\GET_Setup.ifp"
         } else {
           Write-Warning "InstallForge nicht gefunden – Installer-Build übersprungen"
+          exit 1
         }
     
     - name: Upload Windows portable artifact

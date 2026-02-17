@@ -3,7 +3,7 @@
   <project>
     <general>
       <name>Geothermie Erdsondentool</name>
-      <version>3.4.0-beta1.5</version>
+      <version>3.4.0-beta1.6</version>
       <publisher>3ddruck12</publisher>
       <website>https://github.com/3ddruck12/Geothermie-Erdsonden-Tool</website>
       <icon>Icons\icon.ico</icon>
