@@ -149,16 +149,17 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [x] `tests/test_borehole.py` – 10 Tests (iterative Berechnung)
   - [x] `tests/test_validators.py` – 21 Tests (Input-Validierung)
   - [x] CI/CD-Pipeline (GitHub Actions) auf pytest umgestellt
-- [ ] **Input-Validierung integrieren** – `utils/validators.py` in GUI einbinden
-  - [ ] Wertebereiche bei Eingabe prüfen (rot markieren bei Fehler)
-  - [ ] Plausibilitäts-Checks vor Berechnung (z.B. T_min < T_boden)
-  - [ ] Komma-als-Dezimaltrennzeichen akzeptieren
-- [ ] **Normen-Compliance-Check** (VDI 4640 Grenzen)
-  - [ ] Mindestabstand zwischen Bohrungen (≥ 6 m)
-  - [ ] Maximale spezifische Entzugsleistung (W/m) pro Bodentyp
-  - [ ] Frostschutzprüfung: Sole-Austrittstemperatur > -2°C
-- [ ] **Auto-Save** – Periodischer Auto-Save der `.get`-Datei (alle 5 Min.)
-- [ ] **i18n-Infrastruktur vorbereiten** – `gettext`-Wrapper für alle UI-Strings
+- [x] **Input-Validierung integrieren** – `utils/validators.py` in GUI einbinden
+  - [x] Wertebereiche bei Eingabe prüfen (rot markieren bei Fehler)
+  - [x] Plausibilitäts-Checks vor Berechnung (z.B. T_min < T_boden)
+  - [x] Komma-als-Dezimaltrennzeichen akzeptieren
+- [x] **Normen-Compliance-Check** (VDI 4640 Grenzen)
+  - [x] Mindestabstand zwischen Bohrungen (≥ 6 m)
+  - [x] Maximale spezifische Entzugsleistung (W/m) pro Bodentyp
+  - [x] Frostschutzprüfung: Sole-Austrittstemperatur > -2°C
+- [x] **Auto-Save** – Periodischer Auto-Save der `.get`-Datei (alle 5 Min.)
+- [x] **i18n-Infrastruktur vorbereiten** – `gettext`-Wrapper für alle UI-Strings
+- [x] **Windows-Installer** – Professioneller Setup-Wizard mit Inno Setup
 
 #### 📊 Phase 2 – Monatliche Lastprofile (Hauptfeature)
 
