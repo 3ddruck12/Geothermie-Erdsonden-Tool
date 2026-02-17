@@ -53,7 +53,7 @@ class GeothermieGUIProfessional:
     def __init__(self, root):
         """Initialisiert die Professional GUI."""
         self.root = root
-        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1.8")
+        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1.9")
         self.root.geometry("1800x1100")
         
         # Module
