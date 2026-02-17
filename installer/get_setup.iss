@@ -34,9 +34,9 @@ Source: "..\README.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\Geothermie Erdsondentool"; Filename: "{app}\GeothermieErdsondentool.exe"; IconFilename: "{app}\Icons\icon.ico"
+Name: "{group}\Geothermie Erdsondentool"; Filename: "{app}\GeothermieErdsondentool.exe"
 Name: "{group}\{cm:UninstallProgram,Geothermie Erdsondentool}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\Geothermie Erdsondentool"; Filename: "{app}\GeothermieErdsondentool.exe"; Tasks: desktopicon; IconFilename: "{app}\Icons\icon.ico"
+Name: "{commondesktop}\Geothermie Erdsondentool"; Filename: "{app}\GeothermieErdsondentool.exe"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\GeothermieErdsondentool.exe"; Description: "{cm:LaunchProgram,Geothermie Erdsondentool}"; Flags: nowait postinstall skipifsilent
