@@ -39,4 +39,4 @@ Name: "{group}\{cm:UninstallProgram,Geothermie Erdsondentool}"; Filename: "{unin
 Name: "{commondesktop}\Geothermie Erdsondentool"; Filename: "{app}\GeothermieErdsondentool.exe"; Tasks: desktopicon; IconFilename: "{app}\Icons\icon.ico"
 
 [Run]
-Filename: "{app}\GeothermieErdsondentool.exe"; Description: "{cm:LaunchProgram,Geothermie Erdsondentool}"; Flags: nowait postinstall skipafs silentcheck
+Filename: "{app}\GeothermieErdsondentool.exe"; Description: "{cm:LaunchProgram,Geothermie Erdsondentool}"; Flags: nowait postinstall skipifsilent
