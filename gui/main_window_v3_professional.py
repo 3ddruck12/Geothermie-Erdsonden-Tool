@@ -53,7 +53,7 @@ class GeothermieGUIProfessional:
     def __init__(self, root):
         """Initialisiert die Professional GUI."""
         self.root = root
-        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1.6")
+        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1.7")
         self.root.geometry("1800x1100")
         
         # Module
@@ -1860,7 +1860,7 @@ class GeothermieGUIProfessional:
     
     def _create_status_bar(self):
         """Erstellt die Statusleiste."""
-        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.4.0-beta1.6")
+        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.4.0-beta1.7")
         status_bar = ttk.Label(self.root, textvariable=self.status_var,
                               relief=tk.SUNKEN, anchor=tk.W)
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -3123,7 +3123,7 @@ und wird rechts visualisiert.""")
     def _show_about(self):
         """Zeigt Über-Dialog."""
         about = """Geothermie Erdsonden-Tool
-Professional Edition V3.4.0-beta1.6
+Professional Edition V3.4.0-beta1.7
 
 Für eine vollständige Liste aller Änderungen und neuen Features
 siehe bitte den Changelog:

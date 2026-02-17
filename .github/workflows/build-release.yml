@@ -54,28 +54,11 @@ jobs:
       run: |
         pyinstaller geothermie_onedir.spec
     
-    - name: Download and install InstallForge
+    - name: Build Setup Installer with Inno Setup
       run: |
-        # InstallForge von GitHub Releases herunterladen und silent installieren
-        Invoke-WebRequest -Uri "https://github.com/soner-boztas/installforge/releases/download/v1.6.1/IFInst.exe" -OutFile "if_setup.exe"
-        Start-Process -FilePath ".\if_setup.exe" -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait
-    
-    - name: Build Setup Installer with InstallForge
-      run: |
-        # Version in .ifp-Datei ersetzen
-        $ifpContent = Get-Content "installer\GET_Setup.ifp" -Raw
-        $ifpContent = $ifpContent -replace "3\.4\.0-beta1(\.5)?", "$env:VERSION"
-        $ifpContent = $ifpContent -replace "Setup_GET_v3\.4\.0-beta1(\.5)?\.exe", "Setup_GET_v$env:VERSION.exe"
-        $ifpContent | Set-Content "installer\GET_Setup.ifp"
-        
-        # InstallForge CLI Builder ausführen
-        $ifBuild = "C:\Program Files (x86)\solicus\InstallForge\bin\ifbuildx86.exe"
-        if (Test-Path $ifBuild) {
-          & $ifBuild "installer\GET_Setup.ifp"
-        } else {
-          Write-Warning "InstallForge nicht gefunden – Installer-Build übersprungen"
-          exit 1
-        }
+        # Inno Setup Compiler (iscc) ausführen
+        # AppVersion wird als Konstante übergeben
+        & "C:\Program Files (x86)\Inno Setup 6\iscc.exe" /DAppVersion="$env:VERSION" "installer\get_setup.iss"
     
     - name: Upload Windows portable artifact
       uses: actions/upload-artifact@v4
@@ -88,7 +71,7 @@ jobs:
       with:
         name: GeothermieErdsondentool-Setup
         path: Setup_GET_v*.exe
-        if-no-files-found: warn
+        if-no-files-found: error
   
   build-linux:
     name: Build Linux DEB
