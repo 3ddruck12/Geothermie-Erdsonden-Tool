@@ -89,7 +89,11 @@ class BoreholeCalculator:
         simulation_years: int = 25,
         
         # Startwert für Iteration
-        initial_depth: float = 100.0  # m
+        initial_depth: float = 100.0,  # m
+        
+        # NEU: Bohrfeld-Parameter
+        n_boreholes: int = 1,
+        custom_gfunction: Optional[callable] = None  # Funktion(time) -> g-Wert
     ) -> BoreholeResult:
         """
         Berechnet die erforderliche Bohrtiefe für gegebene Parameter.
@@ -107,6 +111,17 @@ class BoreholeCalculator:
         
         if monthly_cooling_factors is None:
             monthly_cooling_factors = [0.0] * 12
+        
+        # LAST-AUFTEILUNG AUF BOHRLÖCHER (Bugfix)
+        # Wir gehen davon aus, dass die Eingaben die GESAMT-Last des Gebäudes sind.
+        # Daher teilen wir sie durch die Anzahl der Bohrungen.
+        if n_boreholes > 1:
+            annual_heating_demand /= n_boreholes
+            annual_cooling_demand /= n_boreholes
+            peak_heating_load /= n_boreholes
+            peak_cooling_load /= n_boreholes
+            # Hinweis: Fluid-Flow-Rate wird meist pro Bohrung angegeben/ausgelegt,
+            # daher lassen wir sie unverändert. (Prüfung durch User empfohlen)
         
         # Umrechnung MWh/Jahr in W
         avg_heating_power = (annual_heating_demand * 1e6 * 3600) / (365.25 * 24 * 3600)  # W
@@ -165,25 +180,34 @@ class BoreholeCalculator:
             # Berechne thermische Diffusivität
             thermal_diffusivity = ground_thermal_conductivity / ground_heat_capacity
             
-            # Erzeuge g-Funktions-Tabelle
-            self.g_calc.generate_g_function_table(
-                depth,
-                borehole_diameter / 2,
-                thermal_diffusivity,
-                simulation_years
-            )
-            
-            # Berechne Fluidtemperaturen für verschiedene Zeitpunkte
-            # Monat mit höchster Heizlast (typisch Januar)
-            max_heating_month = monthly_heating_factors.index(max(monthly_heating_factors))
-            
+            # g-Wert für kritischen Zeitpunkt
             # Zeit am Ende der Simulationsperiode (kritisch)
             critical_time = simulation_years * 365.25 * 24 * 3600  # Sekunden
             
-            # g-Wert für kritischen Zeitpunkt
-            g_value = self.g_calc.interpolate_g(critical_time, depth, thermal_diffusivity)
+            if custom_gfunction is not None:
+                # BENUTZERDEFINIERTE g-FUNKTION (z.B. aus pygfunction für Bohrfeld)
+                # Wir nehmen an, dass diese Funktion g(t) liefert.
+                try:
+                    g_value = float(custom_gfunction(critical_time))
+                except Exception as e:
+                    logger.error(f"Fehler bei custom_gfunction: {e}")
+                    # Fallback auf Standard
+                    self.g_calc.generate_g_function_table(
+                        depth, borehole_diameter / 2, thermal_diffusivity, simulation_years
+                    )
+                    g_value = self.g_calc.interpolate_g(critical_time, depth, thermal_diffusivity)
+            else:
+                # STANDARD: Eskilson / Interpolation
+                self.g_calc.generate_g_function_table(
+                    depth,
+                    borehole_diameter / 2,
+                    thermal_diffusivity,
+                    simulation_years
+                )
+                g_value = self.g_calc.interpolate_g(critical_time, depth, thermal_diffusivity)
             
             # Temperaturänderung durch Langzeit-Last
+            # Hinweis: net_annual_load ist bereits durch n_boreholes geteilt (siehe oben)
             q_per_meter = net_annual_load / depth  # W/m
             delta_T_long = self.g_calc.calculate_temperature_penalty(
                 net_annual_load, ground_thermal_conductivity, depth, g_value
@@ -192,6 +216,10 @@ class BoreholeCalculator:
             # Temperaturänderung durch Peak-Last
             # Für kurze Zeit (z.B. 6 Stunden Peak)
             peak_time = 6 * 3600  # Sekunden
+            
+            # Peak-Response ist meist lokal (nur das Bohrloch selbst), da kurze Zeit.
+            # Feld-Interferenz ist bei 6h meist vernachlässigbar.
+            # Wir verwenden daher weiterhin die Standard-Line-Source für Peak.
             g_peak = self.g_calc.calculate_finite_line_source(
                 peak_time, depth, borehole_diameter / 2, thermal_diffusivity
             )
@@ -247,7 +275,7 @@ class BoreholeCalculator:
             depth, avg_ground_temp, net_annual_load,
             monthly_heating_factors, monthly_cooling_factors,
             ground_thermal_conductivity, thermal_diffusivity,
-            borehole_diameter / 2
+            borehole_diameter / 2, custom_gfunction
         )
         
         # Erstelle Ergebnis
@@ -302,7 +330,8 @@ class BoreholeCalculator:
         cooling_factors: List[float],
         thermal_conductivity: float,
         thermal_diffusivity: float,
-        borehole_radius: float
+        borehole_radius: float,
+        custom_gfunction: Optional[callable] = None
     ) -> List[float]:
         """Berechnet monatliche durchschnittliche Fluidtemperaturen."""
         monthly_temps = []
@@ -318,7 +347,13 @@ class BoreholeCalculator:
             time = (month + 0.5) * seconds_per_month
             
             # g-Wert
-            g = self.g_calc.interpolate_g(time, depth, thermal_diffusivity)
+            if custom_gfunction is not None:
+                try:
+                    g = float(custom_gfunction(time))
+                except:
+                    g = self.g_calc.interpolate_g(time, depth, thermal_diffusivity)
+            else:
+                g = self.g_calc.interpolate_g(time, depth, thermal_diffusivity)
             
             # Temperaturänderung
             delta_T = self.g_calc.calculate_temperature_penalty(

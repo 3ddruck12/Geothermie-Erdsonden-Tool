@@ -8,6 +8,7 @@ from gui.tabs.results_tab import ResultsTab
 from gui.tabs.materials_tab import MaterialsTab
 from gui.tabs.diagrams_tab import DiagramsTab
 from gui.tabs.borefield_tab import BorefieldTab
+from gui.tabs.load_profiles_tab import LoadProfilesTab
 
 __all__ = [
     'InputTab',
@@ -15,4 +16,5 @@ __all__ = [
     'MaterialsTab',
     'DiagramsTab',
     'BorefieldTab',
+    'LoadProfilesTab',
 ]

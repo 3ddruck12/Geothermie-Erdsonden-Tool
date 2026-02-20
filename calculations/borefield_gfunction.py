@@ -304,6 +304,32 @@ class BorefieldCalculator:
         """
         return [(b.x, b.y) for b in boreField]
     
+    def get_gfunction_interpolator(self, result: Dict):
+        """
+        Erstellt eine Interpolationsfunktion für g-Werte.
+        
+        Args:
+            result: Ergebnis-Dict von calculate_gfunction
+            
+        Returns:
+            Callable[[float], float]: Funktion g(time_in_seconds)
+        """
+        from scipy import interpolate
+        
+        time = result["time"]
+        # gFunction Objekt enthält gFunc Array
+        g_values = result["gFunction"].gFunc
+        
+        # Lineare Interpolation
+        f = interpolate.interp1d(
+            time, 
+            g_values, 
+            kind='linear', 
+            fill_value="extrapolate"
+        )
+        
+        return f
+    
     def is_available(self) -> bool:
         """Prüft ob pygfunction verfügbar ist."""
         return PYGFUNCTION_AVAILABLE

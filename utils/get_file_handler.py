@@ -9,6 +9,8 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 import os
 
+from utils.version import APP_VERSION
+
 # Versionskonstanten
 CURRENT_FORMAT_VERSION = "3.3"
 SUPPORTED_VERSIONS = ["3.0", "3.1", "3.2", "3.3"]
@@ -83,7 +85,7 @@ class GETFileHandler:
             data = {
                 "file_format": "GET",
                 "format_version": CURRENT_FORMAT_VERSION,
-                "created_with": f"Geothermie Erdsonden-Tool v3.3.0-beta3",
+                "created_with": f"Geothermie Erdsonden-Tool v{APP_VERSION}",
                 "created_date": datetime.now().isoformat() + "Z",
                 "encoding": "UTF-8",
                 "metadata": metadata,

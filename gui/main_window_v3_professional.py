@@ -36,6 +36,7 @@ from gui.bohranzeige_tab import BohranzeigTab
 from gui.map_widget import OSMMapWidget
 from utils.get_file_handler import GETFileHandler
 from utils.bohranzeige_pdf import BohranzeigePDFGenerator
+from utils.version import APP_VERSION
 
 # V3.4 Modulare Architektur
 from gui.tabs.input_tab import InputTab
@@ -43,6 +44,7 @@ from gui.tabs.results_tab import ResultsTab
 from gui.tabs.materials_tab import MaterialsTab
 from gui.tabs.diagrams_tab import DiagramsTab
 from gui.tabs.borefield_tab import BorefieldTab
+from gui.tabs.load_profiles_tab import LoadProfilesTab
 from gui.controllers.calculation_controller import CalculationController
 from gui.controllers.file_controller import FileController
 
@@ -53,7 +55,7 @@ class GeothermieGUIProfessional:
     def __init__(self, root):
         """Initialisiert die Professional GUI."""
         self.root = root
-        self.root.title("Geothermie Erdsonden-Tool - Professional Edition V3.4.0-beta1.9")
+        self.root.title(f"Geothermie Erdsonden-Tool - Professional Edition V{APP_VERSION}")
         self.root.geometry("1800x1100")
         
         # Module
@@ -159,6 +161,10 @@ class GeothermieGUIProfessional:
         self.borefield_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.borefield_frame, text="🌐 Bohrfeld-Simulation")
         self._create_borefield_tab()
+
+        self.load_profiles_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.load_profiles_frame, text="📊 Lastprofile")
+        self.load_profiles_tab = LoadProfilesTab(self.load_profiles_frame, self)
         
         self.viz_frame = ttk.Frame(self.notebook)
         self.notebook.add(self.viz_frame, text="📈 Diagramme")
@@ -182,6 +188,13 @@ class GeothermieGUIProfessional:
             tab_text = self.notebook.tab(selected, "text")
             if "Bohranzeige" in tab_text:
                 self._sync_projekt_to_bohranzeige()
+            elif "Lastprofile" in tab_text and hasattr(self, 'load_profiles_tab'):
+                # Beim ersten Öffnen: aus Jahreswerten füllen, falls Tabelle leer
+                lp = self.load_profiles_tab
+                sum_h = sum(lp.get_monthly_heating_kwh())
+                sum_c = sum(lp.get_monthly_cooling_kwh())
+                if sum_h == 0 and sum_c == 0:
+                    lp.load_from_annual_entries()
         except Exception:
             pass
 
@@ -925,6 +938,16 @@ class GeothermieGUIProfessional:
         # 12. Energieverbrauch-Vergleich (neu)
         self._add_diagram_frame(scrollable_frame, "Energieverbrauch-Vergleich",
                                self._plot_energy_consumption)
+
+        # 13. Lastprofil: Heizen + Kühlen + Warmwasser (gestapelt)
+        self._add_diagram_frame(scrollable_frame,
+                               "Lastprofil: Heizen + Kühlen + Warmwasser",
+                               self._plot_load_profile_stacked)
+
+        # 14. Lastprofil: Jahresverlauf (Linie)
+        self._add_diagram_frame(scrollable_frame,
+                               "Lastprofil: Jahresverlauf",
+                               self._plot_load_profile_line)
         
         # Mousewheel-Scrolling
         def _on_mousewheel(event):
@@ -1729,7 +1752,92 @@ class GeothermieGUIProfessional:
                     ha='center', va='center', fontsize=10, color='red')
             ax.axis('off')
             canvas.draw()
-    
+
+    def _plot_load_profile_stacked(self, fig, canvas):
+        """Gestapeltes Balkendiagramm: Heizen + Kühlen + Warmwasser pro Monat."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+
+        data = self._get_load_profile_data()
+        if not data:
+            ax.text(0.5, 0.5,
+                    "Keine Lastprofil-Daten.\n\n"
+                    "Bitte Tab 'Lastprofile' öffnen und Daten eingeben.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+
+        months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
+                  "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+        x = np.arange(len(months))
+        width = 0.6
+
+        h = np.array(data["monthly_heating_kwh"])
+        c = np.array(data["monthly_cooling_kwh"])
+        d = np.array(data["monthly_dhw_kwh"])
+
+        ax.bar(x, h, width, label="Heizen", color="#e74c3c", alpha=0.8)
+        ax.bar(x, c, width, bottom=h, label="Kühlen", color="#3498db", alpha=0.8)
+        ax.bar(x, d, width, bottom=h + c, label="Warmwasser", color="#2ecc71", alpha=0.8)
+
+        ax.set_xlabel("Monat", fontsize=11, fontweight="bold")
+        ax.set_ylabel("Energie [kWh]", fontsize=11, fontweight="bold")
+        ax.set_title("Lastprofil: Heizen + Kühlen + Warmwasser pro Monat",
+                     fontsize=12, fontweight="bold")
+        ax.set_xticks(x)
+        ax.set_xticklabels(months)
+        ax.legend(loc="upper right", fontsize=9)
+        ax.grid(True, alpha=0.3, axis="y")
+        fig.tight_layout()
+        canvas.draw()
+
+    def _plot_load_profile_line(self, fig, canvas):
+        """Liniendiagramm: Jahresverlauf mit Spitzenlasten."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+
+        data = self._get_load_profile_data()
+        if not data:
+            ax.text(0.5, 0.5,
+                    "Keine Lastprofil-Daten.\n\n"
+                    "Bitte Tab 'Lastprofile' öffnen und Daten eingeben.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+
+        months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun",
+                  "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
+        x = np.arange(len(months))
+
+        h = np.array(data["monthly_heating_kwh"])
+        c = np.array(data["monthly_cooling_kwh"])
+        d = np.array(data["monthly_dhw_kwh"])
+        total = h + c + d
+
+        ax.plot(x, h, 'o-', linewidth=2, label="Heizen", color="#e74c3c")
+        ax.plot(x, c, 's-', linewidth=2, label="Kühlen", color="#3498db")
+        ax.plot(x, d, '^-', linewidth=2, label="Warmwasser", color="#2ecc71")
+        ax.plot(x, total, '--', linewidth=2, label="Gesamt", color="#2c3e50", alpha=0.8)
+
+        ax.set_xlabel("Monat", fontsize=11, fontweight="bold")
+        ax.set_ylabel("Energie [kWh]", fontsize=11, fontweight="bold")
+        ax.set_title("Lastprofil: Jahresverlauf mit Spitzenlasten",
+                     fontsize=12, fontweight="bold")
+        ax.set_xticks(x)
+        ax.set_xticklabels(months)
+        ax.legend(loc="upper right", fontsize=9)
+        ax.grid(True, alpha=0.3)
+        fig.tight_layout()
+        canvas.draw()
+
+    def _get_load_profile_data(self):
+        """Holt Lastprofil-Daten aus dem Lastprofil-Tab."""
+        if hasattr(self, 'load_profiles_tab') and self.load_profiles_tab:
+            return self.load_profiles_tab.get_load_profile_data()
+        return None
+
     def _create_static_borehole_graphic(self, parent):
         """Erstellt eine statische Erklärungsgrafik einer Erdsonde mit 4 Leitungen."""
         # Titel
@@ -1860,7 +1968,7 @@ class GeothermieGUIProfessional:
     
     def _create_status_bar(self):
         """Erstellt die Statusleiste."""
-        self.status_var = tk.StringVar(value="Bereit - Professional Edition V3.4.0-beta1.8")
+        self.status_var = tk.StringVar(value=f"Bereit - Professional Edition V{APP_VERSION}")
         status_bar = ttk.Label(self.root, textvariable=self.status_var,
                               relief=tk.SUNKEN, anchor=tk.W)
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
@@ -3122,13 +3230,13 @@ und wird rechts visualisiert.""")
     
     def _show_about(self):
         """Zeigt Über-Dialog."""
-        about = """Geothermie Erdsonden-Tool
-Professional Edition V3.4.0-beta1.8
+        about = f"""Geothermie Erdsonden-Tool
+Professional Edition V{APP_VERSION}
 
 Für eine vollständige Liste aller Änderungen und neuen Features
 siehe bitte den Changelog:
 
-CHANGELOG_V3.4.0-beta1.md
+CHANGELOG_V3.4.0-beta2.md
 
 © 2026 - Open Source (MIT Lizenz)"""
         messagebox.showinfo("Über", about)

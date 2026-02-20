@@ -23,6 +23,24 @@ class FileController:
     def __init__(self, app):
         self.app = app
 
+    def _build_loads_dict(self, params: Dict, hp_data: Dict) -> Dict:
+        """Baut das loads-Dict für Export inkl. Lastprofil-Daten."""
+        loads = {
+            "annual_heating_kwh": params.get("annual_heating", 45000.0),
+            "annual_cooling_kwh": params.get("annual_cooling", 0.0),
+            "peak_heating_kw": params.get("peak_heating", 12.5),
+            "peak_cooling_kw": params.get("peak_cooling", 0.0),
+            "heat_pump_cop": hp_data.get("cop_heating", 4.5),
+        }
+        if hasattr(self.app, 'load_profiles_tab') and self.app.load_profiles_tab:
+            lp_data = self.app.load_profiles_tab.get_load_profile_data()
+            loads["monthly_heating_kwh"] = lp_data.get("monthly_heating_kwh", [])
+            loads["monthly_cooling_kwh"] = lp_data.get("monthly_cooling_kwh", [])
+            loads["monthly_dhw_kwh"] = lp_data.get("monthly_dhw_kwh", [])
+            loads["dhw_enabled"] = lp_data.get("dhw_enabled", True)
+            loads["dhw_persons"] = lp_data.get("dhw_persons", 4)
+        return loads
+
     # ──────────────── .get Export ────────────────
 
     def export_get_file(self):
@@ -107,13 +125,7 @@ class FileController:
                     if (hasattr(app, 'fluid_var') and app.fluid_var.get())
                     else None
                 ),
-                loads={
-                    "annual_heating_kwh": params.get("annual_heating", 45000.0),
-                    "annual_cooling_kwh": params.get("annual_cooling", 0.0),
-                    "peak_heating_kw": params.get("peak_heating", 12.5),
-                    "peak_cooling_kw": params.get("peak_cooling", 0.0),
-                    "heat_pump_cop": hp_data.get("cop_heating", 4.5),
-                },
+                loads=self._build_loads_dict(params, hp_data),
                 temp_limits={
                     "min_fluid_temp": params.get("min_fluid_temp", -3.0),
                     "max_fluid_temp": params.get("max_fluid_temp", 20.0),
@@ -337,6 +349,20 @@ class FileController:
                             loads.get("peak_heating_kw", 12.5))
             self._set_entry("peak_cooling",
                             loads.get("peak_cooling_kw", 0.0))
+
+            # Lastprofile (monatliche Werte, Warmwasser)
+            if (hasattr(app, 'load_profiles_tab') and app.load_profiles_tab
+                    and any(k in loads for k in ("monthly_heating_kwh",
+                                                 "monthly_cooling_kwh",
+                                                 "dhw_enabled"))):
+                lp_data = {
+                    "monthly_heating_kwh": loads.get("monthly_heating_kwh"),
+                    "monthly_cooling_kwh": loads.get("monthly_cooling_kwh"),
+                    "monthly_dhw_kwh": loads.get("monthly_dhw_kwh"),
+                    "dhw_enabled": loads.get("dhw_enabled", True),
+                    "dhw_persons": loads.get("dhw_persons", 4),
+                }
+                app.load_profiles_tab.set_load_profile_data(lp_data)
 
             # Temperaturgrenzen
             temp = data.get("temperature_limits", {})
@@ -640,13 +666,7 @@ class FileController:
                     if (hasattr(app, 'fluid_var') and app.fluid_var.get())
                     else None
                 ),
-                loads={
-                    "annual_heating_kwh": params.get("annual_heating", 45000.0),
-                    "annual_cooling_kwh": params.get("annual_cooling", 0.0),
-                    "peak_heating_kw": params.get("peak_heating", 12.5),
-                    "peak_cooling_kw": params.get("peak_cooling", 0.0),
-                    "heat_pump_cop": hp_data.get("cop_heating", 4.5),
-                },
+                loads=self._build_loads_dict(params, hp_data),
                 temp_limits={
                     "min_fluid_temp": params.get("min_fluid_temp", -3.0),
                     "max_fluid_temp": params.get("max_fluid_temp", 20.0),

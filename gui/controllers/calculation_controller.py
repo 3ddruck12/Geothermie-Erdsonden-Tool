@@ -169,6 +169,13 @@ class CalculationController:
         thermal_diffusivity = (params["ground_thermal_cond"] /
                                params["ground_heat_cap"])
 
+        # Monatliche Faktoren aus Lastprofil-Tab (falls vorhanden)
+        monthly_heating_factors = None
+        monthly_cooling_factors = None
+        if hasattr(app, 'load_profiles_tab') and app.load_profiles_tab:
+            monthly_heating_factors = app.load_profiles_tab.get_monthly_heating_factors()
+            monthly_cooling_factors = app.load_profiles_tab.get_monthly_cooling_factors()
+
         app.vdi4640_result = app.vdi4640_calc.calculate_complete(
             ground_thermal_conductivity=params["ground_thermal_cond"],
             ground_thermal_diffusivity=thermal_diffusivity,
@@ -186,7 +193,9 @@ class CalculationController:
                                              params["heat_pump_cop"]),
             t_fluid_min_required=params["min_fluid_temp"],
             t_fluid_max_required=params["max_fluid_temp"],
-            delta_t_fluid=params.get("delta_t_fluid", 3.0)
+            delta_t_fluid=params.get("delta_t_fluid", 3.0),
+            monthly_heating_factors=monthly_heating_factors,
+            monthly_cooling_factors=monthly_cooling_factors
         )
 
         # Warnung bei Überschreitung maximaler Sondenlänge
@@ -242,6 +251,78 @@ class CalculationController:
     def _run_iterative(self, params, pipe_config, num_boreholes):
         """Iterativer Berechnungspfad (Eskilson/Hellström)."""
         app = self.app
+        
+        # ─────────────────────────────────────────────────────────────
+        # FELD-INTERFERENZ CHECK (Neu in V3.5)
+        # ─────────────────────────────────────────────────────────────
+        custom_gfunction = None
+        if num_boreholes > 1:
+            try:
+                from calculations.borefield_gfunction import BorefieldCalculator
+                bf_calc = BorefieldCalculator()
+                
+                if bf_calc.is_available():
+                    app.status_var.set("🔄 Berechne Bohrfeld-Interferenz (pygfunction)...")
+                    app.root.update()
+                    
+                    # Layout-Schätzung (Rechteck nährungsweise quadratisch)
+                    import math
+                    side = math.ceil(math.sqrt(num_boreholes))
+                    n_x = side
+                    n_y = math.ceil(num_boreholes / side)
+                    
+                    # Falls das Rechteck größer ist als nötig, korrigieren wir n_y
+                    # (z.B. N=2 -> side=2 -> 2x1 -> passt)
+                    # (z.B. N=3 -> side=2 -> 2x2=4 -> passt für 3, einer fehlt halt)
+                    # pygfunction füllt Rechtecke. Für ungerade Felder ist das eine Näherung,
+                    # aber besser als keine Interferenz.
+                    # Besser: Wenn N != n_x * n_y, warnen oder akzeptieren.
+                    # pygfunction rechnet für volles Rechteck.
+                    # Bei N=3 rechnen wir für 4 und teilen Last durch 3? Nein.
+                    # Wir rechnen g-Funktion für 4 Sonden. Das überschätzt die Interferenz leicht (konservativ).
+                    
+                    # Abstand (Versuche aus GUI zu lesen, Fallback 6m)
+                    spacing = 6.0
+                    if hasattr(app, 'borefield_tab') and hasattr(app.borefield_tab, 'distance_entry'):
+                         try:
+                             val = float(app.borefield_tab.distance_entry.get())
+                             if val > 0: spacing = val
+                         except:
+                             pass
+                    
+                    # Referenztiefe für g-Funktion (Startwert)
+                    calc_depth = params.get("initial_depth", 100.0)
+                    
+                    # Berechnung
+                    g_res = bf_calc.calculate_gfunction(
+                        layout="rectangle",
+                        num_boreholes_x=n_x,
+                        num_boreholes_y=n_y,
+                        spacing_x=spacing,
+                        spacing_y=spacing,
+                        borehole_depth=calc_depth,
+                        borehole_radius=params["borehole_diameter"] / 2,
+                        soil_thermal_diffusivity=params["ground_thermal_cond"] / params["ground_heat_cap"],
+                        simulation_years=int(params["simulation_years"]),
+                        time_resolution="monthly"
+                    )
+                    
+                    custom_gfunction = bf_calc.get_gfunction_interpolator(g_res)
+                    logger.info(f"Bohrfeld-Interferenz berechnet für {n_x}x{n_y} Feld, Abstand {spacing}m.")
+                    
+            except Exception as e:
+                logger.warning(f"Konnte Bohrfeld-Interferenz nicht berechnen: {e}")
+                app.status_var.set("⚠️ Warnung: Berechne ohne Feld-Interferenz (pygfunction Fehler)")
+        
+        # ─────────────────────────────────────────────────────────────
+        
+        # Monatliche Faktoren aus Lastprofil-Tab (falls vorhanden)
+        monthly_heating_factors = None
+        monthly_cooling_factors = None
+        if hasattr(app, 'load_profiles_tab') and app.load_profiles_tab:
+            monthly_heating_factors = app.load_profiles_tab.get_monthly_heating_factors()
+            monthly_cooling_factors = app.load_profiles_tab.get_monthly_cooling_factors()
+
         app.result = app.calculator.calculate_required_depth(
             ground_thermal_conductivity=params["ground_thermal_cond"],
             ground_heat_capacity=params["ground_heat_cap"],
@@ -267,13 +348,24 @@ class CalculationController:
             min_fluid_temperature=params["min_fluid_temp"],
             max_fluid_temperature=params["max_fluid_temp"],
             simulation_years=int(params["simulation_years"]),
-            initial_depth=params["initial_depth"])
+            initial_depth=params["initial_depth"],
+            n_boreholes=num_boreholes,
+            custom_gfunction=custom_gfunction,
+            monthly_heating_factors=monthly_heating_factors,
+            monthly_cooling_factors=monthly_cooling_factors
+        )
 
         app.vdi4640_result = None
-        app.status_var.set(
-            f"✓ Berechnung erfolgreich! {app.result.required_depth:.1f}m "
-            f"× {num_boreholes} = "
-            f"{app.result.required_depth * num_boreholes:.1f}m gesamt")
+        
+        msg = f"✓ Berechnung erfolgreich! {app.result.required_depth:.1f}m pro Sonde"
+        if num_boreholes > 1:
+            msg += f" ({num_boreholes} Sonden)"
+            if custom_gfunction:
+                msg += " [mit Feld-Interferenz]"
+            else:
+                msg += " [OHNE Interferenz]"
+        
+        app.status_var.set(msg)
 
     # ──────────────── Hilfsmethoden ────────────────
 

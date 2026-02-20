@@ -2,6 +2,8 @@
 
 Entwicklungsplan für zukünftige Versionen des Geothermie Erdsondentool (GET).
 
+> **Hinweis:** Diese Roadmap beschreibt die öffentliche Produktvision. Detaillierte Cloud-Planung und Preise siehe GET Cloud (separates Projekt).
+
 ---
 
 ## 🎯 Vision
@@ -12,6 +14,22 @@ GET soll das führende Open-Source-Tool für Erdwärmesonden-Berechnung werden m
 - Plattformübergreifender Verfügbarkeit (Desktop & Web)
 - Aktiver Community
 - Nachhaltigem Open-Core-Geschäftsmodell
+
+---
+
+## 📐 Abgrenzung & Scope
+
+GET berechnet **vertikale Erdwärmesonden** (Bohrungen). Folgende Systeme werden aktuell *nicht* berechnet; eine Integration wäre langfristig denkbar:
+
+| System | Typ | Status |
+|:---|:---|:---|
+| **Erdwärmesonden** | Vertikal, Bohrungen | ✅ Kern von GET |
+| **Solarkollektoren** | Thermische Wärmequelle | ❌ Nicht in Scope (Eingabe extern) |
+| **Ringgrabenkollektor** | Horizontal, Rohr in Graben | 🔮 Mögliche Zukunft |
+| **GeoCollect** | Horizontal, Absorberplatten | 🔮 Mögliche Zukunft |
+| **Eisspeicher** | Unterirdischer Wassertank | 🔮 Mögliche Zukunft |
+
+*Solare Sondenregeneration*: Wärmeeinspeisung als Eingabe (CSV/Import); Kollektorauslegung erfolgt extern.
 
 ---
 
@@ -132,7 +150,7 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 #### 🏗️ Phase 1 – Architektur-Refactoring ✓
 
-> **Fertiggestellt: Februar 2026 (V3.4.0-beta1)**
+> **Fertiggestellt: Februar 2026 (V3.4.0-beta2)**
 
 - [x] **God-Class aufgelöst** – `main_window_v3_professional.py` (4.648 → 3.353 Zeilen) aufgeteilt:
   - [x] `gui/tabs/input_tab.py` – Eingabefelder, Dropdowns, Validierung
@@ -163,21 +181,21 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 #### 📊 Phase 2 – Monatliche Lastprofile (Hauptfeature)
 
-- [ ] **Monatliche Wärmebedarfs-Eingabe** (neuer Tab)
-  - [ ] 12×3 Eingabetabelle (Monat | Heizlast [kWh] | Kühllast [kWh])
-  - [ ] Schnelleingabe: Jahreswert automatisch auf Monate verteilen
-  - [ ] Profile aus Vorlagen laden (EFH, MFH, Büro, Gewerbe)
-  - [ ] Summenzeile mit Plausibilitäts-Check (Summe = Jahresbedarf)
-  - [ ] Anbindung an `monthly_heating_factors` / `monthly_cooling_factors` (bereits im Backend vorhanden)
-- [ ] **Warmwasser-Lastprofil**
-  - [ ] Checkbox Warmwasser je Monat (Sommer/Winter-Unterscheidung)
-  - [ ] Warmwasser-Bedarf aus Personenzahl berechnen (VDI 2067)
-  - [ ] Separate Warmwasser-Last auf monatliche Faktoren aufteilen
-- [ ] **Lastprofil-Diagramme**
-  - [ ] Gestapeltes Balkendiagramm: Heizen + Kühlen + Warmwasser pro Monat
-  - [ ] Liniendiagramm: Jahresverlauf mit Spitzenlasten
-  - [ ] Monatliche Entzugsleistung (W/m) als Zeitreihe
-  - [ ] Export als PNG/PDF
+- [x] **Monatliche Wärmebedarfs-Eingabe** (neuer Tab „Lastprofile“)
+  - [x] 12×3 Eingabetabelle (Monat | Heizlast [kWh] | Kühllast [kWh])
+  - [x] Schnelleingabe: Jahreswert automatisch auf Monate verteilen
+  - [x] Profile aus Vorlagen laden (EFH, MFH, Büro, Gewerbe)
+  - [x] Summenzeile mit Plausibilitäts-Check (Summe = Jahresbedarf)
+  - [x] Anbindung an `monthly_heating_factors` / `monthly_cooling_factors` (bereits im Backend vorhanden)
+- [x] **Warmwasser-Lastprofil**
+  - [x] Checkbox Warmwasser je Monat (Sommer/Winter-Unterscheidung)
+  - [x] Warmwasser-Bedarf aus Personenzahl berechnen (VDI 2067)
+  - [x] Separate Warmwasser-Last auf monatliche Faktoren aufteilen
+- [x] **Lastprofil-Diagramme**
+  - [x] Gestapeltes Balkendiagramm: Heizen + Kühlen + Warmwasser pro Monat
+  - [x] Liniendiagramm: Jahresverlauf mit Spitzenlasten
+  - [ ] Monatliche Entzugsleistung (W/m) als Zeitreihe *(noch offen)*
+  - [x] Export als PNG/PDF
 
 #### 📊 Phase 3 – Langzeit-Simulation
 
@@ -193,6 +211,7 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [ ] Monatliche COP-Berechnung basierend auf Fluidtemperatur
   - [ ] Jahresarbeitszahl (JAZ) aus monatlichen Profilen
   - [ ] Vergleich: JAZ bei verschiedenen Sondentiefen
+  - [ ] **Temperatur- und teillastabhängiger COP** *(GHEtool-Inspiration)* – COP als Funktion von Ein-/Austrittstemperatur und Teillast
 
 #### 🎨 Phase 4 – GUI-Modernisierung
 
@@ -219,6 +238,10 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 - [x] ~~Interaktive Karte für Standortwahl~~ *(erledigt in V3.3.6.1: OSM-Karte)*
 - [x] ~~GPS-Koordinaten-Integration~~ *(erledigt in V3.3.6.1: PVGIS-Geocoding)*
+- [ ] **Open Data Geothermie (Bundesländer)** – Anbindung an OGC-APIs und WMS der Landesämter
+  - Automatischer Abruf von Geothermie-Karten und Bodendaten nach Standort
+  - NRW: ogc-api.nrw.de, WMS Geothermie; weitere Bundesländer (Bayern, BW, Hessen, …)
+  - Lizenz: DL-DE/BY-2.0 (Datenlizenz Deutschland – Namensnennung)
 - [ ] Automatische Boden-Datenbank nach Region (Basisdaten)
 
 #### 📄 Vergleichsberichte
@@ -231,7 +254,7 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 > [!NOTE]
 > Folgende Features aus V3.5 wurden in **GET Cloud** (proprietär) verschoben:
 > Sensitivitäts-Analyse, CSV/Excel-Export, Wirtschaftlichkeitsberechnung,
-> GEG/BEG-Integration, Geologische Karten, Multi-Szenario-Vergleich
+> GEG/BEG-Integration, Geologische Karten, Multi-Szenario-Vergleich.
 
 ---
 
@@ -246,6 +269,18 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - Thermische Beeinflussung benachbarter Bohrungen
   - Optimaler Abstand basierend auf Geologie
   - Langzeit-Interaktions-Analyse
+- [ ] **Einfluss von Nachbarsonden** – Thermische Beeinflussung durch externe Sondenfelder auf angrenzenden Grundstücken (Quartiersplanung)
+- [ ] **Bohrfeld-Konfigurations-Optimierung** *(GHEtool-Inspiration)*
+  - Automatische Suche optimaler Anordnung (L, U, Rechteck, Box, Staggered)
+  - Bei gegebener Fläche: minimale Bohrmeter finden
+  - Optuna-basierte Optimierung (Abhängigkeit: `optuna`)
+
+#### 🌡️ GHEtool-Integration – Erweiterte Berechnungsmodelle
+> **Kontext**: [GHEtool](https://github.com/wouterpeere/GHEtool) (BSD-Lizenz) bietet erweiterte Methoden. GET und GHEtool nutzen beide pygfunction – gemeinsame Basis für Integration.
+- [ ] **Geothermischer Temperaturgradient** – Bodentemperatur steigt mit Tiefe (relevant ab >100 m)
+- [ ] **Mehrschichtiger Boden** – Verschiedene Bodeneigenschaften pro Tiefenschicht
+- [ ] **Stündliche Lastprofile (L4-Sizing)** – 8760 Pulse/Jahr für präzisere Auslegung bei variablen Lasten
+- [ ] **Building Load statt Geothermal Load** – Eingabe als Gebäudelast (kWh Heizen/Kühlen), interne Umrechnung via COP/EER
 
 #### 🌊 Erweiterte Hydraulische Auslegung
 - [ ] **Druckabfall der Verteiler** (detailliert)
@@ -257,7 +292,24 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 - [ ] Gesamtsystem-Druckabfall
 
 #### 📐 CAD-Export
-- [ ] DXF-Export des Bohrfeld-Layouts (Grundriss mit Koordinaten und Abständen)
+- [ ] **DXF-Export des Bohrfeld-Layouts**
+  - Bohransatzpunkte (Positionen der Bohrungen)
+  - Anbindungsleitungen (Verbindungen zu Verteiler)
+  - Verteiler (Positionen)
+  - Koordinaten und Abstände
+  - Georeferenzierter Lageplan (optional)
+  - Farbcodierung (z.B. grün: Bohransatzpunkte, lila: Anbindungsleitungen)
+
+#### 🔬 Erweiterte Simulationen
+- [ ] **TRT-Simulation** – Auswertung von Thermal Response Tests (instationär, Minutenbereich)
+- [ ] **TRT-Integration** *(Verfüllungsqualität)*
+  - TRT-Datenimport (CSV/Excel: Temperatur- und Leistungsverlauf)
+  - TRT-Auswertung – λ und R<sub>b</sub> aus Line-Source-Methode (VDI 4640 Blatt 5)
+  - Option „R<sub>b</sub> aus TRT übernehmen“ statt Berechnung
+- [ ] **Verfüllprotokoll-Import** – Dokumentation von HMG-/DPG-Messdaten (optional)
+- [ ] **Magnetometrie-Datenimport** – CSV-Import (Tiefe, magnetische Feldstärke) bei magnetischem Verfüllmaterial (VDI 4640 Blatt 5)
+- [ ] **Solare Sondenregeneration** – Stündliche Wärmeeinspeisung über thermische Solarkollektoren
+- [ ] **Direktkühlung (Free Cooling)** – TABS, Kühldecken, Lüftung direkt an Sonden gekoppelt
 
 > [!NOTE]
 > Folgende Features aus V3.6 wurden in **GET Cloud** (proprietär) verschoben:
@@ -272,7 +324,7 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 > [!NOTE]
 > Folgende Features aus V4.0 wurden in **GET Cloud** (proprietär) verschoben:
-> Plugin-System, Plugin-API, CAD-Integration, 3D-Visualisierung, REST-API, BIM-Export (IFC), Kostenberechnung, Angebots-PDF
+> Plugin-System, Plugin-API, CAD-Integration, 3D-Visualisierung (Plotly.js), REST-API, BIM-Export (IFC), Kostenberechnung, Angebots-PDF
 
 ---
 
@@ -284,7 +336,7 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 
 ### Feature-Matrix
 
-| Feature | Desktop (MIT) | ☁️ Free | ☁️ Pro (29€/M) | ☁️ Business (79€/M) | ☁️ Enterprise (199€/M) |
+| Feature | Desktop (MIT) | ☁️ Free | ☁️ Pro | ☁️ Business | ☁️ Enterprise |
 |---|:---:|:---:|:---:|:---:|:---:|
 | **Berechnung** | | | | | |
 | VDI 4640 + Iterativ (Eskilson) | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -309,11 +361,18 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 | 🔒 Sensitivitäts-Analyse | ❌ | ❌ | ❌ | ✅ | ✅ |
 | 🔒 Langzeit-Simulation (50 J.) | ❌ | ❌ | ❌ | ✅ | ✅ |
 | 🔒 Geologische Karten-Integration | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 🔒 Open Data Geothermie (Bundesländer) | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 🔒 Grundwasser-Strömung (MODFLOW 6 GWE) | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 🔒 Einfluss Nachbarsonden (Quartiersplanung) | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 🔒 Solare Regeneration & Direktkühlung | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 🔒 TRT-Simulation (Thermal Response Test) | ❌ | ❌ | ❌ | ✅ | ✅ |
 | 🔒 Optimierungs-Tools | ❌ | ❌ | ❌ | ✅ | ✅ |
 | 🔒 Team-Projekte & Collaboration | ❌ | ❌ | ❌ | ✅ (3 Nutzer) | ✅ (10 Nutzer) |
 | 🔒 Cloud-Backup & Auto-Sync | ❌ | ❌ | ❌ | ✅ | ✅ |
-| 🔒 3D-Visualisierung (Bohrfeld) | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 🔒 3D-Visualisierung (Bohrfeld, Plotly.js) | ❌ | ❌ | ❌ | ❌ | ✅ |
 | 🔒 Kostenberechnung & Angebots-PDF | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 🔒 Beschaffungsliste (Projekt-Materialliste) | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 🔒 Bohrkern-Dokumentation (Bodenschichten-Log) | ❌ | ❌ | ❌ | ❌ | ✅ |
 | 🔒 REST-API-Zugang | ❌ | ❌ | ❌ | ❌ | ✅ |
 | 🔒 BIM-Export (IFC-Format) | ❌ | ❌ | ❌ | ❌ | ✅ |
 | 🔒 CSV/Excel-Export | ❌ | ❌ | ❌ | ❌ | ✅ |
@@ -332,34 +391,118 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 ### Was ist proprietär (nur GET Cloud)?
 
 - 🔒 Web-Frontend (Vue.js / Next.js)
-- 🔒 Cloud-Infrastruktur & Hosting (Hetzner, DSGVO-konform)
+- 🔒 Cloud-Infrastruktur & Hosting (DSGVO-konform)
 - 🔒 Plugin-System & Plugin-API
 - 🔒 CAD-Integration & CAD-Import/Export
 - 🔒 Wärmepumpen-Hersteller-Datenbank (reale Kennlinien)
 - 🔒 GEG/BEG-Prüflogik & Förderrechner
 - 🔒 Wirtschaftlichkeitsberechnung & Angebots-PDF
+- 🔒 Beschaffungsliste (Projekt-Materialliste) – Rohr-Meter, Verfüllmaterial, Fluid, Pumpe, Verteiler; Export PDF/CSV
+- 🔒 Bohrkern-Dokumentation – Schichten pro Bohrung (Gestein, Material, Tiefe von–bis), Proben-Dosen-Zuordnung, Schichtenlog-Bericht
 - 🔒 Team-Collaboration & Nutzerverwaltung
 - 🔒 Whitelabel-PDF (Firmenlogo auf Berichten)
 - 🔒 Szenario-Vergleich & Sensitivitäts-Analyse
 - 🔒 Optimierungs-Tools (Auto-Tiefe, Kosten-optimal)
-- 🔒 3D-Visualisierung (Bohrfeld, Temperaturen)
+- 🔒 3D-Visualisierung (Bohrfeld, Temperaturen) – Plotly.js
 - 🔒 Geologische Karten-Integration
+- 🔒 Open Data Geothermie (Bundesländer) – OGC-API, WMS, DL-DE/BY-2.0
+- 🔒 Grundwasser-Strömung (MODFLOW 6 GWE, flopy) – Public Domain, subscription-tauglich
+- 🔒 Einfluss von Nachbarsonden (Quartiersplanung)
+- 🔒 Solare Sondenregeneration & Direktkühlung (TABS, Free Cooling)
+- 🔒 TRT-Simulation & TRT-Integration (Datenimport, Auswertung, R<sub>b</sub>-Übernahme)
 - 🔒 REST-API & BIM-Export (IFC)
 - 🔒 CSV/Excel-Export
 
 ### Geplante Phasen
 
-- [ ] **Q2 2026**: FastAPI-Backend (Berechnungskern als Web-Service)
-- [ ] **Q3 2026**: Web-Frontend, Stripe-Integration, Beta-Launch
-- [ ] **Q4 2026**: Öffentlicher Launch (Free + Professional)
-- [ ] **Q2 2027**: Enterprise-Plan (3D-Vis, REST-API, BIM, Kosten, Angebots-PDF)
-- [ ] **Vision 2028+**: **GET IoT & Community Data**
-  - Vernetzung von Planung und Ausführung im Feld
-  - Digitale Dokumentationsunterstützung für Fachbetriebe
-  - Aufbau einer kollaborativen Geodatenbasis zur Präzisierung von Projektvorhersagen
-  - Datenbasierte Optimierungsalgorithmen für die Anlagenauslegung
+- [ ] **Backend & Infrastruktur**: FastAPI, REST-API (versioniert, modular, Auth, Logging)
+- [ ] **Web-Frontend & Beta**: Vue.js/Next.js, Beta-Launch
+- [ ] **Öffentlicher Launch**: Free- und Professional-Pläne
+- [ ] **Enterprise-Plan**: 3D-Visualisierung, REST-API, BIM, Kostenberechnung, Beschaffungsliste, Bohrkern-Dokumentation
+- [ ] **Erweiterte Simulationen**: Grundwasser-Strömung, Nachbarsonden, Solare Regeneration, TRT, Direktkühlung
+- [ ] **Vision**: GET IoT & Community Data – Vernetzung Planung/Ausführung, kollaborative Geodatenbasis
 
-Details zur Umsetzung siehe privates Repository `GET-Cloud`.
+---
+
+## 🔗 GHEtool-Integration – Übersicht
+
+[GHEtool](https://github.com/wouterpeere/GHEtool) (KU Leuven, FH Aachen, 3-Clause BSD) ergänzt klassische Methoden um erweiterte Berechnungsmodelle. GET und GHEtool nutzen beide **pygfunction** – eine Integration ist technisch gut möglich.
+
+| Priorität | Feature | Zielversion | Abhängigkeiten |
+|:---:|:---|:---:|:---|
+| Hoch | Geothermischer Temperaturgradient | V3.6 | – |
+| Hoch | Bohrfeld-Konfigurations-Optimierung | V3.6 | optuna |
+| Mittel | Temperatur-/teillastabhängiger COP | V3.4 | – |
+| Mittel | Stündliche Lastprofile (L4) | V3.6 | – |
+| Mittel | Building Load statt Geothermal Load | V3.4/V3.5 | – |
+| Mittel | Mehrschichtiger Boden | V3.6 | – |
+| Niedrig | Variable Durchflussraten | V3.6 | – |
+| Niedrig | Exotische Rohrtypen (Separatus, Conical) | optional | – |
+
+---
+
+## 🌊 MODFLOW 6 GWE – Grundwasser-Strömung (GET Cloud)
+
+[MODFLOW 6 GWE](https://modflow6-examples.readthedocs.io/en/develop/_notebooks/ex-gwe-geotherm.html) (USGS) simuliert Erdwärmesonden in strömendem Grundwasser – advektiver Wärmetransport, Interferenz mehrerer BHEs. **Lizenz**: Public Domain (MODFLOW 6) + CC0 (flopy) → uneingeschränkt kommerziell nutzbar, subscription-tauglich.
+
+| Aspekt | Details |
+|:---|:---|
+| **Ziel** | GET Cloud Business/Enterprise |
+| **Technologie** | flopy + MODFLOW 6 GWE |
+| **Lizenz** | Public Domain – keine Gebühren, keine Einschränkungen |
+| **Referenz** | Al-Khoury et al. (2021), MODFLOW 6 Examples |
+
+---
+
+## 🗺️ Open Data Geothermie – Bundesländer
+
+Die Bundesländer stellen Geothermie-Karten und Bodendaten als Open Data bereit. Anbindung ermöglicht automatischen Abruf nach Standort (Koordinaten).
+
+| Aspekt | Details |
+|:---|:---|
+| **Desktop** | V3.5 – Standort-Funktionen |
+| **GET Cloud** | Business/Enterprise |
+| **Quellen** | NRW (ogc-api.nrw.de, WMS), Bayern, BW, Hessen, Niedersachsen, … |
+| **Technologie** | OGC API, WMS, WFS |
+| **Lizenz** | DL-DE/BY-2.0 (Datenlizenz Deutschland – Namensnennung) |
+
+---
+
+## 📊 Erweiterte Simulationen – Feature-Übersicht
+
+Übersicht der geplanten erweiterten Berechnungsfunktionen:
+
+| Feature | GET Status |
+|:---|:---|
+| Stündliche Simulation (L4) | ⏳ V3.6 |
+| Bohrfeld-Optimierung | ⏳ V3.6 |
+| Mehrschichtiger Boden | ⏳ V3.6 |
+| Grundwasser-Strömung | ⏳ GET Cloud |
+| Einfluss Nachbarsonden | ⏳ V3.6 + GET Cloud |
+| Solare Regeneration | ⏳ V3.6 + GET Cloud |
+| TRT-Simulation | ⏳ V3.6 + GET Cloud |
+| TRT-Integration (Datenimport, Auswertung, R<sub>b</sub>-Übernahme) | ⏳ V3.6 + GET Cloud |
+| Verfüllprotokoll-Import (HMG, DPG) | ⏳ V3.6 |
+| Magnetometrie-Datenimport (magnetisches Verfüllmaterial) | ⏳ V3.6 |
+| Direktkühlung (TABS, Free Cooling) | ⏳ V3.6 + GET Cloud |
+| Open Data Geothermie (Bundesländer) | ⏳ V3.5 + GET Cloud |
+
+---
+
+## 🔬 Verfüllungsqualität & TRT-Integration
+
+Methoden zur Messung der Verfüllqualität und Anbindung an GET:
+
+| Methode | Liefert | Integration |
+|:---|:---|:---|
+| **Thermal Response Test (TRT)** | λ, R<sub>b</sub>, T<sub>0</sub> | V3.6 – Datenimport, Auswertung, R<sub>b</sub>-Übernahme |
+| **Magnetometrie** (magnetisches Verfüllmaterial) | Verfüllkontinuität über Tiefe | V3.6 – Magnetometrie-Datenimport |
+| **Verfüllungsüberwachung (HMG-S/K)** | Protokoll während Installation | V3.6 – Verfüllprotokoll-Import |
+| **Durchfluss-/Dichtigkeitsprüfung (DPG-C3)** | Leckage-Prüfung | V3.6 – Protokoll-Dokumentation |
+
+**Norm:** VDI 4640 Blatt 5 (TRT, Magnetometrie bei ferromagnetischem Verfüllmaterial)
+
+**Hardware:** IoT- bzw. Mikrocontroller-basierte Magnetometrie-Sonden können Daten im CSV-Format liefern.
 
 ---
 
@@ -367,6 +510,7 @@ Details zur Umsetzung siehe privates Repository `GET-Cloud`.
 
 ### 🛰️ GET IoT & Vernetzung
 - [ ] **Digitale Felndatenerfassung**: Unterstützung bei der Erfassung von Bohr- und Standortparametern direkt vor Ort
+- [ ] **Bohrkern-Dokumentation** (GET Cloud Enterprise): Schichten pro Bohrung erfassen (Gestein, Material, Zusammensetzung, Tiefe von–bis), Proben-Dosen-Zuordnung, Schichtenlog-Bericht
 - [ ] **Data Feedback Loop**: Validierung von Planungswerten durch reale Ausführungsdaten zur kontinuierlichen Verbesserung der Berechnungsmodelle
 - [ ] **Echtzeit-Assistenz**: Intelligente Assistenzsysteme während des Erstellungsprozesses von Erdwärme-Anlagen
 
@@ -388,10 +532,14 @@ Details zur Umsetzung siehe privates Repository `GET-Cloud`.
 - [ ] Anomalie-Erkennung in Messdaten
 
 ### Erweiterte Physik
-- [ ] Grundwasser-Strömung berücksichtigen
+- [ ] **Grundwasser-Strömung** – geplant für GET Cloud (MODFLOW 6 GWE + flopy, Public Domain)
+- [ ] **Solare Sondenregeneration** – Wärmeeinspeisung als Eingabe (CSV/Import); Kollektorauslegung extern
+- [ ] **Direktkühlung (Free Cooling)** – TABS, Kühldecken, Lüftung direkt an Sonden
 - [ ] Saisonale Speicher (ATES)
 - [ ] Hybride Systeme (Solar + Geothermie)
 - [ ] Eiskeller-Integration
+- [ ] **Ringgrabenkollektor** – Auslegung horizontaler Grabenkollektoren (langfristig)
+- [ ] **GeoCollect** – Auslegung horizontaler Absorberplatten-Kollektoren (langfristig)
 
 ---
 
@@ -432,6 +580,7 @@ Features werden priorisiert nach:
 
 Aktuelle Änderungen siehe:
 - [CHANGELOG_V3.4.0-beta1](../CHANGELOG_V3.4.0-beta1.md)
+- [CHANGELOG_V3.4.0-beta2](../CHANGELOG_V3.4.0-beta2.md)
 - [CHANGELOG_V3.3.0-beta1](../CHANGELOG_V3.3.0-beta1.md)
 - [CHANGELOG_V3.3.0-beta2](../CHANGELOG_V3.3.0-beta2.md)
 - [CHANGELOG_V3.3.0-beta3](../CHANGELOG_V3.3.0-beta3.md)
@@ -455,4 +604,4 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 
 **Diese Roadmap ist ein lebendiges Dokument und wird regelmäßig aktualisiert basierend auf Community-Feedback und Entwicklungs-Fortschritt.**
 
-**Stand**: Februar 2026 (V3.4.0-beta1, Planung V3.4 Phase 2–4 & GET Cloud)
+**Stand**: Februar 2026 (V3.4.0-beta2, Planung V3.4 Phase 2–4, V3.6 GHEtool-Integration & GET Cloud)

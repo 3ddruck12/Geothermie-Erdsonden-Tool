@@ -55,3 +55,7 @@ build/
 # Package build
 package/
 
+# Projekt-spezifische Dokumentation (nicht versionieren)
+docs/HARDWARE.md
+docs/AUDIT_V3.4.md
+

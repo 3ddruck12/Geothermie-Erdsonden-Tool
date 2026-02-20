@@ -1,16 +1,10 @@
 #!/bin/bash
-# Startskript für Geothermie Erdsonden-Tool
+cd "/home/jens/Dokumente/Software Projekte/Geothermietool"
 
-cd "$(dirname "$0")"
-
-# Aktiviere virtuelle Umgebung
-if [ -d "venv" ]; then
-    source venv/bin/activate
-else
-    echo "Fehler: Virtuelle Umgebung 'venv' nicht gefunden!"
-    echo "Bitte führen Sie zuerst 'python3 -m venv venv' aus."
-    exit 1
+# Check if venv exists, if so activate
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
 fi
 
-# Starte Programm
+export PYTHONPATH=$PYTHONPATH:.
 python3 main.py

@@ -31,13 +31,16 @@ def main():
     """Hauptfunktion - startet die GUI."""
     try:
         # Erstelle Hauptfenster
-        root = tk.Tk()
+        # className für Linux: WM_CLASS = StartupWMClass in .desktop (Taskleisten-Icon)
+        root = tk.Tk(className='geothermie-erdsondentool')
         
         # Setze App-Icon für Windows Taskleiste
         try:
             # Pfad für PyInstaller (OneDir/OneFile) berücksichtigen
             base_path = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(__file__)))
             icon_path = os.path.join(base_path, "Icons", "icon.ico")
+            if not os.path.exists(icon_path):
+                icon_path = os.path.join(base_path, "Icons", "favicon.ico")
             
             if os.path.exists(icon_path):
                 root.iconbitmap(icon_path)

@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 TILE_SIZE = 256
 OSM_TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-USER_AGENT = "GeothermieErdsonden-Tool/3.3 (Bohranzeige-Lageplan)"
+USER_AGENT = "GeothermieErdsonden-Tool/3.4 (Bohranzeige-Lageplan)"
 
 # Standard-Zoom und Bildgröße
 DEFAULT_ZOOM = 16

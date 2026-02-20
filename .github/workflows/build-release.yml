@@ -117,21 +117,35 @@ jobs:
         mkdir -p package/usr/local/bin
         mkdir -p package/usr/share/applications
         mkdir -p package/usr/share/pixmaps
+        mkdir -p package/usr/share/icons/hicolor/256x256/apps
+        mkdir -p package/usr/share/icons/hicolor/48x48/apps
         mkdir -p package/usr/share/doc/geothermie-erdsondentool
         
         cp dist/geothermie-erdsondentool package/usr/local/bin/
         chmod +x package/usr/local/bin/geothermie-erdsondentool
         
-        # Icon konvertieren und kopieren
-        convert Icons/icon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
+        # Icon konvertieren – icon.ico oder favicon.ico (Fallback)
+        if [ -f Icons/icon.ico ]; then
+          convert Icons/icon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
+        elif [ -f Icons/favicon.ico ]; then
+          convert Icons/favicon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
+        else
+          echo "Warnung: Kein Icon gefunden (Icons/icon.ico oder Icons/favicon.ico), erstelle Platzhalter"
+          convert -size 256x256 xc:#1f4788 -fill white -draw "circle 128,128 128,50" package/usr/share/pixmaps/geothermie-erdsondentool.png
+        fi
         
-        # Desktop Entry
+        # XDG Icon Theme (für Startmenü und Taskleiste auf GNOME/KDE)
+        cp package/usr/share/pixmaps/geothermie-erdsondentool.png package/usr/share/icons/hicolor/256x256/apps/
+        convert package/usr/share/pixmaps/geothermie-erdsondentool.png -resize 48x48 package/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
+        
+        # Desktop Entry (StartupWMClass für Taskleisten-Icon)
         cat > package/usr/share/applications/geothermie-erdsondentool.desktop << EOF
         [Desktop Entry]
         Name=GET - Geothermie Erdsondentool
         Comment=Berechnung von Erdwärmesonden bis 100m
         Exec=/usr/local/bin/geothermie-erdsondentool
         Icon=geothermie-erdsondentool
+        StartupWMClass=geothermie-erdsondentool
         Terminal=false
         Type=Application
         Categories=Science;Engineering;Education;
@@ -155,13 +169,57 @@ jobs:
           --deb-priority optional \
           --deb-no-default-config-files \
           -C package \
-          usr/local/bin usr/share/applications usr/share/pixmaps usr/share/doc
+          usr/local/bin usr/share/applications usr/share/pixmaps usr/share/icons usr/share/doc
     
     - name: Upload DEB artifact
       uses: actions/upload-artifact@v4
       with:
         name: GeothermieErdsondentool-Linux-DEB
         path: "*.deb"
+    
+    - name: Create AppImage Type 2
+      run: |
+        mkdir -p AppDir/usr/bin
+        mkdir -p AppDir/usr/share/applications
+        mkdir -p AppDir/usr/share/pixmaps
+        mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+        mkdir -p AppDir/usr/share/icons/hicolor/48x48/apps
+        
+        cp package/usr/local/bin/geothermie-erdsondentool AppDir/usr/bin/
+        chmod +x AppDir/usr/bin/geothermie-erdsondentool
+        
+        cp package/usr/share/pixmaps/geothermie-erdsondentool.png AppDir/usr/share/pixmaps/
+        cp package/usr/share/icons/hicolor/256x256/apps/geothermie-erdsondentool.png AppDir/usr/share/icons/hicolor/256x256/apps/
+        cp package/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png AppDir/usr/share/icons/hicolor/48x48/apps/
+        
+        cp package/usr/share/pixmaps/geothermie-erdsondentool.png AppDir/.DirIcon
+        
+        cat > AppDir/usr/share/applications/geothermie-erdsondentool.desktop << EOF
+        [Desktop Entry]
+        Name=GET - Geothermie Erdsondentool
+        Comment=Berechnung von Erdwärmesonden bis 100m
+        Exec=\$APPDIR/usr/bin/geothermie-erdsondentool
+        Icon=geothermie-erdsondentool
+        StartupWMClass=geothermie-erdsondentool
+        Terminal=false
+        Type=Application
+        Categories=Science;Engineering;Education;
+        Keywords=geothermal;erdwaerme;geothermie;borehole;
+        EOF
+        
+        wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool.AppImage
+        chmod +x appimagetool.AppImage
+        
+        ARCH=x86_64 VERSION=$VERSION ./appimagetool.AppImage \
+          --comp xz \
+          AppDir \
+          "GeothermieErdsondentool-$VERSION-x86_64.AppImage"
+    
+    - name: Upload AppImage artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: GeothermieErdsondentool-Linux-AppImage
+        path: "GeothermieErdsondentool-*-x86_64.AppImage"
   
   create-release:
     name: Create Release
@@ -196,6 +254,11 @@ jobs:
       with:
         name: GeothermieErdsondentool-Linux-DEB
     
+    - name: Download Linux AppImage artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: GeothermieErdsondentool-Linux-AppImage
+    
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
@@ -203,6 +266,7 @@ jobs:
           GeothermieErdsondentool-v*.exe
           Setup_GET_v*.exe
           *.deb
+          GeothermieErdsondentool-*-x86_64.AppImage
         tag_name: ${{ github.ref_name }}
         name: Release ${{ env.VERSION }}
         body: |
@@ -211,7 +275,8 @@ jobs:
           ### Downloads
           - **Windows Installer**: `Setup_GET_v${{ env.VERSION }}.exe` (empfohlen)
           - **Windows Portable**: `GeothermieErdsondentool-v${{ env.VERSION }}.exe`
-          - **Linux**: `geothermie-erdsondentool_${{ env.VERSION }}_amd64.deb`
+          - **Linux DEB**: `geothermie-erdsondentool_${{ env.VERSION }}_amd64.deb`
+          - **Linux AppImage**: `GeothermieErdsondentool-${{ env.VERSION }}-x86_64.AppImage` (universell)
           
           ### Installation
           
@@ -231,10 +296,18 @@ jobs:
           sudo apt-get install -f  # Falls Abhängigkeiten fehlen
           ```
           
+          #### Linux (AppImage – alle Distributionen)
+          ```bash
+          chmod +x GeothermieErdsondentool-${{ env.VERSION }}-x86_64.AppImage
+          ./GeothermieErdsondentool-${{ env.VERSION }}-x86_64.AppImage
+          ```
+          
           ### Features
           - ✅ Architektur-Refactoring (God-Class aufgelöst)
-          - ✅ 71 pytest Unit-Tests
-          - ✅ 5 Tab-Module + 2 Controller
+          - ✅ Monatliche Lastprofile (EFH, MFH, Büro, Gewerbe)
+          - ✅ Warmwasser nach VDI 2067
+          - ✅ 91 pytest Unit-Tests
+          - ✅ 6 Tab-Module + 2 Controller
           - ✅ Berechnung von Erdwärmesonden bis 100m
           - ✅ PE 100 RC Rohre mit Dual- und 4-Verbinder
           - ✅ PDF-Berichtserstellung

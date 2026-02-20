@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<load_profiles_database>
+    <metadata>
+        <version>1.0</version>
+        <last_updated>2026-02-20</last_updated>
+        <description>Lastprofil-Vorlagen für monatliche Heiz- und Kühllastverteilung</description>
+        <source>VDI 4640, typische Gebäudenutzungsprofile Mitteleuropa</source>
+    </metadata>
+
+    <!-- Heiz-/Kühlfaktoren: Anteile pro Monat (Jan–Dez), Summe = 1.0 -->
+
+    <load_profile>
+        <id>efh</id>
+        <name>EFH (Einfamilienhaus)</name>
+        <description>Typische Heizlastverteilung Einfamilienhaus Mitteleuropa</description>
+        <building_type>residential</building_type>
+        <heating_factors>
+            <!-- Jan Feb Mär Apr Mai Jun Jul Aug Sep Okt Nov Dez -->
+            <month>0.155</month>
+            <month>0.148</month>
+            <month>0.125</month>
+            <month>0.099</month>
+            <month>0.064</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.061</month>
+            <month>0.087</month>
+            <month>0.117</month>
+            <month>0.144</month>
+        </heating_factors>
+        <cooling_factors>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.05</month>
+            <month>0.15</month>
+            <month>0.25</month>
+            <month>0.30</month>
+            <month>0.25</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.0</month>
+        </cooling_factors>
+    </load_profile>
+
+    <load_profile>
+        <id>mfh</id>
+        <name>MFH (Mehrfamilienhaus)</name>
+        <description>Mehrfamilienhaus, etwas ausgeglichenere Verteilung</description>
+        <building_type>residential</building_type>
+        <heating_factors>
+            <month>0.14</month>
+            <month>0.135</month>
+            <month>0.12</month>
+            <month>0.10</month>
+            <month>0.07</month>
+            <month>0.02</month>
+            <month>0.01</month>
+            <month>0.01</month>
+            <month>0.06</month>
+            <month>0.09</month>
+            <month>0.12</month>
+            <month>0.125</month>
+        </heating_factors>
+        <cooling_factors>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.02</month>
+            <month>0.08</month>
+            <month>0.15</month>
+            <month>0.22</month>
+            <month>0.25</month>
+            <month>0.23</month>
+            <month>0.05</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.0</month>
+        </cooling_factors>
+    </load_profile>
+
+    <load_profile>
+        <id>buero</id>
+        <name>Büro</name>
+        <description>Bürogebäude, Kühllast dominant im Sommer</description>
+        <building_type>commercial</building_type>
+        <heating_factors>
+            <month>0.12</month>
+            <month>0.12</month>
+            <month>0.11</month>
+            <month>0.09</month>
+            <month>0.06</month>
+            <month>0.02</month>
+            <month>0.01</month>
+            <month>0.01</month>
+            <month>0.05</month>
+            <month>0.10</month>
+            <month>0.12</month>
+            <month>0.19</month>
+        </heating_factors>
+        <cooling_factors>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.03</month>
+            <month>0.08</month>
+            <month>0.14</month>
+            <month>0.18</month>
+            <month>0.25</month>
+            <month>0.23</month>
+            <month>0.09</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.0</month>
+        </cooling_factors>
+    </load_profile>
+
+    <load_profile>
+        <id>gewerbe</id>
+        <name>Gewerbe</name>
+        <description>Gewerbegebäude, hohe Kühllast</description>
+        <building_type>commercial</building_type>
+        <heating_factors>
+            <month>0.11</month>
+            <month>0.11</month>
+            <month>0.10</month>
+            <month>0.09</month>
+            <month>0.06</month>
+            <month>0.03</month>
+            <month>0.02</month>
+            <month>0.02</month>
+            <month>0.06</month>
+            <month>0.10</month>
+            <month>0.12</month>
+            <month>0.18</month>
+        </heating_factors>
+        <cooling_factors>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.04</month>
+            <month>0.10</month>
+            <month>0.15</month>
+            <month>0.18</month>
+            <month>0.25</month>
+            <month>0.23</month>
+            <month>0.05</month>
+            <month>0.0</month>
+            <month>0.0</month>
+            <month>0.0</month>
+        </cooling_factors>
+    </load_profile>
+
+    <!-- Warmwasser: monatliche Faktoren (Sommer/Winter), Summe = 1.0 -->
+    <dhw_monthly_factors>
+        <month>0.075</month>
+        <month>0.072</month>
+        <month>0.078</month>
+        <month>0.082</month>
+        <month>0.088</month>
+        <month>0.092</month>
+        <month>0.084</month>
+        <month>0.094</month>
+        <month>0.090</month>
+        <month>0.085</month>
+        <month>0.080</month>
+        <month>0.080</month>
+    </dhw_monthly_factors>
+
+    <!-- VDI 2067: kWh pro Person und Jahr -->
+    <vdi2067>
+        <kwh_per_person_year>800</kwh_per_person_year>
+        <description>Warmwasser-Bedarf nach VDI 2067, 30 L/Tag bei 55°C</description>
+    </vdi2067>
+
+</load_profiles_database>
