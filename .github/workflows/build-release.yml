@@ -264,7 +264,7 @@ jobs:
         wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool.AppImage
         chmod +x appimagetool.AppImage
         ARCH=x86_64 VERSION=$VERSION ./appimagetool.AppImage \
-          --comp xz AppDir "GeothermieErdsondentool-$VERSION-x86_64.AppImage"
+          --comp zstd AppDir "GeothermieErdsondentool-$VERSION-x86_64.AppImage"
     
     - name: Upload AppImage artifact
       uses: actions/upload-artifact@v4
