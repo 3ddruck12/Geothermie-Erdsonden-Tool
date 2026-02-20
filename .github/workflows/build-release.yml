@@ -209,7 +209,7 @@ jobs:
           echo '[Desktop Entry]'
           echo 'Name=GET - Geothermie Erdsondentool'
           echo 'Comment=Berechnung von Erdwärmesonden bis 100m'
-          echo 'Exec="$APPDIR/usr/bin/geothermie-erdsondentool"'
+          echo 'Exec="\\$APPDIR/usr/bin/geothermie-erdsondentool"'
           echo 'Icon=geothermie-erdsondentool'
           echo 'StartupWMClass=geothermie-erdsondentool'
           echo 'Terminal=false'
