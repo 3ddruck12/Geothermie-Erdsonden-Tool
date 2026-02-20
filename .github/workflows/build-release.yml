@@ -205,18 +205,21 @@ jobs:
         convert "$ICON_SRC" -resize 48x48 AppDir/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
         cp "$ICON_SRC" AppDir/.DirIcon
         
-        cat > AppDir/usr/share/applications/geothermie-erdsondentool.desktop << EOF
-        [Desktop Entry]
-        Name=GET - Geothermie Erdsondentool
-        Comment=Berechnung von Erdwärmesonden bis 100m
-        Exec=\$APPDIR/usr/bin/geothermie-erdsondentool
-        Icon=geothermie-erdsondentool
-        StartupWMClass=geothermie-erdsondentool
-        Terminal=false
-        Type=Application
-        Categories=Science;Engineering;Education;
-        Keywords=geothermal;erdwaerme;geothermie;borehole;
-        EOF
+        cat > AppDir/usr/share/applications/geothermie-erdsondentool.desktop << 'DESKTOP'
+[Desktop Entry]
+Name=GET - Geothermie Erdsondentool
+Comment=Berechnung von Erdwärmesonden bis 100m
+Exec=$APPDIR/usr/bin/geothermie-erdsondentool
+Icon=geothermie-erdsondentool
+StartupWMClass=geothermie-erdsondentool
+Terminal=false
+Type=Application
+Categories=Science;Engineering;Education;
+Keywords=geothermal;erdwaerme;geothermie;borehole;
+DESKTOP
+        
+        # appimagetool erwartet .desktop im AppDir-Root (AppDir-Spezifikation)
+        cp AppDir/usr/share/applications/geothermie-erdsondentool.desktop AppDir/
         
         wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool.AppImage
         chmod +x appimagetool.AppImage
