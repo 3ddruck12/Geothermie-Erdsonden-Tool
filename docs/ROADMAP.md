@@ -150,7 +150,7 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 #### 🏗️ Phase 1 – Architektur-Refactoring ✓
 
-> **Fertiggestellt: Februar 2026 (V3.4.1-beta2)**
+> **Fertiggestellt: Februar 2026 (V3.4.0-beta2.2)**
 
 - [x] **God-Class aufgelöst** – `main_window_v3_professional.py` (4.648 → 3.353 Zeilen) aufgeteilt:
   - [x] `gui/tabs/input_tab.py` – Eingabefelder, Dropdowns, Validierung
@@ -581,7 +581,7 @@ Features werden priorisiert nach:
 Aktuelle Änderungen siehe:
 - [CHANGELOG_V3.4.0-beta1](../CHANGELOG_V3.4.0-beta1.md)
 - [CHANGELOG_V3.4.0-beta2](../CHANGELOG_V3.4.0-beta2.md)
-- [CHANGELOG_V3.4.1-beta2](../CHANGELOG_V3.4.1-beta2.md)
+- [CHANGELOG_V3.4.0-beta2.2](../CHANGELOG_V3.4.0-beta2.2.md)
 - [CHANGELOG_V3.3.0-beta1](../CHANGELOG_V3.3.0-beta1.md)
 - [CHANGELOG_V3.3.0-beta2](../CHANGELOG_V3.3.0-beta2.md)
 - [CHANGELOG_V3.3.0-beta3](../CHANGELOG_V3.3.0-beta3.md)
@@ -605,4 +605,4 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 
 **Diese Roadmap ist ein lebendiges Dokument und wird regelmäßig aktualisiert basierend auf Community-Feedback und Entwicklungs-Fortschritt.**
 
-**Stand**: Februar 2026 (V3.4.1-beta2, Planung V3.4 Phase 2–4, V3.6 GHEtool-Integration & GET Cloud)
+**Stand**: Februar 2026 (V3.4.0-beta2.2, Planung V3.4 Phase 2–4, V3.6 GHEtool-Integration & GET Cloud)

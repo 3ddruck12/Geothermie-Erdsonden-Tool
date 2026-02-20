@@ -13,7 +13,7 @@ def get_version() -> str:
         with open(_VERSION_FILE, encoding="utf-8") as f:
             return f.read().strip()
     except (FileNotFoundError, OSError):
-        return "3.4.1-beta2"
+        return "3.4.0-beta2.2"
 
 
 # Beim Import einmal laden
