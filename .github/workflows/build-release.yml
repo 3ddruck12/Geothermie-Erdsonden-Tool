@@ -245,6 +245,7 @@ jobs:
         cp "$ICON_PNG" AppDir/usr/share/icons/hicolor/256x256/apps/
         convert "$ICON_PNG" -resize 48x48 AppDir/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
         cp "$ICON_PNG" AppDir/.DirIcon
+        cp "$ICON_PNG" AppDir/geothermie-erdsondentool.png
         
         {
           echo '[Desktop Entry]'
