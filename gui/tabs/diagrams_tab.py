@@ -1,19 +1,20 @@
 """Diagramme-Tab: Alle Visualisierungen und Plot-Funktionen.
 
 Extrahiert aus main_window_v3_professional.py (V3.4 Refactoring).
-Enthält 12 Diagramme:
+Enthält 13 Diagramme:
   1. Monatliche Temperaturen
   2. Bohrloch-Schema (Querschnitt)
-  3. Pumpen-Kennlinien (H-Q-Kurven)
-  4. Reynolds-Kurve
-  5. Druckverlust-Komponenten
-  6. Volumenstrom vs. Druckverlust
-  7. Pumpenleistung über Betriebszeit
-  8. Temperaturspreizung Sole
-  9. COP vs. Sole-Eintrittstemperatur
- 10. COP vs. Vorlauftemperatur
- 11. JAZ-Abschätzung
- 12. Energieverbrauch-Vergleich
+  3. Monatliche Entzugsleistung (W/m)
+  4. Pumpen-Kennlinien (H-Q-Kurven)
+  5. Reynolds-Kurve
+  6. Druckverlust-Komponenten
+  7. Volumenstrom vs. Druckverlust
+  8. Pumpenleistung über Betriebszeit
+  9. Temperaturspreizung Sole
+ 10. COP vs. Sole-Eintrittstemperatur
+ 11. COP vs. Vorlauftemperatur
+ 12. JAZ-Abschätzung
+ 13. Energieverbrauch-Vergleich
 """
 
 import tkinter as tk
@@ -91,6 +92,7 @@ class DiagramsTab:
         diagrams = [
             ("Monatliche Temperaturen", self._plot_monthly_temperatures),
             ("Bohrloch-Schema", self._plot_borehole_schema),
+            ("Monatliche Entzugsleistung (W/m)", self._plot_monthly_extraction_w_per_m),
             ("Pumpen-Kennlinien", self._plot_pump_characteristics),
             ("Reynolds-Kurve", self._plot_reynolds_curve),
             ("Druckverlust-Komponenten", self._plot_pressure_components),
@@ -241,6 +243,76 @@ class DiagramsTab:
 
         fig.tight_layout()
         canvas.draw()
+
+    def _plot_monthly_extraction_w_per_m(self, fig, canvas):
+        """Plottet monatliche Entzugsleistung (W/m) als Zeitreihe."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+
+        try:
+            from data.load_profiles import (
+                calculate_monthly_extraction_rate_w_per_m,
+                MONTH_NAMES,
+            )
+            from utils.validators import safe_float
+
+            if not hasattr(self.app, 'load_profiles_tab') or not self.app.load_profiles_tab:
+                ax.text(0.5, 0.5,
+                        "Lastprofile-Tab nicht geladen.\n\n"
+                        "Monatliche Entzugsleistung wird aus Lastprofilen berechnet.",
+                        ha='center', va='center', fontsize=12, color='gray')
+                ax.axis('off')
+                canvas.draw()
+                return
+
+            lp = self.app.load_profiles_tab
+            h_kwh = lp.get_monthly_heating_kwh()
+            c_kwh = lp.get_monthly_cooling_kwh()
+
+            e_depth = self.app.entries.get("initial_depth")
+            e_nbh = self.app.borehole_entries.get("num_boreholes")
+            depth = safe_float(e_depth.get() if e_depth else "100", default=100.0)
+            n_bh = int(safe_float(e_nbh.get() if e_nbh else "1", default=1.0))
+            e_cop = self.app.entries.get("heat_pump_cop")
+            e_eer = self.app.entries.get("heat_pump_eer")
+            cop = safe_float(e_cop.get() if e_cop else "4.0", default=4.0)
+            eer = safe_float(e_eer.get() if e_eer else "4.0", default=4.0)
+
+            total_length = depth * n_bh if n_bh > 0 else 1.0
+            h_wm, c_wm, net_wm = calculate_monthly_extraction_rate_w_per_m(
+                h_kwh, c_kwh, cop, eer, total_length
+            )
+
+            x = np.arange(12)
+            width = 0.35
+
+            if any(h_wm) or any(c_wm):
+                ax.bar(x - width/2, h_wm, width, label="Entzug (Heizen)", color="#e74c3c", alpha=0.85)
+                ax.bar(x + width/2, [-v for v in c_wm], width, label="Eintrag (Kühlen)", color="#3498db", alpha=0.85)
+                ax.axhline(0, color="black", linewidth=0.5)
+            else:
+                ax.text(0.5, 0.5,
+                        "Keine Lastdaten.\n\nLastprofile-Tab ausfüllen oder Vorlage laden.",
+                        ha='center', va='center', fontsize=12, color='gray',
+                        transform=ax.transAxes)
+
+            ax.set_xlabel("Monat", fontsize=11, fontweight='bold')
+            ax.set_ylabel("Entzugsleistung [W/m]", fontsize=11, fontweight='bold')
+            ax.set_xticks(x)
+            ax.set_xticklabels(MONTH_NAMES, fontsize=9)
+            if any(h_wm) or any(c_wm):
+                ax.legend(loc="upper right", fontsize=9)
+                ax.grid(True, alpha=0.3, axis="y")
+            ax.set_title("Monatliche Entzugsleistung (W/m) als Zeitreihe",
+                        fontsize=12, fontweight='bold')
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5,
+                    f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
 
     def _plot_pump_characteristics(self, fig, canvas):
         """Plottet Pumpen-Kennlinien (H-Q-Kurve) mit Betriebspunkt."""

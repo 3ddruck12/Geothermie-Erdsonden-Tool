@@ -3236,7 +3236,7 @@ Professional Edition V{APP_VERSION}
 Für eine vollständige Liste aller Änderungen und neuen Features
 siehe bitte den Changelog:
 
-CHANGELOG_V3.4.0-beta2.md
+CHANGELOG_V3.4.1-beta2.md
 
 © 2026 - Open Source (MIT Lizenz)"""
         messagebox.showinfo("Über", about)

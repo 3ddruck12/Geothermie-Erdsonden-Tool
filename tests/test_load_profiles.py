@@ -15,6 +15,7 @@ from data.load_profiles import (
     calculate_dhw_demand_vdi2067,
     get_monthly_dhw_distribution,
     monthly_values_to_factors,
+    calculate_monthly_extraction_rate_w_per_m,
     MONTH_NAMES,
 )
 
@@ -150,6 +151,51 @@ class TestMonthNames:
     def test_twelve_months(self):
         """12 Monatsnamen definiert."""
         assert len(MONTH_NAMES) == 12
+
+
+class TestMonthlyExtractionRateWPerM:
+    """Monatliche Entzugsleistung (W/m) als Zeitreihe."""
+
+    def test_zero_length_returns_zeros(self):
+        """total_borehole_length_m=0 → alle W/m = 0."""
+        h = [1000.0] * 12
+        c = [0.0] * 12
+        h_wm, c_wm, net = calculate_monthly_extraction_rate_w_per_m(
+            h, c, cop_heating=4.0, eer_cooling=4.0, total_borehole_length_m=0
+        )
+        assert all(v == 0 for v in h_wm + c_wm + net)
+
+    def test_heating_only_positive_w_per_m(self):
+        """Nur Heizen → positive Entzugsleistung."""
+        h = [1000.0] + [0.0] * 11
+        c = [0.0] * 12
+        h_wm, c_wm, net = calculate_monthly_extraction_rate_w_per_m(
+            h, c, cop_heating=4.0, eer_cooling=4.0, total_borehole_length_m=100.0
+        )
+        assert h_wm[0] > 0
+        assert c_wm[0] == 0
+        assert net[0] > 0
+
+    def test_returns_twelve_values_each(self):
+        """Gibt 12 Werte pro Rückgabetyp zurück."""
+        h = [100.0] * 12
+        c = [50.0] * 12
+        h_wm, c_wm, net = calculate_monthly_extraction_rate_w_per_m(
+            h, c, cop_heating=4.0, eer_cooling=4.0, total_borehole_length_m=100.0
+        )
+        assert len(h_wm) == 12
+        assert len(c_wm) == 12
+        assert len(net) == 12
+
+    def test_net_is_heating_minus_cooling(self):
+        """Netto = Heiz-Entzug minus Kühl-Eintrag."""
+        h = [1000.0] * 12
+        c = [500.0] * 12
+        h_wm, c_wm, net = calculate_monthly_extraction_rate_w_per_m(
+            h, c, cop_heating=4.0, eer_cooling=4.0, total_borehole_length_m=100.0
+        )
+        for i in range(12):
+            assert abs(net[i] - (h_wm[i] - c_wm[i])) < 1e-6
 
 
 class TestLoadProfilesIntegration:

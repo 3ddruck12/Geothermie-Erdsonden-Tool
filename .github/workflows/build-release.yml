@@ -124,19 +124,25 @@ jobs:
         cp dist/geothermie-erdsondentool package/usr/local/bin/
         chmod +x package/usr/local/bin/geothermie-erdsondentool
         
-        # Icon konvertieren – icon.ico oder favicon.ico (Fallback)
+        # Icon konvertieren – icon.ico, favicon.ico oder PNG (Fallback)
+        ICON_PNG="package/usr/share/pixmaps/geothermie-erdsondentool.png"
         if [ -f Icons/icon.ico ]; then
-          convert Icons/icon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
-        elif [ -f Icons/favicon.ico ]; then
-          convert Icons/favicon.ico -resize 256x256 package/usr/share/pixmaps/geothermie-erdsondentool.png
-        else
-          echo "Warnung: Kein Icon gefunden (Icons/icon.ico oder Icons/favicon.ico), erstelle Platzhalter"
-          convert -size 256x256 xc:#1f4788 -fill white -draw "circle 128,128 128,50" package/usr/share/pixmaps/geothermie-erdsondentool.png
+          convert Icons/icon.ico -resize 256x256 "$ICON_PNG" 2>/dev/null || true
+        fi
+        if [ ! -f "$ICON_PNG" ] && [ -f Icons/favicon.ico ]; then
+          convert Icons/favicon.ico -resize 256x256 "$ICON_PNG" 2>/dev/null || true
+        fi
+        if [ ! -f "$ICON_PNG" ] && [ -f Icons/icon-7.png ]; then
+          convert Icons/icon-7.png -resize 256x256 "$ICON_PNG" 2>/dev/null || true
+        fi
+        if [ ! -f "$ICON_PNG" ]; then
+          echo "Icon-Konvertierung fehlgeschlagen, erstelle Platzhalter"
+          convert -size 256x256 xc:#1f4788 -fill white -draw "circle 128,128 128,50" "$ICON_PNG"
         fi
         
         # XDG Icon Theme (für Startmenü und Taskleiste auf GNOME/KDE)
-        cp package/usr/share/pixmaps/geothermie-erdsondentool.png package/usr/share/icons/hicolor/256x256/apps/
-        convert package/usr/share/pixmaps/geothermie-erdsondentool.png -resize 48x48 package/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
+        cp "$ICON_PNG" package/usr/share/icons/hicolor/256x256/apps/
+        convert "$ICON_PNG" -resize 48x48 package/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
         
         # Desktop Entry (StartupWMClass für Taskleisten-Icon)
         cat > package/usr/share/applications/geothermie-erdsondentool.desktop << EOF
@@ -188,11 +194,16 @@ jobs:
         cp package/usr/local/bin/geothermie-erdsondentool AppDir/usr/bin/
         chmod +x AppDir/usr/bin/geothermie-erdsondentool
         
-        cp package/usr/share/pixmaps/geothermie-erdsondentool.png AppDir/usr/share/pixmaps/
-        cp package/usr/share/icons/hicolor/256x256/apps/geothermie-erdsondentool.png AppDir/usr/share/icons/hicolor/256x256/apps/
-        cp package/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png AppDir/usr/share/icons/hicolor/48x48/apps/
-        
-        cp package/usr/share/pixmaps/geothermie-erdsondentool.png AppDir/.DirIcon
+        # Icon aus DEB-Package übernehmen (muss nach DEB-Step existieren)
+        ICON_SRC="package/usr/share/pixmaps/geothermie-erdsondentool.png"
+        if [ ! -f "$ICON_SRC" ]; then
+          echo "Icon fehlt, erstelle Platzhalter für AppImage"
+          convert -size 256x256 xc:#1f4788 -fill white -draw "circle 128,128 128,50" "$ICON_SRC"
+        fi
+        cp "$ICON_SRC" AppDir/usr/share/pixmaps/
+        cp "$ICON_SRC" AppDir/usr/share/icons/hicolor/256x256/apps/
+        convert "$ICON_SRC" -resize 48x48 AppDir/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
+        cp "$ICON_SRC" AppDir/.DirIcon
         
         cat > AppDir/usr/share/applications/geothermie-erdsondentool.desktop << EOF
         [Desktop Entry]

@@ -186,6 +186,64 @@ def monthly_values_to_factors(values: List[float]) -> List[float]:
     return [v / total for v in values]
 
 
+# Stunden pro Monat (Durchschnitt)
+_HOURS_PER_MONTH = 730.0
+
+
+def calculate_monthly_extraction_rate_w_per_m(
+    monthly_heating_kwh: List[float],
+    monthly_cooling_kwh: List[float],
+    cop_heating: float,
+    eer_cooling: float,
+    total_borehole_length_m: float,
+) -> Tuple[List[float], List[float], List[float]]:
+    """
+    Berechnet monatliche Entzugsleistung (W/m) als Zeitreihe.
+
+    Heizen: Wärmeentzug aus dem Erdreich (positiv).
+    Kühlen: Wärmeeintrag ins Erdreich (negativ, aus Sicht des Bodens).
+
+    Args:
+        monthly_heating_kwh: 12 Heizlast-Werte [kWh]
+        monthly_cooling_kwh: 12 Kühllast-Werte [kWh]
+        cop_heating: COP der Wärmepumpe (Heizen)
+        eer_cooling: EER der Wärmepumpe (Kühlen)
+        total_borehole_length_m: Gesamtlänge der Sonden [m]
+
+    Returns:
+        (heating_w_per_m, cooling_w_per_m, net_w_per_m)
+        - heating_w_per_m: 12 Werte, Entzug beim Heizen [W/m]
+        - cooling_w_per_m: 12 Werte, Eintrag beim Kühlen [W/m] (positiv)
+        - net_w_per_m: 12 Werte, Netto (Entzug - Eintrag) [W/m]
+    """
+    if total_borehole_length_m <= 0:
+        return ([0.0] * 12, [0.0] * 12, [0.0] * 12)
+
+    # Heizen: (COP-1)/COP = Anteil aus Erdreich
+    eff_heating = (cop_heating - 1) / cop_heating if cop_heating > 0 else 0
+    # Kühlen: (EER+1)/EER = Abwärme ins Erdreich
+    eff_cooling = (eer_cooling + 1) / eer_cooling if eer_cooling > 0 else 0
+
+    heating_w_per_m = []
+    cooling_w_per_m = []
+    net_w_per_m = []
+
+    for h_kwh, c_kwh in zip(monthly_heating_kwh, monthly_cooling_kwh):
+        # Monatliche Leistung [W] = kWh * 1000 / Stunden
+        p_heating = h_kwh * 1000.0 / _HOURS_PER_MONTH * eff_heating
+        p_cooling = c_kwh * 1000.0 / _HOURS_PER_MONTH * eff_cooling
+
+        h_wm = p_heating / total_borehole_length_m
+        c_wm = p_cooling / total_borehole_length_m
+        n_wm = h_wm - c_wm  # Entzug - Eintrag
+
+        heating_w_per_m.append(h_wm)
+        cooling_w_per_m.append(c_wm)
+        net_w_per_m.append(n_wm)
+
+    return (heating_w_per_m, cooling_w_per_m, net_w_per_m)
+
+
 # Kompatibilität: LOAD_PROFILE_TEMPLATES für direkten Zugriff (z.B. Combobox)
 def get_load_profile_templates_dict() -> Dict[str, Tuple[List[float], List[float]]]:
     """Gibt Vorlagen als Dict zurück (für Combobox values)."""

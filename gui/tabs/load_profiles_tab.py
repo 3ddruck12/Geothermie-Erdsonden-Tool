@@ -23,6 +23,7 @@ from data.load_profiles import (
     calculate_dhw_demand_vdi2067,
     get_monthly_dhw_distribution,
     monthly_values_to_factors,
+    calculate_monthly_extraction_rate_w_per_m,
 )
 
 logger = logging.getLogger(__name__)
@@ -346,11 +347,10 @@ class LoadProfilesTab:
         self._update_preview_diagram()
 
     def _update_preview_diagram(self):
-        """Aktualisiert die Live-Vorschau rechts (gestapeltes Balkendiagramm)."""
+        """Aktualisiert die Live-Vorschau rechts (Balkendiagramm + W/m-Zeitreihe)."""
         if not hasattr(self, 'preview_fig'):
             return
         self.preview_fig.clear()
-        ax = self.preview_fig.add_subplot(111)
 
         h = np.array(self.get_monthly_heating_kwh())
         c = np.array(self.get_monthly_cooling_kwh())
@@ -361,25 +361,71 @@ class LoadProfilesTab:
         x = np.arange(12)
         width = 0.6
 
+        # Oben: Monatliche Verteilung (kWh)
+        ax1 = self.preview_fig.add_subplot(211)
         if total > 0:
-            ax.bar(x, h, width, label="Heizen", color="#e74c3c", alpha=0.85)
-            ax.bar(x, c, width, bottom=h, label="Kühlen", color="#3498db", alpha=0.85)
-            ax.bar(x, d, width, bottom=h + c, label="Warmwasser", color="#2ecc71", alpha=0.85)
+            ax1.bar(x, h, width, label="Heizen", color="#e74c3c", alpha=0.85)
+            ax1.bar(x, c, width, bottom=h, label="Kühlen", color="#3498db", alpha=0.85)
+            ax1.bar(x, d, width, bottom=h + c, label="Warmwasser", color="#2ecc71", alpha=0.85)
         else:
-            ax.text(0.5, 0.5, "Keine Daten.\nVorlage laden oder\neingeben.",
-                    ha="center", va="center", fontsize=11, color="gray",
-                    transform=ax.transAxes)
-            ax.set_xlim(-0.5, 11.5)
-            ax.set_ylim(0, 1)
+            ax1.text(0.5, 0.5, "Keine Daten.\nVorlage laden oder\neingeben.",
+                     ha="center", va="center", fontsize=11, color="gray",
+                     transform=ax1.transAxes)
+            ax1.set_xlim(-0.5, 11.5)
+            ax1.set_ylim(0, 1)
 
-        ax.set_xlabel("Monat")
-        ax.set_ylabel("kWh")
-        ax.set_xticks(x)
-        ax.set_xticklabels(months_short, fontsize=8)
+        ax1.set_ylabel("kWh")
+        ax1.set_xticks(x)
+        ax1.set_xticklabels(months_short, fontsize=8)
         if total > 0:
-            ax.legend(loc="upper right", fontsize=8)
-            ax.grid(True, alpha=0.3, axis="y")
-        ax.set_title("Monatliche Verteilung", fontsize=10)
+            ax1.legend(loc="upper right", fontsize=8)
+            ax1.grid(True, alpha=0.3, axis="y")
+        ax1.set_title("Monatliche Verteilung", fontsize=10)
+
+        # Unten: Entzugsleistung (W/m) als Zeitreihe
+        ax2 = self.preview_fig.add_subplot(212)
+        depth = safe_float(
+            self.app.entries.get("initial_depth", tk.Entry()).get() or "100",
+            default=100.0
+        )
+        n_bh = int(safe_float(
+            self.app.borehole_entries.get("num_boreholes", tk.Entry()).get() or "1",
+            default=1.0
+        ))
+        try:
+            e_cop = self.app.entries.get("heat_pump_cop")
+            e_eer = self.app.entries.get("heat_pump_eer")
+            cop = safe_float(e_cop.get() if e_cop else "4.0", default=4.0)
+            eer = safe_float(e_eer.get() if e_eer else "4.0", default=4.0)
+        except (AttributeError, KeyError):
+            cop, eer = 4.0, 4.0
+        total_length = depth * n_bh if n_bh > 0 else 1.0
+
+        h_wm, c_wm, net_wm = calculate_monthly_extraction_rate_w_per_m(
+            list(h), list(c), cop, eer, total_length
+        )
+        h_wm_arr = np.array(h_wm)
+        c_wm_arr = np.array(c_wm)
+        net_wm_arr = np.array(net_wm)
+
+        if any(h_wm_arr != 0) or any(c_wm_arr != 0):
+            ax2.bar(x - 0.2, h_wm_arr, 0.35, label="Entzug (Heizen)", color="#e74c3c", alpha=0.85)
+            ax2.bar(x + 0.2, [-v for v in c_wm_arr], 0.35, label="Eintrag (Kühlen)", color="#3498db", alpha=0.85)
+            ax2.axhline(0, color="black", linewidth=0.5)
+        else:
+            ax2.text(0.5, 0.5, "W/m: Sondentiefe und Bohrungen eingeben.",
+                     ha="center", va="center", fontsize=9, color="gray",
+                     transform=ax2.transAxes)
+
+        ax2.set_xlabel("Monat")
+        ax2.set_ylabel("W/m")
+        ax2.set_xticks(x)
+        ax2.set_xticklabels(months_short, fontsize=8)
+        if any(h_wm_arr != 0) or any(c_wm_arr != 0):
+            ax2.legend(loc="upper right", fontsize=8)
+            ax2.grid(True, alpha=0.3, axis="y")
+        ax2.set_title("Monatliche Entzugsleistung (W/m)", fontsize=10)
+
         self.preview_fig.tight_layout()
         self.preview_canvas.draw()
 
