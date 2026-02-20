@@ -73,7 +73,7 @@ jobs:
         path: Setup_GET_v*.exe
         if-no-files-found: error
   
-  build-linux:
+  build-linux-deb:
     name: Build Linux DEB
     runs-on: ubuntu-latest
     
@@ -182,6 +182,41 @@ jobs:
       with:
         name: GeothermieErdsondentool-Linux-DEB
         path: "*.deb"
+  
+  build-linux-appimage:
+    name: Build Linux AppImage
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Read version
+      id: version
+      run: |
+        VERSION=$(cat VERSION | tr -d '[:space:]')
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "Version: $VERSION"
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build Linux executable
+      run: |
+        sed "s/icon=.*$/icon=None,/" geothermie.spec | \
+        sed "s/name='GeothermieErdsondentool'/name='geothermie-erdsondentool'/" > geothermie-linux.spec
+        pyinstaller geothermie-linux.spec
+    
+    - name: Install ImageMagick for Icon
+      run: sudo apt-get update && sudo apt-get install -y imagemagick
     
     - name: Create AppImage Type 2
       run: |
@@ -191,19 +226,25 @@ jobs:
         mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
         mkdir -p AppDir/usr/share/icons/hicolor/48x48/apps
         
-        cp package/usr/local/bin/geothermie-erdsondentool AppDir/usr/bin/
+        cp dist/geothermie-erdsondentool AppDir/usr/bin/
         chmod +x AppDir/usr/bin/geothermie-erdsondentool
         
-        # Icon aus DEB-Package übernehmen (muss nach DEB-Step existieren)
-        ICON_SRC="package/usr/share/pixmaps/geothermie-erdsondentool.png"
-        if [ ! -f "$ICON_SRC" ]; then
-          echo "Icon fehlt, erstelle Platzhalter für AppImage"
-          convert -size 256x256 xc:#1f4788 -fill white -draw "circle 128,128 128,50" "$ICON_SRC"
+        ICON_PNG="AppDir/usr/share/pixmaps/geothermie-erdsondentool.png"
+        if [ -f Icons/icon.ico ]; then
+          convert Icons/icon.ico -resize 256x256 "$ICON_PNG" 2>/dev/null || true
         fi
-        cp "$ICON_SRC" AppDir/usr/share/pixmaps/
-        cp "$ICON_SRC" AppDir/usr/share/icons/hicolor/256x256/apps/
-        convert "$ICON_SRC" -resize 48x48 AppDir/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
-        cp "$ICON_SRC" AppDir/.DirIcon
+        if [ ! -f "$ICON_PNG" ] && [ -f Icons/favicon.ico ]; then
+          convert Icons/favicon.ico -resize 256x256 "$ICON_PNG" 2>/dev/null || true
+        fi
+        if [ ! -f "$ICON_PNG" ] && [ -f Icons/icon-7.png ]; then
+          convert Icons/icon-7.png -resize 256x256 "$ICON_PNG" 2>/dev/null || true
+        fi
+        if [ ! -f "$ICON_PNG" ]; then
+          convert -size 256x256 xc:#1f4788 -fill white -draw "circle 128,128 128,50" "$ICON_PNG"
+        fi
+        cp "$ICON_PNG" AppDir/usr/share/icons/hicolor/256x256/apps/
+        convert "$ICON_PNG" -resize 48x48 AppDir/usr/share/icons/hicolor/48x48/apps/geothermie-erdsondentool.png
+        cp "$ICON_PNG" AppDir/.DirIcon
         
         {
           echo '[Desktop Entry]'
@@ -217,17 +258,12 @@ jobs:
           echo 'Categories=Science;Engineering;'
           echo 'Keywords=geothermal;erdwaerme;geothermie;borehole;'
         } > AppDir/usr/share/applications/geothermie-erdsondentool.desktop
-        
-        # appimagetool erwartet .desktop im AppDir-Root (AppDir-Spezifikation)
         cp AppDir/usr/share/applications/geothermie-erdsondentool.desktop AppDir/
         
         wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool.AppImage
         chmod +x appimagetool.AppImage
-        
         ARCH=x86_64 VERSION=$VERSION ./appimagetool.AppImage \
-          --comp xz \
-          AppDir \
-          "GeothermieErdsondentool-$VERSION-x86_64.AppImage"
+          --comp xz AppDir "GeothermieErdsondentool-$VERSION-x86_64.AppImage"
     
     - name: Upload AppImage artifact
       uses: actions/upload-artifact@v4
@@ -237,7 +273,7 @@ jobs:
   
   create-release:
     name: Create Release
-    needs: [build-windows, build-linux]
+    needs: [build-windows, build-linux-deb, build-linux-appimage]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
     
