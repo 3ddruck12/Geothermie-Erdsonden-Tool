@@ -252,30 +252,28 @@ jobs:
         cp "$ICON_PNG" AppDir/geothermie-erdsondentool.png
         
         # Desktop-Datei: Exec ohne $APPDIR – AppRun übernimmt Pfad-Auflösung
-        cat > AppDir/usr/share/applications/geothermie-erdsondentool.desktop << 'DESKTOP_EOF'
-[Desktop Entry]
-Name=GET - Geothermie Erdsondentool
-Comment=Berechnung von Erdwärmesonden bis 100m
-Exec=geothermie-erdsondentool
-Icon=geothermie-erdsondentool
-StartupWMClass=geothermie-erdsondentool
-Terminal=false
-Type=Application
-Categories=Science;Engineering;
-Keywords=geothermal;erdwaerme;geothermie;borehole;
-DESKTOP_EOF
-        cp AppDir/usr/share/applications/geothermie-erdsondentool.desktop AppDir/
+        DESK="AppDir/usr/share/applications/geothermie-erdsondentool.desktop"
+        echo '[Desktop Entry]' > "$DESK"
+        echo 'Name=GET - Geothermie Erdsondentool' >> "$DESK"
+        echo 'Comment=Berechnung von Erdwaermesonden bis 100m' >> "$DESK"
+        echo 'Exec=geothermie-erdsondentool' >> "$DESK"
+        echo 'Icon=geothermie-erdsondentool' >> "$DESK"
+        echo 'StartupWMClass=geothermie-erdsondentool' >> "$DESK"
+        echo 'Terminal=false' >> "$DESK"
+        echo 'Type=Application' >> "$DESK"
+        echo 'Categories=Science;Engineering;' >> "$DESK"
+        echo 'Keywords=geothermal;erdwaerme;geothermie;borehole;' >> "$DESK"
+        cp "$DESK" AppDir/
         
         # AppRun-Skript: löst Pfad auf, funktioniert auch ohne FUSE (extract-and-run)
-        cat > AppDir/AppRun << 'APPRUN_EOF'
-#!/bin/bash
-HERE="$(dirname "$(readlink -f "${0}")")"
-export APPDIR="${APPDIR:-${HERE}}"
-export PATH="${HERE}/usr/bin:${PATH}"
-export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
-exec "${HERE}/usr/bin/geothermie-erdsondentool" "$@"
-APPRUN_EOF
-        chmod +x AppDir/AppRun
+        APPRUN="AppDir/AppRun"
+        echo '#!/bin/bash' > "$APPRUN"
+        echo 'HERE="$(dirname "$(readlink -f "${0}")")"' >> "$APPRUN"
+        echo 'export APPDIR="${APPDIR:-${HERE}}"' >> "$APPRUN"
+        echo 'export PATH="${HERE}/usr/bin:${PATH}"' >> "$APPRUN"
+        echo 'export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"' >> "$APPRUN"
+        echo 'exec "${HERE}/usr/bin/geothermie-erdsondentool" "$@"' >> "$APPRUN"
+        chmod +x "$APPRUN"
         
         wget -q "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage" -O appimagetool.AppImage
         chmod +x appimagetool.AppImage
