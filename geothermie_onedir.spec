@@ -7,13 +7,17 @@ Verwendung:
     pyinstaller geothermie_onedir.spec
 """
 import os
+from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
+
+# tkintermapview vollständig einbinden
+tkmap_datas, tkmap_binaries, tkmap_hiddenimports = collect_all('tkintermapview')
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=tkmap_binaries,
     datas=[
         ('import', 'import'),
         ('Icons', 'Icons'),
@@ -23,19 +27,35 @@ a = Analysis(
         ('calculations', 'calculations'),
         ('utils', 'utils'),
         ('locales', 'locales'),
-    ],
+    ] + tkmap_datas,
     hiddenimports=[
         'tkinter',
         'tkinter.ttk',
+        'tkinter.messagebox',
+        'tkinter.filedialog',
         'matplotlib.backends.backend_tkagg',
         'scipy',
+        'scipy.spatial',
+        'scipy.interpolate',
         'numpy',
         'pandas',
         'reportlab',
+        'reportlab.lib',
+        'reportlab.platypus',
         'requests',
+        'PIL',
+        'PIL.Image',
+        'PIL.ImageTk',
         'pygfunction',
-        'tkintermapview',
-    ],
+        'gui.map_widget',
+        'calculations.longterm_simulation',
+        'calculations.regeneration_analysis',
+        'calculations.seasonal_efficiency',
+        'utils.validators',
+        'utils.version',
+        'utils.osm_map',
+        'data.load_profiles',
+    ] + tkmap_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

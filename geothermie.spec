@@ -4,13 +4,17 @@ PyInstaller Spec File für Geothermie Erdsondentool
 Erzeugt eine Standalone-Anwendung mit allen Abhängigkeiten
 """
 import os
+from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 block_cipher = None
+
+# tkintermapview vollständig einbinden (Quellcode + Daten + Submodule)
+tkmap_datas, tkmap_binaries, tkmap_hiddenimports = collect_all('tkintermapview')
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=tkmap_binaries,
     datas=[
         ('import', 'import'),
         ('Icons', 'Icons'),
@@ -19,7 +23,7 @@ a = Analysis(
         ('parsers', 'parsers'),
         ('calculations', 'calculations'),
         ('utils', 'utils'),
-    ],
+    ] + tkmap_datas,
     hiddenimports=[
         'tkinter',
         'tkinter.ttk',
@@ -38,16 +42,9 @@ a = Analysis(
         'PIL',
         'PIL.Image',
         'PIL.ImageTk',
-        # OSM-Karte
-        'tkintermapview',
-        'tkintermapview.canvas_button_image',
-        'tkintermapview.canvas_path',
-        'tkintermapview.canvas_polygon',
-        'tkintermapview.canvas_position_marker',
-        'tkintermapview.canvas_tile',
-        'tkintermapview.map_widget',
-        'tkintermapview.utility_functions',
-        # Interne Module
+        # Internes Karten-Widget (try/except → PyInstaller findet es nicht selbst)
+        'gui.map_widget',
+        # Interne Berechnungsmodule
         'calculations',
         'calculations.thermal',
         'calculations.hydraulics',
@@ -63,7 +60,7 @@ a = Analysis(
         'utils.version',
         'utils.osm_map',
         'data.load_profiles',
-    ],
+    ] + tkmap_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -98,4 +95,3 @@ exe = EXE(
     entitlements_file=None,
     icon='Icons/icon.ico' if os.path.exists('Icons/icon.ico') else None,
 )
-
