@@ -107,8 +107,16 @@ class InputTab:
                 on_position_change=self.app._on_map_position_changed,
             )
         except Exception as e:
+            import traceback
             self.app.map_widget = None
-            logger.warning(f"Kartenwidget konnte nicht geladen werden: {e}")
+            err_msg = f"{type(e).__name__}: {e}"
+            err_detail = traceback.format_exc()
+            logger.warning(f"Kartenwidget konnte nicht geladen werden: {err_msg}\n{err_detail}")
+            # Fehler im UI anzeigen (für Debug bei PyInstaller-Build)
+            err_frame = ttk.LabelFrame(right_scrollable, text="🗺️ Standort-Karte")
+            err_frame.pack(fill="x", padx=10, pady=5)
+            ttk.Label(err_frame, text="Karte konnte nicht geladen werden:", foreground="red").pack(anchor="w", padx=5, pady=2)
+            ttk.Label(err_frame, text=err_msg, foreground="#333", font=("", 9), wraplength=480).pack(anchor="w", padx=5, pady=(0, 5))
 
         self.app._create_static_borehole_graphic(right_scrollable)
 

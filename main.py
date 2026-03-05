@@ -5,6 +5,14 @@ Geothermie Erdsonden-Berechnungstool
 Haupteinstiegspunkt für die Anwendung.
 """
 
+# Pillow-Kompatibilität für tkintermapview (ANTIALIAS in Pillow 10+ entfernt)
+try:
+    from PIL import Image
+    if not hasattr(Image, 'ANTIALIAS'):
+        Image.ANTIALIAS = Image.Resampling.LANCZOS
+except Exception:
+    pass
+
 import tkinter as tk
 import sys
 import os

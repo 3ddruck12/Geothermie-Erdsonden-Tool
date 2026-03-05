@@ -14,20 +14,24 @@ import threading
 logger = logging.getLogger(__name__)
 
 # tkintermapview optional laden (graceful degradation)
+MAPVIEW_ERROR = None
 try:
     import tkintermapview
     HAS_MAPVIEW = True
-except ImportError:
+except Exception as e:
     HAS_MAPVIEW = False
-    logger.warning("tkintermapview nicht installiert – Kartenansicht deaktiviert")
+    MAPVIEW_ERROR = f"{type(e).__name__}: {e}"
+    logger.warning(f"tkintermapview nicht verfügbar – {MAPVIEW_ERROR}")
 
 # Statische Karte als Fallback
+STATIC_MAP_ERROR = None
 try:
     from utils.osm_map import generate_static_map
     from PIL import ImageTk
     HAS_STATIC_MAP = True
-except ImportError:
+except Exception as e:
     HAS_STATIC_MAP = False
+    STATIC_MAP_ERROR = f"{type(e).__name__}: {e}"
 
 
 class OSMMapWidget:
@@ -152,14 +156,19 @@ class OSMMapWidget:
 
     def _build_text_fallback(self):
         """Einfacher Text-Fallback wenn keine Kartenbibliothek vorhanden."""
+        err_info = []
+        if MAPVIEW_ERROR:
+            err_info.append(f"tkintermapview: {MAPVIEW_ERROR}")
+        if STATIC_MAP_ERROR:
+            err_info.append(f"Statische Karte: {STATIC_MAP_ERROR}")
+        err_text = "\n".join(err_info) if err_info else "Unbekannter Fehler"
         lbl = ttk.Label(
             self.frame,
-            text="🗺️ Kartenvorschau nicht verfügbar\n\n"
-                 "Installieren Sie tkintermapview:\n"
-                 "pip install tkintermapview",
+            text=f"🗺️ Kartenvorschau nicht verfügbar\n\n{err_text}",
             foreground="gray",
             font=("Arial", 10),
             justify="center",
+            wraplength=450,
         )
         lbl.pack(fill="both", expand=True, padx=20, pady=30)
 
