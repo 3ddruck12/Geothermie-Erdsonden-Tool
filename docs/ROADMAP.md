@@ -345,7 +345,7 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 | **Berechnung** | | | | | |
 | VDI 4640 + Iterativ (Eskilson) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Hydraulik-Berechnung | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 12 Diagramme | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 17 Diagramme (inkl. Langzeit & JAZ) | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Monatliche Leistungsanalyse | ✅ | ✅ | ✅ | ✅ | ✅ |
 | **Export** | | | | | |
 | PDF-Bericht | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -462,6 +462,21 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 
 ---
 
+## 🧊 CO2-EWS – Pumpenloser Thermosiphon-Betrieb (GET Cloud)
+
+**CO2-EWS** (Erdwärmesonden mit CO2 als Wärmeträger) nutzen den natürlichen Thermosiphon-Effekt: CO2 verdampft im warmen Erdreich, steigt zur Wärmepumpe auf und kondensiert dort – **vollständig ohne Umwälzpumpe**. Das spart Betriebsenergie und Wartungsaufwand.
+
+| Aspekt | Details |
+|:---|:---|
+| **Ziel** | GET Cloud Business/Enterprise |
+| **Zielversion** | V3.6 + GET Cloud |
+| **Betriebsmedium** | CO2 (R744) – natürliches Kältemittel, GWP = 1 |
+| **Besonderheit** | Pumpenloser Betrieb (Thermosiphon-Prinzip, Dichteunterschied Flüssig/Dampf) |
+| **Rohrmaterial** | Kupfer (EN 12735-1) oder Edelstahl 1.4404 – kein PE (Druckbetrieb ~35–50 bar) |
+| **Norm** | VDI 4640, EN 378 (Kälteanlagen), DGUV |
+
+---
+
 ## 🗺️ Open Data Geothermie – Bundesländer
 
 Die Bundesländer stellen Geothermie-Karten und Bodendaten als Open Data bereit. Anbindung ermöglicht automatischen Abruf nach Standort (Koordinaten).
@@ -494,6 +509,8 @@ Die Bundesländer stellen Geothermie-Karten und Bodendaten als Open Data bereit.
 | Magnetometrie-Datenimport (magnetisches Verfüllmaterial) | ⏳ V3.6 |
 | Direktkühlung (TABS, Free Cooling) | ⏳ V3.6 + GET Cloud |
 | Open Data Geothermie (Bundesländer) | ⏳ V3.5 + GET Cloud |
+| CO2-EWS (Thermosiphon, pumpenlos) | ⏳ V3.6 + GET Cloud |
+| Metallrohre (Kupfer, Edelstahl) für CO2-EWS | ⏳ V3.6 + GET Cloud |
 
 ---
 

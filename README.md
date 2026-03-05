@@ -218,7 +218,25 @@ geothermie-erdsondentool
 # Oder über das Anwendungsmenü: "GET - Geothermie Erdsondentool"
 ```
 
-**Option 2: Shell-Script**
+**Option 2: AppImage** (universell – funktioniert auf allen Linux-Distributionen)
+
+```bash
+# Herunterladen
+wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.4.0-beta3/GeothermieErdsondentool-3.4.0-beta3-x86_64.AppImage
+
+# Ausführbar machen & starten
+chmod +x GeothermieErdsondentool-3.4.0-beta3-x86_64.AppImage
+./GeothermieErdsondentool-3.4.0-beta3-x86_64.AppImage
+```
+
+> **Startet nicht? (Ubuntu 22.04+, Linux Mint 21+, Debian 12+)**
+> AppImages benötigen FUSE2. Einmalig installieren:
+> ```bash
+> sudo apt install libfuse2t64   # Ubuntu 24.04 / Linux Mint 22
+> sudo apt install libfuse2      # Ubuntu 22.04 / Linux Mint 21
+> ```
+
+**Option 3: Shell-Script**
 
 ```bash
 git clone https://github.com/3ddruck12/Geothermie-Erdsonden-Tool.git
