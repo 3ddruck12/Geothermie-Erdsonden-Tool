@@ -50,21 +50,15 @@ class GFunctionCalculator:
         H_rb = borehole_depth / borehole_radius
         
         # Vereinfachte FLS-Berechnung für Single-Bohrloch
-        # Für kleine Zeiten (Fo < 0.01): Unendliche Zylinder-Quelle
-        if Fo < 0.01:
-            g = GFunctionCalculator._infinite_cylindrical_source(time, borehole_radius, thermal_diffusivity)
-        # Für große Zeiten (Fo > 10): Infinite Line Source
-        elif Fo > 10:
-            g = GFunctionCalculator._infinite_line_source(time, borehole_depth, thermal_diffusivity)
-        # Für mittlere Zeiten: Interpolation
-        else:
-            g_cyl = GFunctionCalculator._infinite_cylindrical_source(time, borehole_radius, thermal_diffusivity)
-            g_ils = GFunctionCalculator._infinite_line_source(time, borehole_depth, thermal_diffusivity)
-            # Gewichtete Interpolation
-            weight = (math.log10(Fo) + 2) / 3  # 0 bei Fo=0.01, 1 bei Fo=10
-            weight = max(0, min(1, weight))
-            g = (1 - weight) * g_cyl + weight * g_ils
+        # Für die meisten typischen Simulationszeiträume (< ts) ist die 
+        # Infinite Cylindrical Source (ICS) eine sehr gute Näherung.
+        g = GFunctionCalculator._infinite_cylindrical_source(time, borehole_radius, thermal_diffusivity)
         
+        # Für sehr große Zeiten (t > ts) nähert sich die FLS dem stationären Zustand
+        g_steady = math.log(borehole_depth / (2 * borehole_radius))
+        if g_steady > 0:
+            g = min(g, g_steady)
+            
         return g
     
     @staticmethod

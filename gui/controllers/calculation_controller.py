@@ -88,6 +88,9 @@ class CalculationController:
             app.current_params['pipe_configuration'] = app.pipe_config_var.get()
             app.current_params['calculation_method'] = method
 
+            # Langzeit-Simulation (V3.4 Phase 3)
+            self._run_longterm_simulation(params, num_boreholes)
+
             self.display_results()
             self._plot_results()
 
@@ -367,7 +370,148 @@ class CalculationController:
         
         app.status_var.set(msg)
 
-    # ──────────────── Hilfsmethoden ────────────────
+    def _run_longterm_simulation(self, params, num_boreholes):
+        """Führt Langzeit-Simulation, Regeneration und COP-Analyse durch."""
+        app = self.app
+
+        # Initialisiere Ergebnisse auf None
+        app.longterm_result = None
+        app.thermal_balance = None
+        app.depletion_warning = None
+        app.longterm_monthly_cop = None
+        app.jaz_comparison = None
+
+        try:
+            from calculations.longterm_simulation import LongtermSimulator
+            from calculations.regeneration_analysis import (
+                calculate_thermal_balance, check_ground_depletion,
+            )
+            from calculations.seasonal_efficiency import (
+                calculate_monthly_cop, calculate_jaz,
+                compare_jaz_by_depth, JAZComparisonResult,
+            )
+
+            app.status_var.set("🔄 Langzeit-Simulation läuft...")
+            app.root.update()
+
+            # Monatliche Lasten aus Lastprofil-Tab
+            monthly_heating_kwh = [0.0] * 12
+            monthly_cooling_kwh = [0.0] * 12
+            if hasattr(app, 'load_profiles_tab') and app.load_profiles_tab:
+                monthly_heating_kwh = app.load_profiles_tab.get_monthly_heating_kwh()
+                monthly_cooling_kwh = app.load_profiles_tab.get_monthly_cooling_kwh()
+
+            # Falls keine monatlichen Daten: Jahreswerte gleichmäßig verteilen
+            if sum(monthly_heating_kwh) == 0 and params.get("annual_heating", 0) > 0:
+                annual_h = params["annual_heating"]  # kWh
+                heating_factors = [
+                    0.155, 0.148, 0.125, 0.099, 0.064, 0.0,
+                    0.0, 0.0, 0.061, 0.087, 0.117, 0.144
+                ]
+                monthly_heating_kwh = [annual_h * f for f in heating_factors]
+            if sum(monthly_cooling_kwh) == 0 and params.get("annual_cooling", 0) > 0:
+                annual_c = params["annual_cooling"]
+                cooling_factors = [
+                    0.0, 0.0, 0.0, 0.05, 0.15, 0.25,
+                    0.30, 0.25, 0.0, 0.0, 0.0, 0.0
+                ]
+                monthly_cooling_kwh = [annual_c * f for f in cooling_factors]
+
+            # Bohrtiefe (Ergebnis oder initial)
+            depth = app.result.required_depth if app.result else params.get("initial_depth", 100.0)
+            r_b = app.result.borehole_resistance if app.result else 0.10
+
+            sim = LongtermSimulator()
+            sim_years = min(int(params.get("simulation_years", 25)), 25)
+
+            lt_result = sim.simulate(
+                ground_thermal_conductivity=params["ground_thermal_cond"],
+                ground_heat_capacity=params["ground_heat_cap"],
+                undisturbed_ground_temp=params["ground_temp"],
+                geothermal_gradient=params.get("geothermal_gradient", 0.03),
+                borehole_depth=depth,
+                borehole_diameter=params["borehole_diameter"],
+                borehole_resistance=r_b,
+                monthly_heating_kwh=monthly_heating_kwh,
+                monthly_cooling_kwh=monthly_cooling_kwh,
+                cop_heating=params.get("heat_pump_cop", 4.0),
+                eer_cooling=params.get("heat_pump_eer", params.get("heat_pump_cop", 4.0)),
+                delta_t_fluid=params.get("delta_t_fluid", 3.0),
+                simulation_years=sim_years,
+                n_boreholes=num_boreholes,
+            )
+            app.longterm_result = lt_result
+
+            # Regenerations-Analyse
+            app.thermal_balance = calculate_thermal_balance(
+                lt_result.annual_energy_extraction,
+                lt_result.annual_energy_injection,
+            )
+            app.depletion_warning = check_ground_depletion(
+                lt_result.annual_fluid_temp_min,
+                warning_threshold=params.get("min_fluid_temp", -2.0),
+            )
+
+            # Monatliche COP pro Jahr (Carnot-Modell)
+            cop_nominal = params.get("heat_pump_cop", 4.0)
+            monthly_cop_per_year = []
+            for year_temps in lt_result.monthly_fluid_temps:
+                cops = calculate_monthly_cop(
+                    year_temps, cop_nominal, t_sink=35.0, method='carnot'
+                )
+                monthly_cop_per_year.append(cops)
+            app.longterm_monthly_cop = monthly_cop_per_year
+
+            # JAZ-Vergleich bei verschiedenen Tiefen
+            app.status_var.set("🔄 JAZ-Vergleich für verschiedene Tiefen...")
+            app.root.update()
+
+            # 5 Tiefen: -20%, -10%, berechnet, +10%, +20%
+            base_depth = depth
+            test_depths = sorted(set([
+                max(30, round(base_depth * 0.8)),
+                max(30, round(base_depth * 0.9)),
+                round(base_depth),
+                round(base_depth * 1.1),
+                round(base_depth * 1.2),
+            ]))
+
+            jaz_result = JAZComparisonResult()
+            for d in test_depths:
+                try:
+                    test_sim = sim.simulate(
+                        ground_thermal_conductivity=params["ground_thermal_cond"],
+                        ground_heat_capacity=params["ground_heat_cap"],
+                        undisturbed_ground_temp=params["ground_temp"],
+                        borehole_depth=d,
+                        borehole_diameter=params["borehole_diameter"],
+                        borehole_resistance=r_b,
+                        monthly_heating_kwh=monthly_heating_kwh,
+                        monthly_cooling_kwh=monthly_cooling_kwh,
+                        cop_heating=cop_nominal,
+                        simulation_years=sim_years,
+                        n_boreholes=num_boreholes,
+                    )
+                    if test_sim.monthly_fluid_temps:
+                        last_temps = test_sim.monthly_fluid_temps[-1]
+                        cops = calculate_monthly_cop(
+                            last_temps, cop_nominal, method='carnot'
+                        )
+                        jaz = calculate_jaz(cops, monthly_heating_kwh)
+                        jaz_result.depths.append(d)
+                        jaz_result.jaz_values.append(jaz)
+                        jaz_result.monthly_cop_per_depth[d] = cops
+                except Exception:
+                    pass
+
+            app.jaz_comparison = jaz_result
+
+            logger.info("Langzeit-Simulation abgeschlossen: %d Jahre", sim_years)
+
+        except Exception as e:
+            logger.warning("Langzeit-Simulation fehlgeschlagen: %s", e)
+            import traceback
+            traceback.print_exc()
 
     @staticmethod
     def get_pipe_length_factor(pipe_config: str) -> int:

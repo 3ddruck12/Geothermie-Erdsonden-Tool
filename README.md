@@ -10,7 +10,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/workflows/Tests/badge.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/actions)
 [![GitHub release](https://img.shields.io/github/release/3ddruck12/Geothermie-Erdsonden-Tool.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases)
-![Version](https://img.shields.io/badge/version-3.4.0--beta2.2-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.4.0--beta3-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -59,7 +59,15 @@
 
 ## ✨ Features
 
-### 🆕 Neu in V3.4.0-beta2.2 (Februar 2026)
+### 🆕 Neu in V3.4.0-beta3 (Februar 2026)
+- 📡 **Langzeit-Simulation** (bis 25 Jahre, Cloud: 50): Temporal Superposition nach Eskilson (1987)
+- ♻️ **Regenerations-Analyse**: Thermische Balance, Auskühlung-Warnung, optimaler Heiz/Kühl-Anteil
+- ⚡ **Saisonale Effizienz (SCOP/SEER/JAZ)**: Temperatur- und teillastabhängiger COP, Jahresarbeitszahl
+- 📊 **4 neue Langzeit-Diagramme** (gesamt 17): Temperaturentwicklung, Thermische Balance, monatlicher COP, JAZ-Vergleich
+- 🔧 **g-Funktions-Fix**: Finite Line Source läuft korrekt gegen ICS-Grenzwert
+- ✅ **129 pytest Unit-Tests** (alle grün)
+
+### Neu in V3.4.0-beta2.2 (Februar 2026)
 - 🏗️ **Architektur-Refactoring**: God-Class aufgelöst (4648 → 3353 Zeilen)
   - 6 Tab-Module: `InputTab`, `ResultsTab`, `MaterialsTab`, `DiagramsTab`, `BorefieldTab`, `LoadProfilesTab`
   - 2 Controller: `CalculationController`, `FileController`
@@ -198,10 +206,10 @@ python main.py
 
 ```bash
 # Neueste Version herunterladen
-wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.4.0-beta2.2/geothermie-erdsondentool_3.4.0-beta2.2_amd64.deb
+wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.4.0-beta3/geothermie-erdsondentool_3.4.0-beta3_amd64.deb
 
 # Installieren/Upgraden (keine Deinstallation nötig)
-sudo dpkg -i geothermie-erdsondentool_3.4.0-beta2.2_amd64.deb
+sudo dpkg -i geothermie-erdsondentool_3.4.0-beta3_amd64.deb
 sudo apt-get install -f  # Falls Abhängigkeiten fehlen
 
 # Starten

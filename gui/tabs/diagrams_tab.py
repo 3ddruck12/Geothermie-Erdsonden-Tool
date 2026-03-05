@@ -1,7 +1,7 @@
 """Diagramme-Tab: Alle Visualisierungen und Plot-Funktionen.
 
 Extrahiert aus main_window_v3_professional.py (V3.4 Refactoring).
-Enthält 13 Diagramme:
+Enthält 17 Diagramme:
   1. Monatliche Temperaturen
   2. Bohrloch-Schema (Querschnitt)
   3. Monatliche Entzugsleistung (W/m)
@@ -15,6 +15,10 @@ Enthält 13 Diagramme:
  11. COP vs. Vorlauftemperatur
  12. JAZ-Abschätzung
  13. Energieverbrauch-Vergleich
+ 14. Langzeit-Temperaturentwicklung (Phase 3)
+ 15. Thermische Balance / Regeneration (Phase 3)
+ 16. Monatlicher COP Langzeit (Phase 3)
+ 17. JAZ-Vergleich bei verschiedenen Tiefen (Phase 3)
 """
 
 import tkinter as tk
@@ -105,7 +109,16 @@ class DiagramsTab:
             ("COP vs. Vorlauftemperatur", self._plot_cop_vs_flow_temp),
             ("JAZ-Abschätzung", self._plot_jaz_estimation),
             ("Energieverbrauch-Vergleich", self._plot_energy_consumption),
-        ]
+        # --- Langzeit-Simulation (V3.4 Phase 3) ---
+        ("Langzeit-Temperaturentwicklung",
+         self._plot_longterm_temperatures),
+        ("Thermische Balance (Entzug/Eintrag)",
+         self._plot_thermal_balance),
+        ("Monatliche COP-Entwicklung",
+         self._plot_monthly_cop_longterm),
+        ("JAZ-Vergleich bei verschiedenen Tiefen",
+         self._plot_jaz_depth_comparison),
+    ]
 
         for title, plot_fn in diagrams:
             self._add_diagram_frame(scrollable_frame, title, plot_fn)
@@ -958,3 +971,307 @@ class DiagramsTab:
                     ha='center', va='center', fontsize=10, color='red')
             ax.axis('off')
             canvas.draw()
+
+    # ───── Langzeit-Simulation Diagramme (V3.4 Phase 3) ──────────
+
+    def _plot_longterm_temperatures(self, fig, canvas):
+        """Plottet Langzeit-Temperaturentwicklung über Jahre."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+
+        if not hasattr(self.app, 'longterm_result') or not self.app.longterm_result:
+            ax.text(0.5, 0.5,
+                    "Keine Langzeit-Simulation verfügbar.\n\n"
+                    "Bitte Berechnung durchführen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+
+        try:
+            lt = self.app.longterm_result
+            years = list(range(1, lt.years + 1))
+
+            # Min/Max Band
+            ax.fill_between(years, lt.annual_fluid_temp_min,
+                           lt.annual_fluid_temp_max,
+                           alpha=0.2, color='#1f77b4',
+                           label='Temperaturband (Min/Max)')
+
+            # Min-Linie
+            ax.plot(years, lt.annual_fluid_temp_min, 'b-', linewidth=2,
+                    label=f'Min. Fluid-T ({lt.annual_fluid_temp_min[-1]:.1f}°C)')
+            # Max-Linie
+            ax.plot(years, lt.annual_fluid_temp_max, 'r-', linewidth=2,
+                    label=f'Max. Fluid-T ({lt.annual_fluid_temp_max[-1]:.1f}°C)')
+
+            # Boden-Temperatur (Jahresmittel)
+            if lt.monthly_ground_temps:
+                annual_ground_mean = [
+                    sum(gt) / len(gt) for gt in lt.monthly_ground_temps
+                ]
+                ax.plot(years, annual_ground_mean, 'g--', linewidth=1.5,
+                        alpha=0.7, label='Ø Bodentemperatur')
+
+            # Grenzlinien
+            try:
+                t_min_limit = float(
+                    self.app.entries.get("min_fluid_temperature",
+                                        ttk.Entry()).get() or "-2")
+            except (ValueError, AttributeError):
+                t_min_limit = -2.0
+            ax.axhline(y=t_min_limit, color='blue', linestyle=':',
+                       linewidth=1.5, alpha=0.5,
+                       label=f'Grenzwert ({t_min_limit:.0f}°C)')
+            ax.axhline(y=0, color='gray', linestyle='-',
+                       linewidth=0.5, alpha=0.3)
+
+            # Depletion-Warnung
+            if hasattr(self.app, 'depletion_warning') and self.app.depletion_warning:
+                dw = self.app.depletion_warning
+                if dw.is_warning:
+                    color = {'critical': 'red', 'warning': 'orange',
+                             'info': 'blue'}.get(dw.warning_level, 'gray')
+                    ax.text(0.02, 0.02, f'⚠️ {dw.warning_level.upper()}\n'
+                            f'Trend: {dw.temperature_trend:.2f} K/Dekade',
+                            transform=ax.transAxes, fontsize=9,
+                            verticalalignment='bottom', color=color,
+                            bbox=dict(boxstyle='round', facecolor='lightyellow',
+                                      alpha=0.8))
+
+            ax.set_xlabel('Jahr', fontsize=11, fontweight='bold')
+            ax.set_ylabel('Fluid-Temperatur [°C]', fontsize=11,
+                          fontweight='bold')
+            ax.set_title('Langzeit-Temperaturentwicklung', fontsize=12,
+                         fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=8, loc='best')
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5,
+                    f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+
+    def _plot_thermal_balance(self, fig, canvas):
+        """Plottet thermische Balance (Entzug vs. Eintrag pro Jahr)."""
+        fig.clear()
+
+        if not hasattr(self.app, 'thermal_balance') or not self.app.thermal_balance:
+            ax = fig.add_subplot(111)
+            ax.text(0.5, 0.5,
+                    "Keine Langzeit-Simulation verfügbar.\n\n"
+                    "Bitte Berechnung durchführen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+
+        try:
+            tb = self.app.thermal_balance
+            years = list(range(1, len(tb.annual_extraction) + 1))
+
+            ax1 = fig.add_subplot(111)
+
+            # Balken: Entzug (positiv) und Eintrag (negativ)
+            width = 0.6
+            ax1.bar(years, tb.annual_extraction, width, color='#e74c3c',
+                    alpha=0.7, label='Wärmeentzug (Heizen)')
+            negative_injection = [-v for v in tb.annual_injection]
+            ax1.bar(years, negative_injection, width, color='#3498db',
+                    alpha=0.7, label='Wärmeeintrag (Kühlen)')
+
+            ax1.axhline(y=0, color='black', linewidth=0.5)
+
+            # Kumulative Bilanz auf zweiter Y-Achse
+            ax2 = ax1.twinx()
+            ax2.plot(years, [c / 1000 for c in tb.cumulative_balance],
+                     'k-', linewidth=2.5, marker='o', markersize=3,
+                     label='Kumulierte Bilanz')
+            ax2.set_ylabel('Kumulierte Bilanz [MWh]', fontsize=10,
+                          fontweight='bold')
+
+            # Info-Box
+            ratio_text = (f'{tb.imbalance_ratio:.1f}x'
+                         if tb.imbalance_ratio != float('inf')
+                         else 'Nur Heizen')
+            ax1.text(0.02, 0.98,
+                     f'Bilanz-Verhältnis: {ratio_text}\n'
+                     f'Gesamt-Entzug: {tb.total_extraction/1000:.1f} MWh\n'
+                     f'Gesamt-Eintrag: {tb.total_injection/1000:.1f} MWh',
+                     transform=ax1.transAxes, fontsize=8,
+                     verticalalignment='top',
+                     bbox=dict(boxstyle='round', facecolor='lightyellow',
+                               alpha=0.7))
+
+            ax1.set_xlabel('Jahr', fontsize=11, fontweight='bold')
+            ax1.set_ylabel('Energie [kWh/Jahr]', fontsize=11,
+                          fontweight='bold')
+            ax1.set_title('Thermische Balance (Entzug/Eintrag)',
+                         fontsize=12, fontweight='bold')
+            ax1.grid(True, alpha=0.3)
+
+            # Legenden kombinieren
+            h1, l1 = ax1.get_legend_handles_labels()
+            h2, l2 = ax2.get_legend_handles_labels()
+            ax1.legend(h1 + h2, l1 + l2, fontsize=8, loc='upper right')
+
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax = fig.add_subplot(111)
+            ax.text(0.5, 0.5,
+                    f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+
+    def _plot_monthly_cop_longterm(self, fig, canvas):
+        """Plottet monatliche COP-Entwicklung über Jahre (Liniendiagramm)."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+
+        if (not hasattr(self.app, 'longterm_result')
+                or not self.app.longterm_result
+                or not hasattr(self.app, 'longterm_monthly_cop')
+                or not self.app.longterm_monthly_cop):
+            ax.text(0.5, 0.5,
+                    "Keine Langzeit-Simulation verfügbar.\n\n"
+                    "Bitte Berechnung durchführen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+
+        try:
+            lt = self.app.longterm_result
+            monthly_cops = self.app.longterm_monthly_cop  # [year][month]
+            n_years = len(monthly_cops)
+
+            # JAZ pro Jahr
+            jaz_per_year = []
+            for year_cops in monthly_cops:
+                # Gewichteter Durchschnitt (Heizmonate gewichten mehr)
+                valid = [c for c in year_cops if c > 0]
+                jaz_per_year.append(
+                    sum(valid) / len(valid) if valid else 0
+                )
+
+            years = list(range(1, n_years + 1))
+
+            # JAZ-Verlauf
+            ax.plot(years, jaz_per_year, 'g-o', linewidth=2.5,
+                    markersize=4, label='JAZ pro Jahr')
+
+            # Min/Max COP pro Jahr
+            min_cops = [min(c for c in yc if c > 0) if any(c > 0 for c in yc)
+                       else 0 for yc in monthly_cops]
+            max_cops = [max(yc) for yc in monthly_cops]
+
+            ax.fill_between(years, min_cops, max_cops, alpha=0.15,
+                           color='green', label='COP-Spanne (Min/Max)')
+            ax.plot(years, min_cops, 'b--', linewidth=1, alpha=0.6,
+                    label=f'Min. COP ({min_cops[-1]:.2f})')
+
+            # Nenn-COP
+            try:
+                cop_nominal = float(
+                    self.app.entries.get("heat_pump_cop_heating",
+                                        ttk.Entry()).get() or "4.0")
+                ax.axhline(y=cop_nominal, color='gray', linestyle=':',
+                          linewidth=1.5, alpha=0.5,
+                          label=f'Nenn-COP ({cop_nominal:.1f})')
+            except (ValueError, AttributeError):
+                pass
+
+            ax.set_xlabel('Jahr', fontsize=11, fontweight='bold')
+            ax.set_ylabel('COP / JAZ [-]', fontsize=11, fontweight='bold')
+            ax.set_title('Monatliche COP-Entwicklung über Jahre',
+                        fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3)
+            ax.legend(fontsize=8, loc='best')
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5,
+                    f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+
+    def _plot_jaz_depth_comparison(self, fig, canvas):
+        """Plottet JAZ-Vergleich bei verschiedenen Sondentiefen."""
+        fig.clear()
+        ax = fig.add_subplot(111)
+
+        if (not hasattr(self.app, 'jaz_comparison')
+                or not self.app.jaz_comparison
+                or not self.app.jaz_comparison.depths):
+            ax.text(0.5, 0.5,
+                    "Keine JAZ-Vergleichsdaten verfügbar.\n\n"
+                    "Bitte Berechnung durchführen.",
+                    ha='center', va='center', fontsize=12, color='gray')
+            ax.axis('off')
+            canvas.draw()
+            return
+
+        try:
+            jc = self.app.jaz_comparison
+            depths = jc.depths
+            jaz_vals = jc.jaz_values
+
+            colors = ['#3498db' if i != len(depths) - 1 else '#2ecc71'
+                     for i in range(len(depths))]
+
+            bars = ax.bar([f'{d:.0f}m' for d in depths], jaz_vals,
+                         color=colors, alpha=0.8, edgecolor='black',
+                         linewidth=1)
+
+            for bar, val in zip(bars, jaz_vals):
+                ax.text(bar.get_x() + bar.get_width() / 2.,
+                        bar.get_height() + 0.02,
+                        f'{val:.2f}', ha='center', va='bottom',
+                        fontsize=10, fontweight='bold')
+
+            # Grenznutzen
+            if len(depths) >= 2:
+                marginal = []
+                for i in range(1, len(depths)):
+                    d_depth = depths[i] - depths[i-1]
+                    d_jaz = jaz_vals[i] - jaz_vals[i-1]
+                    marginal.append(d_jaz / d_depth * 10 if d_depth > 0
+                                   else 0)
+
+                ax.text(0.02, 0.98,
+                        'Grenznutzen (ΔJAZ / 10m):\n' +
+                        '\n'.join(
+                            f'{depths[i-1]:.0f}→{depths[i]:.0f}m: '
+                            f'+{marginal[i-1]:.3f}'
+                            for i in range(1, len(depths))
+                        ),
+                        transform=ax.transAxes, fontsize=8,
+                        verticalalignment='top',
+                        bbox=dict(boxstyle='round', facecolor='lightgreen',
+                                  alpha=0.5))
+
+            ax.set_xlabel('Sondentiefe', fontsize=11, fontweight='bold')
+            ax.set_ylabel('JAZ [-]', fontsize=11, fontweight='bold')
+            ax.set_title('JAZ-Vergleich bei verschiedenen Sondentiefen',
+                        fontsize=12, fontweight='bold')
+            ax.grid(True, alpha=0.3, axis='y')
+
+            # Y-Achse beginnt etwas unter dem Min-Wert
+            if jaz_vals:
+                ax.set_ylim(min(jaz_vals) * 0.85, max(jaz_vals) * 1.1)
+
+            fig.tight_layout()
+            canvas.draw()
+        except Exception as e:
+            ax.text(0.5, 0.5,
+                    f"Fehler beim Erstellen des Diagramms:\n{str(e)}",
+                    ha='center', va='center', fontsize=10, color='red')
+            ax.axis('off')
+            canvas.draw()
+

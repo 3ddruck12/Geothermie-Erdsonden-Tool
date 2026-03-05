@@ -155,13 +155,13 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 - [x] **God-Class aufgelöst** – `main_window_v3_professional.py` (4.648 → 3.353 Zeilen) aufgeteilt:
   - [x] `gui/tabs/input_tab.py` – Eingabefelder, Dropdowns, Validierung
   - [x] `gui/tabs/results_tab.py` – Ergebnis-Anzeige, Text-Ausgabe
-  - [x] `gui/tabs/diagrams_tab.py` – Alle 12 Matplotlib-Diagramme
+  - [x] `gui/tabs/diagrams_tab.py` – 17 Diagramme (12 initial + 1 Phase 2 + 4 Phase 3)
   - [x] `gui/tabs/materials_tab.py` – Verfüllmaterial, Rohre, Fluide
   - [x] `gui/tabs/borefield_tab.py` – Bohrfeld-Simulation (g-Funktionen)
   - [x] `gui/controllers/calculation_controller.py` – Berechnungssteuerung
   - [x] `gui/controllers/file_controller.py` – Import/Export (.get-Dateien)
 - [x] **Legacy-GUIs entfernt** – `main_window.py` (V1) und `main_window_extended.py` (V2) gelöscht
-- [x] **Unit-Tests mit pytest** (71 Tests)
+- [x] **Unit-Tests mit pytest** (71 Tests bei Phase-1-Abschluss, 129 gesamt)
   - [x] `tests/test_thermal.py` – 16 Tests (thermische Widerstände)
   - [x] `tests/test_hydraulics.py` – 24 Tests (Druckverlust, Reynolds)
   - [x] `tests/test_borehole.py` – 10 Tests (iterative Berechnung)
@@ -179,7 +179,9 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 - [x] **i18n-Infrastruktur vorbereiten** – `gettext`-Wrapper für alle UI-Strings
 - [x] **Windows-Installer** – Professioneller Setup-Wizard mit Inno Setup
 
-#### 📊 Phase 2 – Monatliche Lastprofile (Hauptfeature)
+#### 📊 Phase 2 – Monatliche Lastprofile (Hauptfeature) ✓
+
+> **Fertiggestellt: Februar 2026 (V3.4.0-beta2.2)**
 
 - [x] **Monatliche Wärmebedarfs-Eingabe** (neuer Tab „Lastprofile“)
   - [x] 12×3 Eingabetabelle (Monat | Heizlast [kWh] | Kühllast [kWh])
@@ -197,21 +199,23 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [x] Monatliche Entzugsleistung (W/m) als Zeitreihe
   - [x] Export als PNG/PDF
 
-#### 📊 Phase 3 – Langzeit-Simulation
+#### 📊 Phase 3 – Langzeit-Simulation ✓
 
-- [ ] **Erweiterte Temperatur-Simulation**
-  - [ ] Langzeit-Temperaturentwicklung bis 50 Jahre (statt 25)
-  - [ ] Jahresgang der Fluid-Temperaturen mit monatlichen Profilen
-  - [ ] Bodentemperatur-Regeneration zwischen Heiz-/Kühlperioden
-- [ ] **Regenerations-Analyse**
-  - [ ] Thermische Balance: Wärmeentzug vs. Wärmeeintrag pro Jahr
-  - [ ] Warnung bei langfristiger Auskühlung des Erdreichs
-  - [ ] Optimaler Heiz/Kühl-Anteil für Langzeitstabilität
-- [ ] **Saisonale Effizienz (SCOP/SEER)**
-  - [ ] Monatliche COP-Berechnung basierend auf Fluidtemperatur
-  - [ ] Jahresarbeitszahl (JAZ) aus monatlichen Profilen
-  - [ ] Vergleich: JAZ bei verschiedenen Sondentiefen
-  - [ ] **Temperatur- und teillastabhängiger COP** *(GHEtool-Inspiration)* – COP als Funktion von Ein-/Austrittstemperatur und Teillast
+> **Fertiggestellt: Februar 2026 (V3.4.0-beta3)**
+
+- [x] **Erweiterte Temperatur-Simulation**
+  - [x] Langzeit-Temperaturentwicklung bis 50 Jahre (statt 25)
+  - [x] Jahresgang der Fluid-Temperaturen mit monatlichen Profilen
+  - [x] Bodentemperatur-Regeneration zwischen Heiz-/Kühlperioden
+- [x] **Regenerations-Analyse**
+  - [x] Thermische Balance: Wärmeentzug vs. Wärmeeintrag pro Jahr
+  - [x] Warnung bei langfristiger Auskühlung des Erdreichs
+  - [x] Optimaler Heiz/Kühl-Anteil für Langzeitstabilität
+- [x] **Saisonale Effizienz (SCOP/SEER)**
+  - [x] Monatliche COP-Berechnung basierend auf Fluidtemperatur
+  - [x] Jahresarbeitszahl (JAZ) aus monatlichen Profilen
+  - [x] Vergleich: JAZ bei verschiedenen Sondentiefen
+  - [x] **Temperatur- und teillastabhängiger COP** *(GHEtool-Inspiration)* – COP als Funktion von Ein-/Austrittstemperatur und Teillast
 
 #### 🎨 Phase 4 – GUI-Modernisierung
 
@@ -377,6 +381,8 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 | 🔒 BIM-Export (IFC-Format) | ❌ | ❌ | ❌ | ❌ | ✅ |
 | 🔒 CSV/Excel-Export | ❌ | ❌ | ❌ | ❌ | ✅ |
 | 🔒 Priority Support | ❌ | ❌ | ❌ | ❌ | ✅ |
+| 🔒 CO2-EWS Systeme (Pumpenlos) | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 🔒 Metallrohre (Kupfer, Edelstahl) | ❌ | ❌ | ❌ | ✅ | ✅ |
 
 ### Was bleibt Open Source (MIT)?
 
@@ -412,6 +418,8 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 - 🔒 TRT-Simulation & TRT-Integration (Datenimport, Auswertung, R<sub>b</sub>-Übernahme)
 - 🔒 REST-API & BIM-Export (IFC)
 - 🔒 CSV/Excel-Export
+- 🔒 CO2-EWS Systeme (Pumpenloser Betrieb mit CO2-Medium)
+- 🔒 Metallrohre (Kupfer, Edelstahl) für spezielle Sondenkonzepte
 
 ### Geplante Phasen
 
@@ -568,6 +576,8 @@ Features werden priorisiert nach:
 ## 🎯 Kurzfristige Ziele (Q1–Q2 2026)
 
 - [x] V3.4 Phase 1: Architektur-Refactoring ✓ (God-Class aufgelöst, 71 Tests)
+- [x] V3.4 Phase 2: Monatliche Lastprofile ✓ (Wärme/Kühlung/WW, W/m-Zeitreihe)
+- [x] V3.4 Phase 3: Langzeit-Simulation ✓ (Regeneration, JAZ, monatliche COP, 129 Tests gesamt)
 - [x] Unit-Tests aufbauen (pytest + CI/CD) ✓
 - [ ] Community aufbauen & Feedback sammeln
 - [ ] Dokumentation erweitern
@@ -581,6 +591,7 @@ Features werden priorisiert nach:
 Aktuelle Änderungen siehe:
 - [CHANGELOG_V3.4.0-beta1](../CHANGELOG_V3.4.0-beta1.md)
 - [CHANGELOG_V3.4.0-beta2](../CHANGELOG_V3.4.0-beta2.md)
+- [CHANGELOG_V3.4.0-beta3](../CHANGELOG_V3.4.0-beta3.md)
 - [CHANGELOG_V3.4.0-beta2.2](../CHANGELOG_V3.4.0-beta2.2.md)
 - [CHANGELOG_V3.3.0-beta1](../CHANGELOG_V3.3.0-beta1.md)
 - [CHANGELOG_V3.3.0-beta2](../CHANGELOG_V3.3.0-beta2.md)
@@ -605,4 +616,4 @@ Siehe [CONTRIBUTING.md](CONTRIBUTING.md) für Details.
 
 **Diese Roadmap ist ein lebendiges Dokument und wird regelmäßig aktualisiert basierend auf Community-Feedback und Entwicklungs-Fortschritt.**
 
-**Stand**: Februar 2026 (V3.4.0-beta2.2, Planung V3.4 Phase 2–4, V3.6 GHEtool-Integration & GET Cloud)
+**Stand**: Februar 2026 (V3.4.0-beta3, Phase 1–3 fertig, Planung V3.4 Phase 4, V3.6 GHEtool-Integration & GET Cloud)
