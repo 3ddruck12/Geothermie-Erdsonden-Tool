@@ -57,6 +57,7 @@ class GeothermieGUIProfessional:
         self.root = root
         self.root.title(f"Geothermie Erdsonden-Tool - Professional Edition V{APP_VERSION}")
         self.root.geometry("1800x1100")
+        self._maximize_at_startup()
         
         # Module
         self.pipe_parser = PipeParser()
@@ -105,6 +106,23 @@ class GeothermieGUIProfessional:
         
         # V3.4 Auto-Save starten
         self._start_auto_save()
+
+    def _maximize_at_startup(self):
+        """Setzt das Fenster beim Start auf Vollbild (Bildschirmgröße)."""
+        def _do_maximize():
+            try:
+                if self.root.tk.call("tk", "windowingsystem") == "win32":
+                    self.root.state("zoomed")
+                else:
+                    self.root.attributes("-zoomed", True)
+            except Exception:
+                try:
+                    w = self.root.winfo_screenwidth()
+                    h = self.root.winfo_screenheight()
+                    self.root.geometry(f"{w}x{h}+0+0")
+                except Exception:
+                    pass
+        self.root.after(50, _do_maximize)
     
     def _create_menu(self):
         """Erstellt die Menüleiste."""

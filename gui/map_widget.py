@@ -5,6 +5,7 @@ Wird sowohl im Eingabe-Tab (Standort-Visualisierung) als auch
 im Bohranzeige-Tab (Lageplan-Vorschau) verwendet.
 """
 
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Optional, Callable, Tuple
@@ -12,6 +13,9 @@ import logging
 import threading
 
 logger = logging.getLogger(__name__)
+
+# PyInstaller/DEB-Build: tkintermapview-Tiles laden oft nicht → statische Karte nutzen
+FROZEN = getattr(sys, "frozen", False)
 
 # tkintermapview optional laden (graceful degradation)
 MAPVIEW_ERROR = None
@@ -94,24 +98,28 @@ class OSMMapWidget:
         )
         self.status_label.pack(side="right")
 
-        # Karte einbauen
-        if HAS_MAPVIEW:
+        # Karte einbauen: Im PyInstaller-Build statische Karte (tkintermapview-Tiles laden oft nicht)
+        if FROZEN and HAS_STATIC_MAP:
+            self._build_static_fallback()
+        elif HAS_MAPVIEW and not FROZEN:
             self._build_interactive_map()
         elif HAS_STATIC_MAP:
             self._build_static_fallback()
+        elif HAS_MAPVIEW:
+            self._build_interactive_map()
         else:
             self._build_text_fallback()
 
-        # Zoom-Buttons
-        btn_frame = ttk.Frame(self.frame)
-        btn_frame.pack(fill="x", padx=5, pady=(2, 5))
-
-        ttk.Button(btn_frame, text="➕ Zoom +", width=10,
-                   command=self._zoom_in).pack(side="left", padx=2)
-        ttk.Button(btn_frame, text="➖ Zoom −", width=10,
-                   command=self._zoom_out).pack(side="left", padx=2)
-        ttk.Label(btn_frame, text="© OpenStreetMap contributors",
-                  foreground="gray", font=("Arial", 7)).pack(side="right", padx=5)
+        # Zoom-Buttons nur bei statischer Karte (tkintermapview hat eigene schwarze +/-)
+        if hasattr(self, "_canvas"):
+            btn_frame = ttk.Frame(self.frame)
+            btn_frame.pack(fill="x", padx=5, pady=(2, 5))
+            ttk.Button(btn_frame, text="➕ Zoom +", width=10,
+                       command=self._zoom_in).pack(side="left", padx=2)
+            ttk.Button(btn_frame, text="➖ Zoom −", width=10,
+                       command=self._zoom_out).pack(side="left", padx=2)
+            ttk.Label(btn_frame, text="© OpenStreetMap contributors",
+                      foreground="gray", font=("Arial", 7)).pack(side="right", padx=5)
 
     # ─── Karten-Builder ─────────────────────────────────────
 
@@ -151,7 +159,7 @@ class OSMMapWidget:
             bg="#e8e8e8", highlightthickness=0
         )
         self._canvas.pack(fill="both", expand=True, padx=5, pady=2)
-        self.status_label.configure(text="Statische Karte (Vorschau)")
+        self.status_label.configure(text="Statische Karte – Lade Kacheln…")
         self._update_static_image()
 
     def _build_text_fallback(self):
@@ -274,8 +282,10 @@ class OSMMapWidget:
                 self.width // 2, self.height // 2,
                 image=self._photo_image, anchor="center"
             )
+            self.status_label.configure(text="Statische Karte (Zoom +/-)")
         except Exception as e:
             logger.warning(f"Canvas-Bild konnte nicht gesetzt werden: {e}")
+            self.status_label.configure(text="Karte konnte nicht geladen werden")
 
     def _zoom_in(self):
         """Zoom vergrößern."""

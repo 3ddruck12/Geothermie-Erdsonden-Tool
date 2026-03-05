@@ -39,6 +39,7 @@ a = Analysis(
         'reportlab.lib',
         'reportlab.platypus',
         'requests',
+        'certifi',
         'PIL',
         'PIL.Image',
         'PIL.ImageTk',
