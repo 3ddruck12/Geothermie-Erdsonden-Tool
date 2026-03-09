@@ -51,6 +51,7 @@ a = Analysis(
         'six',
         'future',
         'sqlite3',
+        'ttkbootstrap',
         'gui.map_widget',
         'calculations',
         'calculations.thermal',

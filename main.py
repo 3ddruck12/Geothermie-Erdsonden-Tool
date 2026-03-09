@@ -40,6 +40,14 @@ logger = logging.getLogger("geothermie")
 # Füge den aktuellen Ordner zum Python-Pfad hinzu
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+# ttkbootstrap optional laden (graceful degradation falls nicht installiert)
+try:
+    import ttkbootstrap as tbs
+    HAS_TTKBOOTSTRAP = True
+except ImportError:
+    HAS_TTKBOOTSTRAP = False
+    logger.info("ttkbootstrap nicht verfügbar – Standard-ttk wird verwendet")
+
 # Importiere die GUI
 from gui.main_window_v3_professional import GeothermieGUIProfessional as GUI
 logger.info("Starte Professional GUI V3.4")
@@ -48,9 +56,22 @@ logger.info("Starte Professional GUI V3.4")
 def main():
     """Hauptfunktion - startet die GUI."""
     try:
+        # Theme aus Einstellungen lesen
+        try:
+            from utils.settings import get as settings_get
+            theme = settings_get("theme") or "cosmo"
+        except Exception:
+            theme = "cosmo"
+
         # Erstelle Hauptfenster
-        # className für Linux: WM_CLASS = StartupWMClass in .desktop (Taskleisten-Icon)
-        root = tk.Tk(className='geothermie-erdsondentool')
+        if HAS_TTKBOOTSTRAP:
+            # ttkbootstrap.Window ist ein Drop-In für tk.Tk mit Theming
+            root = tbs.Window(
+                themename=theme,
+                className='geothermie-erdsondentool',
+            )
+        else:
+            root = tk.Tk(className='geothermie-erdsondentool')
         
         # Setze App-Icon für Windows Taskleiste
         try:

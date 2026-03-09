@@ -10,6 +10,9 @@ pygfunction[plot]>=2.3.0
 
 # V3.3.6.1: Interaktive OSM-Karte im Eingabe-Tab
 tkintermapview>=1.29
+
+# V3.4.0 Phase 4: Modernes Dark/Light-Theme
+ttkbootstrap>=1.10.0
 geocoder>=1.38.1
 pyperclip>=1.8.0
 certifi

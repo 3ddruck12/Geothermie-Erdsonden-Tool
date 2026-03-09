@@ -226,14 +226,17 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [x] Enter in PLZ/Ort löst Geocoding direkt aus
   - [x] Marker wird gesetzt, Koordinaten in Klimadaten übernommen
   - [x] Statuszeile mit Lade-/Erfolgs-/Fehlerstatus
-- [ ] **ttkbootstrap-Integration** – Modernes Dark/Light-Theme
-  - [ ] Drop-in-Ersatz für ttk (minimaler Änderungsaufwand)
-  - [ ] Theme-Auswahl im Einstellungs-Menü
-  - [ ] Konsistentes Farbschema für Diagramme
+- [x] **ttkbootstrap-Integration** – Modernes Dark/Light-Theme
+  - [x] Drop-in-Ersatz für ttk, graceful fallback ohne ttkbootstrap
+  - [x] Theme-Auswahl im Menü „⚙️ Einstellungen → 🎨 Theme"
+  - [x] 18 Themes: 13 helle (cosmo, flatly, …) + 5 dunkle (darkly, cyborg, …)
+  - [x] Theme wird in `~/.config/geothermietool/settings.json` gespeichert
+  - [x] Matplotlib wechselt bei Dunkel-Theme auf `dark_background`-Style
 - [x] **Scrolling-Fix** – `bind_all("<MouseWheel>")` durch Widget-spezifisches Binding ersetzt
   - [x] `gui/utils.py`: `bind_mousewheel_to_canvas()` mit Enter/Leave-Prinzip
   - [x] Alle 6 scrollbaren Canvas-Bereiche umgestellt (Diagramme, Eingabe, Materialien, Lastprofile, Bohranzeige)
   - [x] Linux-Scrolling (Button-4/5) und Windows/macOS (MouseWheel) unterstützt
+  - [ ] PDF Bericht und GET Format erweitern mit den neunen Funktionen aus Version 3.4 Format und abwärtskompatibel halten.
 
 ---
 

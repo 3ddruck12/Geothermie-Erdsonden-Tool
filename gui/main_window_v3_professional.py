@@ -9,11 +9,14 @@ Neue Features in V3:
 - Frostschutz-Konfiguration
 """
 
+import logging
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, simpledialog
 import os
 from typing import Optional, Dict, Any
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.figure import Figure
@@ -148,7 +151,35 @@ class GeothermieGUIProfessional:
         tools_menu.add_command(label="🌍 PVGIS Klimadaten laden", command=self._load_pvgis_data)
         tools_menu.add_command(label="💧 Materialmengen berechnen", command=self.calc_controller.calculate_grout_materials)
         tools_menu.add_command(label="💨 Hydraulik berechnen", command=self.calc_controller.calculate_hydraulics)
-        
+
+        # Einstellungen (Theme-Auswahl) – nur mit ttkbootstrap
+        try:
+            import ttkbootstrap as tbs
+            from utils.settings import LIGHT_THEMES, DARK_THEMES_LIST
+            settings_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label="⚙️ Einstellungen", menu=settings_menu)
+
+            theme_menu = tk.Menu(settings_menu, tearoff=0)
+            settings_menu.add_cascade(label="🎨 Theme", menu=theme_menu)
+
+            light_menu = tk.Menu(theme_menu, tearoff=0)
+            theme_menu.add_cascade(label="☀️ Hell", menu=light_menu)
+            for t in LIGHT_THEMES:
+                light_menu.add_command(
+                    label=t.capitalize(),
+                    command=lambda th=t: self._apply_theme(th),
+                )
+
+            dark_menu = tk.Menu(theme_menu, tearoff=0)
+            theme_menu.add_cascade(label="🌙 Dunkel", menu=dark_menu)
+            for t in DARK_THEMES_LIST:
+                dark_menu.add_command(
+                    label=t.capitalize(),
+                    command=lambda th=t: self._apply_theme(th),
+                )
+        except ImportError:
+            pass
+
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label="Hilfe", menu=help_menu)
         help_menu.add_command(label="Über", command=self._show_about)
@@ -3245,6 +3276,30 @@ und wird rechts visualisiert.""")
         self.borefield_fig.tight_layout()
         self.borefield_canvas.draw()
     
+    def _apply_theme(self, theme_name: str):
+        """Wendet ein ttkbootstrap-Theme an und speichert die Einstellung."""
+        try:
+            import ttkbootstrap as tbs
+            from utils.settings import DARK_THEMES, set_value as settings_set
+            import matplotlib.pyplot as plt
+
+            # Theme anwenden
+            style = tbs.Style()
+            style.theme_use(theme_name)
+
+            # Matplotlib-Style anpassen
+            if theme_name in DARK_THEMES:
+                plt.style.use("dark_background")
+            else:
+                plt.style.use("default")
+
+            # Einstellung speichern
+            settings_set("theme", theme_name)
+
+            self.status_var.set(f"🎨 Theme: {theme_name.capitalize()}")
+        except Exception as e:
+            logger.warning(f"Theme konnte nicht angewendet werden: {e}")
+
     def _show_about(self):
         """Zeigt Über-Dialog."""
         about = f"""Geothermie Erdsonden-Tool

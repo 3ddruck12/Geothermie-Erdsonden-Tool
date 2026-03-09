@@ -55,6 +55,7 @@ a = Analysis(
         'future',
         'sqlite3',
         'pygfunction',
+        'ttkbootstrap',
         'gui.map_widget',
         'calculations.longterm_simulation',
         'calculations.regeneration_analysis',
