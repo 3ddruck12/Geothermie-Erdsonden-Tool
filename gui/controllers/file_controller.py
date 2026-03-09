@@ -43,6 +43,32 @@ class FileController:
 
     # ──────────────── .get Export ────────────────
 
+    def _collect_map_coords(self):
+        """Gibt (lat, lon) vom Karten-Widget zurück oder (None, None)."""
+        app = self.app
+        if hasattr(app, 'map_widget') and app.map_widget:
+            try:
+                pos = app.map_widget.get_position()
+                if pos:
+                    return pos
+            except Exception:
+                pass
+        return None, None
+
+    def _build_metadata(self, project_data: dict) -> dict:
+        """Baut das V3.4-konforme metadata-Dict."""
+        lat, lon = self._collect_map_coords()
+        return {
+            "project_name": project_data.get("project_name", ""),
+            "customer_name": project_data.get("customer_name", ""),
+            "address": project_data.get("address", ""),
+            "postal_code": project_data.get("postal_code", ""),
+            "city": project_data.get("city", ""),
+            "latitude": lat,
+            "longitude": lon,
+            "date": datetime.now().strftime("%Y-%m-%d"),
+        }
+
     def export_get_file(self):
         """Exportiert aktuelles Projekt als .get Datei."""
         app = self.app
@@ -60,14 +86,7 @@ class FileController:
 
             success = app.get_handler.export_to_get(
                 filepath=filepath,
-                metadata={
-                    "project_name": project_data.get("project_name", ""),
-                    "location": (f"{project_data.get('city', '')} "
-                                 f"{project_data.get('postal_code', '')}"),
-                    "designer": project_data.get("customer_name", ""),
-                    "date": project_data.get("date", ""),
-                    "notes": project_data.get("address", ""),
-                },
+                metadata=self._build_metadata(project_data),
                 ground_props={
                     "thermal_conductivity": params.get("ground_thermal_cond", 2.5),
                     "heat_capacity": params.get("ground_heat_cap", 2.4e6),
@@ -290,6 +309,37 @@ class FileController:
         """Füllt GUI mit Daten aus .get Datei."""
         app = self.app
         try:
+            # ── Projektmetadaten (V3.4) ──────────────────────────────────────
+            meta = data.get("metadata", {})
+            for field in ("project_name", "customer_name", "address",
+                          "postal_code", "city"):
+                if field in app.project_entries:
+                    entry = app.project_entries[field]
+                    entry.delete(0, tk.END)
+                    entry.insert(0, meta.get(field, ""))
+
+            # Karte auf gespeicherte Koordinaten setzen
+            lat = meta.get("latitude")
+            lon = meta.get("longitude")
+            if (lat is not None and lon is not None
+                    and hasattr(app, 'map_widget') and app.map_widget):
+                try:
+                    app.map_widget.set_position(float(lat), float(lon))
+                except Exception as exc:
+                    logger.debug("Karte konnte nicht positioniert werden: %s", exc)
+            elif (not lat) and meta.get("city"):
+                # Kein Koordinatenwert → über Stadtname geocodieren
+                address_str = " ".join(filter(None, [
+                    meta.get("address", ""),
+                    meta.get("postal_code", ""),
+                    meta.get("city", ""),
+                ]))
+                if hasattr(app, 'map_widget') and app.map_widget and address_str.strip():
+                    try:
+                        app.map_widget.set_address(address_str)
+                    except Exception:
+                        pass
+
             # Bodeneigenschaften
             ground = data.get("ground_properties", {})
             self._set_entry("ground_thermal_cond",
@@ -601,14 +651,7 @@ class FileController:
 
             success = app.get_handler.export_to_get(
                 filepath=filepath,
-                metadata={
-                    "project_name": project_data.get("project_name", ""),
-                    "location": (f"{project_data.get('city', '')} "
-                                 f"{project_data.get('postal_code', '')}"),
-                    "designer": project_data.get("customer_name", ""),
-                    "date": project_data.get("date", ""),
-                    "notes": project_data.get("address", ""),
-                },
+                metadata=self._build_metadata(project_data),
                 ground_props={
                     "thermal_conductivity": params.get("ground_thermal_cond", 2.5),
                     "heat_capacity": params.get("ground_heat_cap", 2.4e6),

@@ -119,12 +119,18 @@ class PDFReportGenerator:
         # === PROJEKTINFORMATIONEN ===
         story.append(Paragraph("Projektinformationen", self.styles['CustomHeading']))
         
+        lat = project_info.get('latitude')
+        lon = project_info.get('longitude')
+        coords_str = (f"{float(lat):.5f}° N  |  {float(lon):.5f}° E"
+                      if lat is not None and lon is not None else "–")
+
         project_data = [
             ['Projekt:', project_info.get('project_name', 'N/A')],
             ['Kunde:', project_info.get('customer_name', 'N/A')],
             ['Adresse:', project_info.get('address', 'N/A')],
             ['Ort:', project_info.get('city', 'N/A')],
-            ['PLZ:', project_info.get('postal_code', 'N/A')]
+            ['PLZ:', project_info.get('postal_code', 'N/A')],
+            ['Koordinaten:', coords_str],
         ]
         
         project_table = Table(project_data, colWidths=[4*cm, 13*cm])

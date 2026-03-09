@@ -12,8 +12,8 @@ import os
 from utils.version import APP_VERSION
 
 # Versionskonstanten
-CURRENT_FORMAT_VERSION = "3.3"
-SUPPORTED_VERSIONS = ["3.0", "3.1", "3.2", "3.3"]
+CURRENT_FORMAT_VERSION = "3.4"
+SUPPORTED_VERSIONS = ["3.0", "3.1", "3.2", "3.3", "3.4"]
 
 
 class GETFileHandler:
@@ -51,7 +51,8 @@ class GETFileHandler:
         
         Args:
             filepath: Pfad zur .get Datei
-            metadata: Projektmetadaten (project_name, location, designer, date, notes)
+            metadata: Projektmetadaten (project_name, customer_name, address, postal_code,
+                      city, latitude, longitude, date, notes)
             ground_props: Bodeneigenschaften (thermal_conductivity, heat_capacity, etc.)
             borehole_config: Bohrlochkonfiguration (diameter_mm, depth_m, etc.)
             pipe_props: Rohreigenschaften (material, outer_diameter_mm, etc.)
@@ -132,6 +133,15 @@ class GETFileHandler:
             # NEU in V3.3.6: Bohranzeige-Daten
             if bohranzeige_data:
                 data["bohranzeige_data"] = bohranzeige_data
+
+            # Sicherstellen, dass V3.4-Pflichtfelder in metadata vorhanden sind
+            meta = data.get("metadata", {})
+            for field in ("project_name", "customer_name", "address",
+                          "postal_code", "city", "date"):
+                meta.setdefault(field, "")
+            meta.setdefault("latitude", None)
+            meta.setdefault("longitude", None)
+            data["metadata"] = meta
             
             # Schreibe JSON mit Formatierung
             with open(filepath, 'w', encoding='utf-8') as f:
@@ -260,7 +270,6 @@ class GETFileHandler:
         
         # Migration 3.2 → 3.3
         if from_version == "3.2":
-            # Füge Diagramm-Konfigurationen hinzu (Standard: alle aktiviert)
             if "diagrams" not in data:
                 data["diagrams"] = {
                     "pump_characteristics": {"enabled": True},
@@ -274,11 +283,44 @@ class GETFileHandler:
                     "jaz_estimation": {"enabled": True},
                     "energy_consumption": {"enabled": True, "show_10_year": True}
                 }
-            
-            # Update Version
             data["format_version"] = "3.3"
+            from_version = "3.3"
             print("  ✓ Migriert auf 3.3")
-        
+
+        # Migration 3.3 → 3.4
+        if from_version == "3.3":
+            meta = data.get("metadata", {})
+            # Altes "notes"-Feld → "address" (Straße)
+            if "address" not in meta:
+                meta["address"] = meta.pop("notes", "")
+            else:
+                meta.pop("notes", None)
+            # Altes "designer"-Feld → "customer_name"
+            if "customer_name" not in meta:
+                meta["customer_name"] = meta.pop("designer", "")
+            else:
+                meta.pop("designer", None)
+            # Altes "location"-Feld (z.B. "Berlin 10115") → city + postal_code trennen
+            if "city" not in meta or "postal_code" not in meta:
+                location = meta.pop("location", "") or ""
+                parts = location.strip().rsplit(" ", 1)
+                if len(parts) == 2 and parts[1].isdigit():
+                    meta.setdefault("city", parts[0])
+                    meta.setdefault("postal_code", parts[1])
+                else:
+                    meta.setdefault("city", location)
+                    meta.setdefault("postal_code", "")
+            else:
+                meta.pop("location", None)
+            # Koordinaten neu
+            meta.setdefault("latitude", None)
+            meta.setdefault("longitude", None)
+            meta.setdefault("date", "")
+            data["metadata"] = meta
+            data["format_version"] = "3.4"
+            from_version = "3.4"
+            print("  ✓ Migriert auf 3.4")
+
         return data
     
     def validate_get_file(self, filepath: str) -> tuple[bool, str]:
@@ -335,17 +377,28 @@ class GETFileHandler:
             with open(filepath, 'r', encoding='utf-8') as f:
                 data = json.load(f)
             
+            meta = data.get("metadata", {})
+            city = meta.get("city") or ""
+            postal = meta.get("postal_code") or ""
+            location = (f"{city} {postal}".strip()
+                        or meta.get("location", ""))
             return {
                 "format": data.get("file_format", "unbekannt"),
                 "version": data.get("format_version", "unbekannt"),
                 "created_with": data.get("created_with", "unbekannt"),
                 "created_date": data.get("created_date", "unbekannt"),
-                "project_name": data.get("metadata", {}).get("project_name", ""),
-                "location": data.get("metadata", {}).get("location", ""),
-                "designer": data.get("metadata", {}).get("designer", ""),
-                "has_climate_data": "climate_data" in data and data["climate_data"] is not None,
-                "has_borefield": "borefield_v32" in data and data.get("borefield_v32", {}).get("enabled", False),
-                "has_results": "results" in data and data["results"] is not None
+                "project_name": meta.get("project_name", ""),
+                "location": location,
+                "customer_name": (meta.get("customer_name")
+                                  or meta.get("designer", "")),
+                "latitude": meta.get("latitude"),
+                "longitude": meta.get("longitude"),
+                "has_climate_data": ("climate_data" in data
+                                     and data["climate_data"] is not None),
+                "has_borefield": ("borefield_v32" in data
+                                  and data.get("borefield_v32", {}).get(
+                                      "enabled", False)),
+                "has_results": "results" in data and data["results"] is not None,
             }
         except Exception as e:
             print(f"Fehler beim Lesen der Datei-Info: {e}")

@@ -236,7 +236,14 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [x] `gui/utils.py`: `bind_mousewheel_to_canvas()` mit Enter/Leave-Prinzip
   - [x] Alle 6 scrollbaren Canvas-Bereiche umgestellt (Diagramme, Eingabe, Materialien, Lastprofile, Bohranzeige)
   - [x] Linux-Scrolling (Button-4/5) und Windows/macOS (MouseWheel) unterstützt
-  - [ ] PDF Bericht und GET Format erweitern mit den neunen Funktionen aus Version 3.4 Format und abwärtskompatibel halten.
+- [x] **PDF & .get Format V3.4** – Neue Felder aus V3.4 integriert, abwärtskompatibel
+  - [x] `.get`-Format auf Version 3.4 angehoben: `address`, `postal_code`, `city` separat (statt zusammengeführtes `location`)
+  - [x] `customer_name` korrekt gespeichert (statt missbrauchtes `designer`-Feld)
+  - [x] `latitude` / `longitude` (Kartenposition) werden gespeichert und beim Laden wiederhergestellt
+  - [x] Migration 3.3 → 3.4: altes Format wird automatisch konvertiert
+  - [x] Beim Laden einer `.get`-Datei werden Projektfelder (Name, Adresse, PLZ, Ort) wieder in die GUI eingetragen
+  - [x] Karte wird beim Laden auf gespeicherte Koordinaten (oder Stadtname) positioniert
+  - [x] PDF-Bericht zeigt Kartenkoordinaten in der Projektinfo-Sektion an
 
 ---
 

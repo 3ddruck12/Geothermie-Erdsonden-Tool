@@ -1087,6 +1087,16 @@ class CalculationController:
 
             project_info = {k: e.get()
                             for k, e in app.project_entries.items()}
+            # Kartenkoordinaten ergänzen
+            if hasattr(app, 'map_widget') and app.map_widget:
+                try:
+                    pos = app.map_widget.get_position()
+                    if pos:
+                        project_info['latitude'] = pos[0]
+                        project_info['longitude'] = pos[1]
+                except Exception:
+                    pass
+
             borehole_config = {k: float(e.get())
                                for k, e in app.borehole_entries.items()}
 
