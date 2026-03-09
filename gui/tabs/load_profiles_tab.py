@@ -60,6 +60,8 @@ class LoadProfilesTab:
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        from gui.utils import bind_mousewheel_to_canvas
+        bind_mousewheel_to_canvas(canvas)
 
         # Steuerleiste
         ctrl = ttk.Frame(scrollable)

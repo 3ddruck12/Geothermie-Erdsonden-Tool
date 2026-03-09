@@ -230,7 +230,10 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [ ] Drop-in-Ersatz für ttk (minimaler Änderungsaufwand)
   - [ ] Theme-Auswahl im Einstellungs-Menü
   - [ ] Konsistentes Farbschema für Diagramme
-- [ ] **Scrolling-Fix** – `bind_all("<MouseWheel>")` durch Widget-spezifisches Binding ersetzen
+- [x] **Scrolling-Fix** – `bind_all("<MouseWheel>")` durch Widget-spezifisches Binding ersetzt
+  - [x] `gui/utils.py`: `bind_mousewheel_to_canvas()` mit Enter/Leave-Prinzip
+  - [x] Alle 6 scrollbaren Canvas-Bereiche umgestellt (Diagramme, Eingabe, Materialien, Lastprofile, Bohranzeige)
+  - [x] Linux-Scrolling (Button-4/5) und Windows/macOS (MouseWheel) unterstützt
 
 ---
 

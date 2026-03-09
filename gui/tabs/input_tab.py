@@ -79,6 +79,8 @@ class InputTab:
         canvas.configure(yscrollcommand=scrollbar.set)
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        from gui.utils import bind_mousewheel_to_canvas
+        bind_mousewheel_to_canvas(canvas)
 
         # Rechte Seite: Karte + Grafik
         right_frame = ttk.Frame(main_container, relief=tk.RIDGE, borderwidth=2)
@@ -96,6 +98,7 @@ class InputTab:
         right_canvas.configure(yscrollcommand=right_scrollbar.set)
         right_canvas.pack(side="left", fill="both", expand=True)
         right_scrollbar.pack(side="right", fill="y")
+        bind_mousewheel_to_canvas(right_canvas)
 
         # OSM-Karte
         try:

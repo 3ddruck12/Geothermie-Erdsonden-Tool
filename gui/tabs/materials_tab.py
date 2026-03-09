@@ -50,6 +50,8 @@ class MaterialsTab:
             lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
 
         canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+        from gui.utils import bind_mousewheel_to_canvas
+        bind_mousewheel_to_canvas(canvas)
         scrollbar.pack(side="right", fill="y")
 
         # ── Materialmengen-Anzeige ──

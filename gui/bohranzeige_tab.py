@@ -62,6 +62,8 @@ class BohranzeigTab:
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
+        from gui.utils import bind_mousewheel_to_canvas
+        bind_mousewheel_to_canvas(canvas)
 
         # Titel
         title_frame = ttk.Frame(scrollable)

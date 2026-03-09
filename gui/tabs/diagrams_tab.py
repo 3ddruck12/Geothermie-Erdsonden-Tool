@@ -123,11 +123,9 @@ class DiagramsTab:
         for title, plot_fn in diagrams:
             self._add_diagram_frame(scrollable_frame, title, plot_fn)
 
-        # Mousewheel
-        def _on_mousewheel(event):
-            canvas_container.yview_scroll(int(-1 * (event.delta / 120)),
-                                           "units")
-        canvas_container.bind_all("<MouseWheel>", _on_mousewheel)
+        # Mousewheel-Scrolling (Widget-spezifisch, kein bind_all)
+        from gui.utils import bind_mousewheel_to_canvas
+        bind_mousewheel_to_canvas(canvas_container)
 
         # Referenzen für App-Zugriff
         self.canvas_container = canvas_container
