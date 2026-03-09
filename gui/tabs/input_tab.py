@@ -225,11 +225,67 @@ class InputTab:
         row += 1
         self._add_entry(parent, row, "PLZ:", "postal_code", "",
                         self.project_entries)
+        # Enter in PLZ → direkt Karte aktualisieren
+        self.project_entries["postal_code"].bind(
+            "<Return>", lambda e: self._geocode_project_address()
+        )
         row += 1
         self._add_entry(parent, row, "Ort:", "city", "",
                         self.project_entries)
+        # Enter in Ort → direkt Karte aktualisieren
+        self.project_entries["city"].bind(
+            "<Return>", lambda e: self._geocode_project_address()
+        )
+        row += 1
+
+        # Button "Adresse auf Karte zeigen"
+        btn_frame = ttk.Frame(parent)
+        btn_frame.grid(row=row, column=0, columnspan=2, sticky="w", padx=10, pady=(2, 8))
+        ttk.Button(
+            btn_frame,
+            text="📍 Adresse auf Karte zeigen",
+            command=self._geocode_project_address,
+        ).pack(side="left")
+        self._geo_status_label = ttk.Label(
+            btn_frame, text="", foreground="gray", font=("Arial", 8, "italic")
+        )
+        self._geo_status_label.pack(side="left", padx=8)
         row += 1
         return row
+
+    def _geocode_project_address(self):
+        """Baut aus Projekt-Adressfeldern eine Adresse und zeigt sie auf der Karte."""
+        if not getattr(self.app, "map_widget", None):
+            return
+
+        address = self.project_entries.get("address", None)
+        postal  = self.project_entries.get("postal_code", None)
+        city    = self.project_entries.get("city", None)
+
+        parts = [
+            address.get().strip() if address else "",
+            postal.get().strip()  if postal  else "",
+            city.get().strip()    if city    else "",
+        ]
+        full_address = ", ".join(p for p in parts if p)
+
+        if not full_address:
+            if hasattr(self, "_geo_status_label"):
+                self._geo_status_label.configure(text="Bitte zuerst Adresse eingeben.")
+            return
+
+        if hasattr(self, "_geo_status_label"):
+            self._geo_status_label.configure(text="⏳ Suche…")
+
+        self.app.root.update_idletasks()
+
+        try:
+            self.app.map_widget.set_address(full_address)
+            if hasattr(self, "_geo_status_label"):
+                self._geo_status_label.configure(text=f"✅ {full_address[:50]}")
+        except Exception as e:
+            if hasattr(self, "_geo_status_label"):
+                self._geo_status_label.configure(text=f"❌ {e}")
 
     def _add_borehole_section(self, parent, row):
         self._add_entry(parent, row, "Anzahl Bohrungen:", "num_boreholes", "1",

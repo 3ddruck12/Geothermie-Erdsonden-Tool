@@ -239,3 +239,16 @@ class OSMMapWidget:
                 self.coord_label.configure(
                     text=f"Breite: {self._lat:.5f}°  |  Länge: {self._lon:.5f}°"
                 )
+                # Marker setzen
+                if self._marker:
+                    try:
+                        self._marker.delete()
+                    except Exception:
+                        pass
+                self._marker = self._map_widget.set_marker(
+                    self._lat, self._lon,
+                    text=f"Bohrstandort\n{self._lat:.4f}°, {self._lon:.4f}°",
+                )
+                # Position-Callback aufrufen (z.B. climate_data aktualisieren)
+                if self.on_position_change:
+                    self.on_position_change(self._lat, self._lon)
