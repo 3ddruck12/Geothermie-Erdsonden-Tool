@@ -20,7 +20,7 @@ certifi_datas = collect_data_files('certifi')
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
+    binaries=[] + pil_binaries,
     datas=[
         ('import', 'import'),
         ('Icons', 'Icons'),
@@ -30,7 +30,6 @@ a = Analysis(
         ('calculations', 'calculations'),
         ('utils', 'utils'),
     ] + certifi_datas + pil_datas,
-    binaries=[] + pil_binaries,
     hiddenimports=[
         'tkinter',
         'tkinter.ttk',
