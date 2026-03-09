@@ -4,14 +4,16 @@ PyInstaller Spec File für Geothermie Erdsondentool
 Erzeugt eine Standalone-Anwendung mit allen Abhängigkeiten
 """
 import os
-from PyInstaller.utils.hooks import collect_submodules, collect_data_files
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_all
 
 block_cipher = None
 
-# tkintermapview: nur Submodule (collect_all legt .py als datas → kann Import stören)
+# tkintermapview: nur Submodule
 tkmap_hidden = collect_submodules('tkintermapview')
 # geocoder: tkintermapview braucht geocoder für Adress-Lookup (66 Provider-Module)
 geocoder_hidden = collect_submodules('geocoder')
+# PIL: collect_all liefert alle Submodule + Daten (.py Plugins etc.)
+pil_datas, pil_binaries, pil_hidden = collect_all('PIL')
 # certifi: CA-Bundle für SSL/HTTPS (requests, OSM-Tiles)
 certifi_datas = collect_data_files('certifi')
 
@@ -27,7 +29,8 @@ a = Analysis(
         ('parsers', 'parsers'),
         ('calculations', 'calculations'),
         ('utils', 'utils'),
-    ] + certifi_datas,
+    ] + certifi_datas + pil_datas,
+    binaries=[] + pil_binaries,
     hiddenimports=[
         'tkinter',
         'tkinter.ttk',
@@ -44,12 +47,6 @@ a = Analysis(
         'reportlab.platypus',
         'requests',
         'certifi',
-        'PIL',
-        'PIL.Image',
-        'PIL.ImageTk',
-        'PIL.ImageDraw',
-        'PIL.ImageFont',
-        'PIL.UnidentifiedImageError',
         'pyperclip',
         'ratelim',
         'six',
@@ -71,7 +68,7 @@ a = Analysis(
         'utils.version',
         'utils.osm_map',
         'data.load_profiles',
-    ] + tkmap_hidden + geocoder_hidden,
+    ] + tkmap_hidden + geocoder_hidden + pil_hidden,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=['hooks/runtime_hook_pillow.py'] if os.path.exists('hooks/runtime_hook_pillow.py') else [],

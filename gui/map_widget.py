@@ -6,18 +6,40 @@ im Bohranzeige-Tab (Lageplan-Vorschau) verwendet.
 """
 
 import sys
+import os
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from typing import Optional, Callable, Tuple
 import logging
-import threading
 
 logger = logging.getLogger(__name__)
 
-# PyInstaller/DEB-Build: tkintermapview-Tiles laden oft nicht → statische Karte nutzen
 FROZEN = getattr(sys, "frozen", False)
 
-# tkintermapview optional laden (graceful degradation)
+# #region agent log
+def _dbg(m, d):
+    """Debug-Log in /tmp und in Session-Logdatei (für frozen builds)."""
+    try:
+        import json, time
+        entry = json.dumps({"sessionId": "435298", "location": "map_widget",
+                            "message": m, "data": d, "hypothesisId": "PIL",
+                            "timestamp": int(time.time() * 1000)}, ensure_ascii=False)
+        # Session-Log (lokale Entwicklung)
+        session_log = "/home/jens/Dokumente/Software Projekte/Geothermietool/.cursor/debug-435298.log"
+        try:
+            with open(session_log, "a", encoding="utf-8") as f:
+                f.write(entry + "\n")
+        except Exception:
+            pass
+        # /tmp-Log (frozen AppImage/DEB)
+        if FROZEN:
+            with open("/tmp/get_map_debug.log", "a", encoding="utf-8") as f:
+                f.write(entry + "\n")
+    except Exception:
+        pass
+# #endregion
+
+# tkintermapview laden
 MAPVIEW_ERROR = None
 try:
     import tkintermapview
@@ -27,22 +49,21 @@ except Exception as e:
     MAPVIEW_ERROR = f"{type(e).__name__}: {e}"
     logger.warning(f"tkintermapview nicht verfügbar – {MAPVIEW_ERROR}")
 
-# Statische Karte als Fallback
-STATIC_MAP_ERROR = None
-try:
-    from utils.osm_map import generate_static_map
-    from PIL import ImageTk
-    HAS_STATIC_MAP = True
-except Exception as e:
-    HAS_STATIC_MAP = False
-    STATIC_MAP_ERROR = f"{type(e).__name__}: {e}"
+# #region agent log
+_dbg("module load", {
+    "HAS_MAPVIEW": HAS_MAPVIEW,
+    "FROZEN": FROZEN,
+    "MAPVIEW_ERR": MAPVIEW_ERROR,
+    "python": sys.version,
+})
+# #endregion
 
 
 class OSMMapWidget:
-    """Interaktives OSM-Karten-Widget mit Marker-Unterstützung.
+    """Interaktives OSM-Karten-Widget – ausschließlich tkintermapview.
 
-    Verwendet tkintermapview für die interaktive Karte.
-    Fällt auf ein statisches Bild zurück wenn tkintermapview fehlt.
+    Kein Fallback auf statische Karte. Wenn tkintermapview nicht
+    verfügbar ist, wird eine Fehlertext-Anzeige eingeblendet.
     """
 
     def __init__(
@@ -55,16 +76,6 @@ class OSMMapWidget:
         default_zoom: int = 6,
         on_position_change: Optional[Callable[[float, float], None]] = None,
     ):
-        """
-        Args:
-            parent:              Übergeordnetes tkinter-Widget
-            width:               Kartenbreite in Pixel
-            height:              Kartenhöhe in Pixel
-            default_lat:         Standard-Breitengrad (Deutschland-Mitte)
-            default_lon:         Standard-Längengrad
-            default_zoom:        Standard-Zoomstufe
-            on_position_change:  Callback bei Positionsänderung (lat, lon)
-        """
         self.parent = parent
         self.width = width
         self.height = height
@@ -75,7 +86,6 @@ class OSMMapWidget:
         self._zoom = default_zoom
         self._marker = None
         self._map_widget = None
-        self._photo_image = None  # Referenz halten für GC
 
         # Container-Frame
         self.frame = ttk.LabelFrame(parent, text="🗺️ Standort-Karte (OpenStreetMap)")
@@ -89,7 +99,7 @@ class OSMMapWidget:
             info_frame,
             text=f"Breite: {default_lat:.4f}°  |  Länge: {default_lon:.4f}°",
             foreground="#1f4788",
-            font=("Arial", 9, "bold")
+            font=("Arial", 9, "bold"),
         )
         self.coord_label.pack(side="left")
 
@@ -98,29 +108,19 @@ class OSMMapWidget:
         )
         self.status_label.pack(side="right")
 
-        # Karte einbauen: tkintermapview (interaktiv) wenn verfügbar, sonst statische Karte
+        # Karte bauen: nur tkintermapview
         if HAS_MAPVIEW:
             self._build_interactive_map()
-        elif HAS_STATIC_MAP:
-            self._build_static_fallback()
         else:
-            self._build_text_fallback()
-
-        # Zoom-Buttons nur bei statischer Karte (tkintermapview hat eigene schwarze +/-)
-        if hasattr(self, "_canvas"):
-            btn_frame = ttk.Frame(self.frame)
-            btn_frame.pack(fill="x", padx=5, pady=(2, 5))
-            ttk.Button(btn_frame, text="➕ Zoom +", width=10,
-                       command=self._zoom_in).pack(side="left", padx=2)
-            ttk.Button(btn_frame, text="➖ Zoom −", width=10,
-                       command=self._zoom_out).pack(side="left", padx=2)
-            ttk.Label(btn_frame, text="© OpenStreetMap contributors",
-                      foreground="gray", font=("Arial", 7)).pack(side="right", padx=5)
+            self._build_error_label()
 
     # ─── Karten-Builder ─────────────────────────────────────
 
     def _build_interactive_map(self):
         """Baut die interaktive tkintermapview-Karte."""
+        # #region agent log
+        _dbg("_build_interactive_map START", {})
+        # #endregion
         try:
             self._map_widget = tkintermapview.TkinterMapView(
                 self.frame,
@@ -130,11 +130,9 @@ class OSMMapWidget:
             )
             self._map_widget.pack(fill="both", expand=True, padx=5, pady=2)
 
-            # Position setzen
             self._map_widget.set_position(self._lat, self._lon)
             self._map_widget.set_zoom(self._zoom)
 
-            # Klick-Handler für Marker-Platzierung
             self._map_widget.add_right_click_menu_command(
                 label="📍 Standort hier setzen",
                 command=self._on_map_right_click,
@@ -143,38 +141,37 @@ class OSMMapWidget:
 
             self.status_label.configure(text="Rechtsklick → Standort setzen")
             logger.info("Interaktive OSM-Karte initialisiert")
+            # #region agent log
+            _dbg("_build_interactive_map OK", {})
+            # #endregion
 
         except Exception as e:
+            # #region agent log
+            _dbg("_build_interactive_map FAIL", {"err": str(e), "type": type(e).__name__})
+            # #endregion
             logger.error(f"Fehler bei interaktiver Karte: {e}")
-            self._build_static_fallback()
+            # Widget ggf. wieder entfernen, dann Fehler anzeigen
+            if self._map_widget:
+                try:
+                    self._map_widget.destroy()
+                except Exception:
+                    pass
+                self._map_widget = None
+            self._build_error_label(str(e))
 
-    def _build_static_fallback(self):
-        """Zeigt ein statisches Kartenbild als Fallback."""
-        self._canvas = tk.Canvas(
-            self.frame, width=self.width, height=self.height,
-            bg="#e8e8e8", highlightthickness=0
-        )
-        self._canvas.pack(fill="both", expand=True, padx=5, pady=2)
-        self.status_label.configure(text="Statische Karte – Lade Kacheln…")
-        self._update_static_image()
-
-    def _build_text_fallback(self):
-        """Einfacher Text-Fallback wenn keine Kartenbibliothek vorhanden."""
-        err_info = []
-        if MAPVIEW_ERROR:
-            err_info.append(f"tkintermapview: {MAPVIEW_ERROR}")
-        if STATIC_MAP_ERROR:
-            err_info.append(f"Statische Karte: {STATIC_MAP_ERROR}")
-        err_text = "\n".join(err_info) if err_info else "Unbekannter Fehler"
+    def _build_error_label(self, detail: str = ""):
+        """Zeigt eine Fehlertext-Anzeige wenn tkintermapview nicht verfügbar."""
+        err = MAPVIEW_ERROR or detail or "Unbekannter Fehler"
         lbl = ttk.Label(
             self.frame,
-            text=f"🗺️ Kartenvorschau nicht verfügbar\n\n{err_text}",
+            text=f"🗺️ Karte nicht verfügbar\n\n{err}\n\nBitte tkintermapview installieren:\npip install tkintermapview",
             foreground="gray",
             font=("Arial", 10),
             justify="center",
             wraplength=450,
         )
         lbl.pack(fill="both", expand=True, padx=20, pady=30)
+        self.status_label.configure(text="Karte nicht verfügbar")
 
     # ─── Öffentliche Methoden ────────────────────────────────
 
@@ -189,29 +186,21 @@ class OSMMapWidget:
         if zoom is not None:
             self._zoom = zoom
 
-        # Koordinaten-Label aktualisieren
         self.coord_label.configure(
             text=f"Breite: {latitude:.5f}°  |  Länge: {longitude:.5f}°"
         )
 
-        if self._map_widget and HAS_MAPVIEW:
-            # Alten Marker entfernen
+        if self._map_widget:
             if self._marker:
                 self._marker.delete()
-
             self._map_widget.set_position(latitude, longitude)
             if zoom is not None:
                 self._map_widget.set_zoom(zoom)
-
-            # Neuen Marker setzen
             self._marker = self._map_widget.set_marker(
                 latitude, longitude,
-                text=f"Bohrstandort\n{latitude:.4f}°, {longitude:.4f}°"
+                text=f"Bohrstandort\n{latitude:.4f}°, {longitude:.4f}°",
             )
-        elif hasattr(self, '_canvas'):
-            self._update_static_image()
 
-        # Callback aufrufen
         if self.on_position_change:
             self.on_position_change(latitude, longitude)
 
@@ -221,29 +210,28 @@ class OSMMapWidget:
 
     def set_address(self, address: str):
         """Setzt die Position über eine Adresse (Geocoding via tkintermapview)."""
-        if self._map_widget and HAS_MAPVIEW:
+        if self._map_widget:
             try:
                 self._map_widget.set_address(address)
-                # Position und Marker nach kurzer Verzögerung aktualisieren
                 self.parent.after(1000, self._sync_position_from_map)
             except Exception as e:
                 logger.warning(f"Geocoding fehlgeschlagen: {e}")
         else:
-            # Fallback: eigene Geocoding-Funktion
-            from utils.pvgis_api import PVGISClient
-            coords = PVGISClient.get_location_from_address(address)
-            if coords:
-                self.set_position(coords[0], coords[1], zoom=15)
+            try:
+                from utils.pvgis_api import PVGISClient
+                coords = PVGISClient.get_location_from_address(address)
+                if coords:
+                    self.set_position(coords[0], coords[1], zoom=15)
+            except Exception:
+                pass
 
     # ─── Private Methoden ────────────────────────────────────
 
     def _on_map_right_click(self, coords):
-        """Handler für Rechtsklick auf die Karte."""
         lat, lon = coords
         self.set_position(lat, lon)
 
     def _sync_position_from_map(self):
-        """Synchronisiert die Position aus der interaktiven Karte."""
         if self._map_widget:
             pos = self._map_widget.get_position()
             if pos:
@@ -251,61 +239,3 @@ class OSMMapWidget:
                 self.coord_label.configure(
                     text=f"Breite: {self._lat:.5f}°  |  Länge: {self._lon:.5f}°"
                 )
-
-    def _update_static_image(self):
-        """Aktualisiert das statische Kartenbild (Fallback)."""
-        if not HAS_STATIC_MAP:
-            return
-
-        def _load():
-            try:
-                img = generate_static_map(
-                    self._lat, self._lon,
-                    zoom=self._zoom,
-                    width=self.width,
-                    height=self.height
-                )
-                if img:
-                    self.parent.after(0, lambda i=img: self._set_canvas_image(i))
-                else:
-                    self.parent.after(0, lambda: self._on_static_map_failed("Tile-Download fehlgeschlagen"))
-            except Exception as e:
-                self.parent.after(0, lambda: self._on_static_map_failed(str(e)))
-
-        threading.Thread(target=_load, daemon=True).start()
-
-    def _set_canvas_image(self, img):
-        """Setzt das Canvas-Bild (muss im Hauptthread laufen)."""
-        try:
-            self._photo_image = ImageTk.PhotoImage(img)
-            self._canvas.delete("all")
-            self._canvas.create_image(
-                self.width // 2, self.height // 2,
-                image=self._photo_image, anchor="center"
-            )
-            self.status_label.configure(text="Statische Karte (Zoom +/-)")
-        except Exception as e:
-            logger.warning(f"Canvas-Bild konnte nicht gesetzt werden: {e}")
-            self._on_static_map_failed(str(e))
-
-    def _on_static_map_failed(self, msg: str):
-        """Zeigt Fehler im UI wenn statische Karte nicht lädt (z.B. im DEB-Build)."""
-        self.status_label.configure(text=f"Karte: {msg[:60]}…" if len(msg) > 60 else f"Karte: {msg}")
-
-    def _zoom_in(self):
-        """Zoom vergrößern."""
-        if self._zoom < 19:
-            self._zoom += 1
-            if self._map_widget and HAS_MAPVIEW:
-                self._map_widget.set_zoom(self._zoom)
-            elif hasattr(self, '_canvas'):
-                self._update_static_image()
-
-    def _zoom_out(self):
-        """Zoom verkleinern."""
-        if self._zoom > 1:
-            self._zoom -= 1
-            if self._map_widget and HAS_MAPVIEW:
-                self._map_widget.set_zoom(self._zoom)
-            elif hasattr(self, '_canvas'):
-                self._update_static_image()
