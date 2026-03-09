@@ -98,15 +98,11 @@ class OSMMapWidget:
         )
         self.status_label.pack(side="right")
 
-        # Karte einbauen: Im PyInstaller-Build statische Karte (tkintermapview-Tiles laden oft nicht)
-        if FROZEN and HAS_STATIC_MAP:
-            self._build_static_fallback()
-        elif HAS_MAPVIEW and not FROZEN:
+        # Karte einbauen: tkintermapview (interaktiv) wenn verfügbar, sonst statische Karte
+        if HAS_MAPVIEW:
             self._build_interactive_map()
         elif HAS_STATIC_MAP:
             self._build_static_fallback()
-        elif HAS_MAPVIEW:
-            self._build_interactive_map()
         else:
             self._build_text_fallback()
 
@@ -262,14 +258,19 @@ class OSMMapWidget:
             return
 
         def _load():
-            img = generate_static_map(
-                self._lat, self._lon,
-                zoom=self._zoom,
-                width=self.width,
-                height=self.height
-            )
-            if img:
-                self.parent.after(0, lambda: self._set_canvas_image(img))
+            try:
+                img = generate_static_map(
+                    self._lat, self._lon,
+                    zoom=self._zoom,
+                    width=self.width,
+                    height=self.height
+                )
+                if img:
+                    self.parent.after(0, lambda i=img: self._set_canvas_image(i))
+                else:
+                    self.parent.after(0, lambda: self._on_static_map_failed("Tile-Download fehlgeschlagen"))
+            except Exception as e:
+                self.parent.after(0, lambda: self._on_static_map_failed(str(e)))
 
         threading.Thread(target=_load, daemon=True).start()
 
@@ -285,7 +286,11 @@ class OSMMapWidget:
             self.status_label.configure(text="Statische Karte (Zoom +/-)")
         except Exception as e:
             logger.warning(f"Canvas-Bild konnte nicht gesetzt werden: {e}")
-            self.status_label.configure(text="Karte konnte nicht geladen werden")
+            self._on_static_map_failed(str(e))
+
+    def _on_static_map_failed(self, msg: str):
+        """Zeigt Fehler im UI wenn statische Karte nicht lädt (z.B. im DEB-Build)."""
+        self.status_label.configure(text=f"Karte: {msg[:60]}…" if len(msg) > 60 else f"Karte: {msg}")
 
     def _zoom_in(self):
         """Zoom vergrößern."""

@@ -7,12 +7,14 @@ Verwendung:
     pyinstaller geothermie_onedir.spec
 """
 import os
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 block_cipher = None
 
 # tkintermapview Submodule
 tkmap_hidden = collect_submodules('tkintermapview')
+# certifi: CA-Bundle für SSL/HTTPS
+certifi_datas = collect_data_files('certifi')
 
 a = Analysis(
     ['main.py'],
@@ -27,7 +29,7 @@ a = Analysis(
         ('calculations', 'calculations'),
         ('utils', 'utils'),
         ('locales', 'locales'),
-    ],
+    ] + certifi_datas,
     hiddenimports=[
         'tkinter',
         'tkinter.ttk',

@@ -4,12 +4,14 @@ PyInstaller Spec File für Geothermie Erdsondentool
 Erzeugt eine Standalone-Anwendung mit allen Abhängigkeiten
 """
 import os
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 block_cipher = None
 
 # tkintermapview: nur Submodule (collect_all legt .py als datas → kann Import stören)
 tkmap_hidden = collect_submodules('tkintermapview')
+# certifi: CA-Bundle für SSL/HTTPS (requests, OSM-Tiles)
+certifi_datas = collect_data_files('certifi')
 
 a = Analysis(
     ['main.py'],
@@ -23,7 +25,7 @@ a = Analysis(
         ('parsers', 'parsers'),
         ('calculations', 'calculations'),
         ('utils', 'utils'),
-    ],
+    ] + certifi_datas,
     hiddenimports=[
         'tkinter',
         'tkinter.ttk',

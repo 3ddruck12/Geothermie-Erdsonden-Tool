@@ -3,6 +3,13 @@
 > **Release: Februar 2026**
 > **Baut auf V3.4.0-beta2.2 auf**
 
+## V3.4.0-beta3.5 (Februar 2026)
+
+- **Karte**: tkintermapview wieder primär, statische OSM-Karte nur Fallback bei fehlender tkintermapview
+- **Zoom-Buttons**: Nur bei statischer Karte sichtbar; tkintermapview nutzt eigene Zoom-Steuerung
+- **Build**: SSL-Zertifikate (certifi) für PyInstaller/AppImage/DEB eingebunden
+- **Build**: hiddenimports für tkintermapview und neue Module ergänzt
+
 ## 🆕 Neue Features – Phase 3: Langzeit-Simulation
 
 ### Langzeit-Temperaturentwicklung

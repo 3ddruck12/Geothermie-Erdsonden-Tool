@@ -5,6 +5,18 @@ Geothermie Erdsonden-Berechnungstool
 Haupteinstiegspunkt für die Anwendung.
 """
 
+import sys
+import os
+
+# PyInstaller: SSL-Zertifikate für requests (OSM-Tiles, PVGIS) im frozen Build
+if getattr(sys, "frozen", False):
+    try:
+        import certifi
+        os.environ.setdefault("REQUESTS_CA_BUNDLE", certifi.where())
+        os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+    except Exception:
+        pass
+
 # Pillow-Kompatibilität für tkintermapview (ANTIALIAS in Pillow 10+ entfernt)
 try:
     from PIL import Image
@@ -14,8 +26,6 @@ except Exception:
     pass
 
 import tkinter as tk
-import sys
-import os
 import logging
 import ctypes
 
