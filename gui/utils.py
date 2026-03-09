@@ -5,24 +5,38 @@ import tkinter as tk
 
 
 def bind_mousewheel_to_canvas(canvas: tk.Canvas) -> None:
-    """Bindet Mausrad-Scrolling an einen Canvas.
+    """Bindet Mausrad-Scrolling an einen Canvas über Geometrie-Prüfung.
 
-    Registriert einen Root-Level-Handler, der bei jedem Scroll-Event prüft,
-    ob das Ereignis-Widget ein Nachkomme dieses Canvas ist. So scrollt nur
-    der Canvas, über dem die Maus tatsächlich schwebt – auch wenn Kinder-Widgets
-    (ttk.Label, ttk.Entry, …) den direkten Canvas-Bereich überdecken.
+    Statt Widget-Ancestor-Check wird die tatsächliche Mausposition mit den
+    Bildschirmkoordinaten des Canvas verglichen. Damit scrollt genau der Canvas,
+    über dem der Mauszeiger gerade ist – unabhängig davon welches Kind-Widget
+    das Event ursprünglich erhielt (Entry, Combobox, Label, …).
+
+    Funktioniert auf Windows, macOS und Linux.
     """
 
     def _on_mousewheel(event):
-        w = event.widget
-        while w is not None:
-            if w is canvas:
+        try:
+            # Nur scrollen wenn Canvas gerade sichtbar ist
+            if not canvas.winfo_ismapped():
+                return
+
+            # Mauszeiger-Position auf dem Bildschirm
+            ptr_x, ptr_y = canvas.winfo_pointerxy()
+
+            # Canvas-Bereich auf dem Bildschirm
+            cx = canvas.winfo_rootx()
+            cy = canvas.winfo_rooty()
+            cw = canvas.winfo_width()
+            ch = canvas.winfo_height()
+
+            if cx <= ptr_x <= cx + cw and cy <= ptr_y <= cy + ch:
                 if event.num == 4 or getattr(event, 'delta', 0) > 0:
                     canvas.yview_scroll(-1, "units")
                 elif event.num == 5 or getattr(event, 'delta', 0) < 0:
                     canvas.yview_scroll(1, "units")
-                return
-            w = getattr(w, 'master', None)
+        except Exception:
+            pass
 
     if sys.platform == "linux":
         canvas.bind_all("<Button-4>", _on_mousewheel, add="+")
