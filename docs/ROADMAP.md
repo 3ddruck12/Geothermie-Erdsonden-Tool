@@ -219,6 +219,13 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 #### 🎨 Phase 4 – GUI-Modernisierung
 
+> **In Arbeit: März 2026 (V3.4.0-beta4+)**
+
+- [x] **Adresse → Karte** – Projektfelder (Straße, PLZ, Ort) geocodieren und Karte auf Standort zoomen
+  - [x] Button „📍 Adresse auf Karte zeigen" im Projektabschnitt
+  - [x] Enter in PLZ/Ort löst Geocoding direkt aus
+  - [x] Marker wird gesetzt, Koordinaten in Klimadaten übernommen
+  - [x] Statuszeile mit Lade-/Erfolgs-/Fehlerstatus
 - [ ] **ttkbootstrap-Integration** – Modernes Dark/Light-Theme
   - [ ] Drop-in-Ersatz für ttk (minimaler Änderungsaufwand)
   - [ ] Theme-Auswahl im Einstellungs-Menü
