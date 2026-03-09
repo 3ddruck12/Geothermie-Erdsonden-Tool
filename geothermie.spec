@@ -10,6 +10,8 @@ block_cipher = None
 
 # tkintermapview: nur Submodule (collect_all legt .py als datas → kann Import stören)
 tkmap_hidden = collect_submodules('tkintermapview')
+# geocoder: tkintermapview braucht geocoder für Adress-Lookup (66 Provider-Module)
+geocoder_hidden = collect_submodules('geocoder')
 # certifi: CA-Bundle für SSL/HTTPS (requests, OSM-Tiles)
 certifi_datas = collect_data_files('certifi')
 
@@ -45,6 +47,14 @@ a = Analysis(
         'PIL',
         'PIL.Image',
         'PIL.ImageTk',
+        'PIL.ImageDraw',
+        'PIL.ImageFont',
+        'PIL.UnidentifiedImageError',
+        'pyperclip',
+        'ratelim',
+        'six',
+        'future',
+        'sqlite3',
         'gui.map_widget',
         'calculations',
         'calculations.thermal',
@@ -61,7 +71,7 @@ a = Analysis(
         'utils.version',
         'utils.osm_map',
         'data.load_profiles',
-    ] + tkmap_hidden,
+    ] + tkmap_hidden + geocoder_hidden,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=['hooks/runtime_hook_pillow.py'] if os.path.exists('hooks/runtime_hook_pillow.py') else [],

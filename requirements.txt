@@ -10,4 +10,7 @@ pygfunction[plot]>=2.3.0
 
 # V3.3.6.1: Interaktive OSM-Karte im Eingabe-Tab
 tkintermapview>=1.29
+geocoder>=1.38.1
+pyperclip>=1.8.0
+certifi
 

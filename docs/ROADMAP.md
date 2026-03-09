@@ -425,10 +425,34 @@ GET Cloud bietet eine Web-Version des Tools mit Premium-Features für profession
 
 - [ ] **Backend & Infrastruktur**: FastAPI, REST-API (versioniert, modular, Auth, Logging)
 - [ ] **Web-Frontend & Beta**: Vue.js/Next.js, Beta-Launch
+- [ ] **Demo-Zugang**: Nur Beispiel-Projekte, IP-Begrenzung (siehe unten)
 - [ ] **Öffentlicher Launch**: Free- und Professional-Pläne
 - [ ] **Enterprise-Plan**: 3D-Visualisierung, REST-API, BIM, Kostenberechnung, Beschaffungsliste, Bohrkern-Dokumentation
 - [ ] **Erweiterte Simulationen**: Grundwasser-Strömung, Nachbarsonden, Solare Regeneration, TRT, Direktkühlung
 - [ ] **Vision**: GET IoT & Community Data – Vernetzung Planung/Ausführung, kollaborative Geodatenbasis
+
+### Demo-Zugang (Missbrauchsschutz)
+
+Demo-Nutzer können das Tool **nur mit vordefinierten Beispiel-Projekten** testen – keine eigenen Eingaben, keine Speicherung.
+
+**Einschränkungen:**
+- Nur 1–3 feste Beispiel-Projekte (z.B. Einfamilienhaus, Mehrfamilienhaus, Gewerbe mit Kühlung)
+- Eingabefelder read-only bzw. deaktiviert
+- Kein Geocoding / Adresssuche (oder nur feste Demo-Adresse)
+- Kein Speichern eigener Projekte
+- PDF/Export: nur mit Wasserzeichen „Demo – GET Cloud“ oder komplett deaktiviert
+- Session-Timeout: z.B. 30 Minuten Inaktivität
+
+**IP-Begrenzung (Rate Limiting):**
+| Regel | Vorschlag | Zweck |
+|:---|:---|:---|
+| Berechnungen pro IP/Stunde | 20 | Verhindert Batch-Nutzung / Scripts |
+| Demo-Sessions pro IP/Tag | 5 | Begrenzt Mehrfach-Nutzung pro Firmennetz |
+| Aktive Sessions pro IP | 1 | Keine parallelen Demo-Sessions |
+
+Umsetzung: Redis/Memcached für Zähler (`demo:calc:{ip}:{hour}`), bei Überschreitung HTTP 429 oder Hinweis „Demo-Limit erreicht – in 1 Stunde erneut oder Pro registrieren“.
+
+**Schutz vor:** Produktive Nutzung ohne Lizenz, Datenmissbrauch, Ressourcen-Auslastung.
 
 ---
 

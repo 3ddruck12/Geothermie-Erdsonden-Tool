@@ -16,7 +16,13 @@ import logging
 from typing import Optional, Tuple
 
 import requests
-from PIL import Image, ImageDraw, ImageFont
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    _HAS_PIL = True
+except ImportError:
+    _HAS_PIL = False
+    Image = ImageDraw = ImageFont = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -151,6 +157,9 @@ def generate_static_map(
     Returns:
         PIL.Image.Image oder None bei Fehler
     """
+    if not _HAS_PIL:
+        logger.warning("PIL/Pillow nicht verfügbar – statische Karte nicht möglich")
+        return None
     if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
         logger.error(f"Ungültige Koordinaten: {latitude}, {longitude}")
         return None
