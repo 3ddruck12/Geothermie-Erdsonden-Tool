@@ -143,10 +143,10 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
 
 ## 📅 Geplante Releases
 
-### Version 3.4 (in Entwicklung)
+### Version 3.4 ✅ Released
 
 > **Schwerpunkt: Code-Qualität, Monatliche Lastprofile & GUI-Modernisierung**
-> **Geplant: Q2 2026 | GUI: tkinter (beibehalten)**
+> **Veröffentlicht: März 2026 | Stable Release**
 
 #### 🏗️ Phase 1 – Architektur-Refactoring ✓
 
@@ -217,9 +217,9 @@ Erdwärmesonden bis 100m Tiefe erfordern i.d.R. eine **wasserrechtliche Anzeige 
   - [x] Vergleich: JAZ bei verschiedenen Sondentiefen
   - [x] **Temperatur- und teillastabhängiger COP** *(GHEtool-Inspiration)* – COP als Funktion von Ein-/Austrittstemperatur und Teillast
 
-#### 🎨 Phase 4 – GUI-Modernisierung
+#### 🎨 Phase 4 – GUI-Modernisierung ✓
 
-> **In Arbeit: März 2026 (V3.4.0-beta4+)**
+> **Fertiggestellt: März 2026 (V3.4.0 Stable)**
 
 - [x] **Adresse → Karte** – Projektfelder (Straße, PLZ, Ort) geocodieren und Karte auf Standort zoomen
   - [x] Button „📍 Adresse auf Karte zeigen" im Projektabschnitt

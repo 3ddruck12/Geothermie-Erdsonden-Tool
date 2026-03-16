@@ -10,7 +10,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Build Status](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/workflows/Tests/badge.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/actions)
 [![GitHub release](https://img.shields.io/github/release/3ddruck12/Geothermie-Erdsonden-Tool.svg)](https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases)
-![Version](https://img.shields.io/badge/version-3.4.0--beta3.5-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-3.4.0-brightgreen.svg)
 
 > **Open-Source Tool zur professionellen Berechnung von Erdwärmesonden bis 100m Tiefe**
 
@@ -206,10 +206,10 @@ python main.py
 
 ```bash
 # Neueste Version herunterladen
-wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.4.0-beta3/geothermie-erdsondentool_3.4.0-beta3_amd64.deb
+wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.4.0/geothermie-erdsondentool_3.4.0_amd64.deb
 
 # Installieren/Upgraden (keine Deinstallation nötig)
-sudo dpkg -i geothermie-erdsondentool_3.4.0-beta3_amd64.deb
+sudo dpkg -i geothermie-erdsondentool_3.4.0_amd64.deb
 sudo apt-get install -f  # Falls Abhängigkeiten fehlen
 
 # Starten
@@ -222,11 +222,11 @@ geothermie-erdsondentool
 
 ```bash
 # Herunterladen
-wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.4.0-beta3/GeothermieErdsondentool-3.4.0-beta3-x86_64.AppImage
+wget https://github.com/3ddruck12/Geothermie-Erdsonden-Tool/releases/download/v3.4.0/GeothermieErdsondentool-3.4.0-x86_64.AppImage
 
 # Ausführbar machen & starten
-chmod +x GeothermieErdsondentool-3.4.0-beta3-x86_64.AppImage
-./GeothermieErdsondentool-3.4.0-beta3-x86_64.AppImage
+chmod +x GeothermieErdsondentool-3.4.0-x86_64.AppImage
+./GeothermieErdsondentool-3.4.0-x86_64.AppImage
 ```
 
 > **Startet nicht? (Ubuntu 22.04+, Linux Mint 21+, Debian 12+)**
